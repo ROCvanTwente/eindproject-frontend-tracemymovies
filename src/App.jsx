@@ -1,69 +1,111 @@
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { motion } from 'framer-motion';
+import './App.css';
 
 function App() {
+  // Animatie voor het hijsblokje
+  const craneBlockVariants = {
+    initial: { y: -300, x: 50 },
+    animate: {
+      y: [ -300, 0, 0, -300],
+      x: [ 50, 50, 100, 100],
+      transition: {
+        duration: 8,
+        repeat: Infinity,
+        ease: "easeInOut",
+        times: [0, 0.4, 0.6, 1]
+      }
+    }
+  };
+
+  // Animatie voor de kraanarm
+  const craneArmVariants = {
+    initial: { rotate: 0 },
+    animate: {
+      rotate: [0, 0, 10, 10, 0],
+      transition: {
+        duration: 8,
+        repeat: Infinity,
+        ease: "easeInOut",
+        times: [0, 0.4, 0.5, 0.6, 0.7]
+      }
+    }
+  };
+
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          {/* We houden de visuals erin voor herkenbaarheid */}
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="construction-container">
+      {/* Geanimeerde Parallax Achtergrond */}
+      <motion.div 
+        className="bg-pattern"
+        animate={{ 
+          backgroundPosition: ["0px 0px", "100px 100px"] 
+        }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+      />
+      <div className="overlay"></div>
+
+      <motion.main 
+        className="construction-window"
+        initial={{ opacity: 0, y: 100 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: "easeOut" }}
+      >
+        <div className="window-header">
+          <div className="danger-stripes"></div>
+          <span className="header-title">ZONE_STATUS: ACTIVE_BUILD</span>
+          <div className="danger-stripes"></div>
         </div>
 
-        <div>
-          <h1>Even geduld aub...</h1>
-          <p style={{ fontSize: '1.2rem', margin: '20px 0' }}>
-            Onze website ondergaat momenteel gepland <strong>onderhoud</strong>.
-          </p>
-          <p>
-            We zijn snel weer terug met verbeteringen!
-          </p>
+        <div className="window-body">
+          {/* Geanimeerde Kraan Scene */}
+          <div className="crane-scene">
+            <motion.div 
+              className="crane-arm"
+              variants={craneArmVariants}
+              initial="initial"
+              animate="animate"
+            >
+              <div className="arm-structure"></div>
+              <div className="crane-cable"></div>
+            </motion.div>
+            <motion.div 
+              className="crane-block"
+              variants={craneBlockVariants}
+              initial="initial"
+              animate="animate"
+            >
+              <div className="block-symbol">🛠️</div>
+            </motion.div>
+            <div className="crane-base"></div>
+          </div>
+
+          <h1 className="title">Werken aan de weg</h1>
+          
+          <div className="description">
+            <p>
+              Hefboom, vijs en moer... we bouwen aan een <strong>betere</strong> ervaring.
+            </p>
+            <p className="sub-description">
+              [ Verwachte voltooiing: <span className="highlight">Snel</span> ]
+            </p>
+          </div>
+
+          {/* Waarschuwingsbord Loader */}
+          <motion.div 
+            className="warning-sign"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <div className="sign-icon">⚠️</div>
+            <div className="sign-text">WERK_IN_UITVOERING</div>
+          </motion.div>
         </div>
 
-        {/* Een visuele indicator in plaats van een werkende knop */}
-        <div className="counter" style={{ cursor: 'default', opacity: 0.8 }}>
-          Status: Offline voor updates
+        <div className="window-footer">
+          <span>&copy; HEAVY_LIFTING_CORP // ZONE_ID: BUILD_9</span>
         </div>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps" style={{ justifyContent: 'center' }}>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Blijf op de hoogte</h2>
-          <p>Volg onze status via social media:</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank" rel="noreferrer">
-                <svg className="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank" rel="noreferrer">
-                <svg className="button-icon" role="presentation" aria-hidden="true">
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </motion.main>
+    </div>
+  );
 }
 
-export default App
+export default App;
