@@ -2,106 +2,67 @@ import { motion } from 'framer-motion';
 import './App.css';
 
 function App() {
-  // Animatie voor het hijsblokje
-  const craneBlockVariants = {
-    initial: { y: -300, x: 50 },
-    animate: {
-      y: [ -300, 0, 0, -300],
-      x: [ 50, 50, 100, 100],
-      transition: {
-        duration: 8,
-        repeat: Infinity,
-        ease: "easeInOut",
-        times: [0, 0.4, 0.6, 1]
-      }
-    }
-  };
-
-  // Animatie voor de kraanarm
-  const craneArmVariants = {
-    initial: { rotate: 0 },
-    animate: {
-      rotate: [0, 0, 10, 10, 0],
-      transition: {
-        duration: 8,
-        repeat: Infinity,
-        ease: "easeInOut",
-        times: [0, 0.4, 0.5, 0.6, 0.7]
-      }
-    }
-  };
-
   return (
-    <div className="construction-container">
-      {/* Geanimeerde Parallax Achtergrond */}
-      <motion.div 
-        className="bg-pattern"
-        animate={{ 
-          backgroundPosition: ["0px 0px", "100px 100px"] 
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      />
-      <div className="overlay"></div>
-
+    <div className="neon-container">
+      {/* Geanimeerde achtergrond gloed */}
+      <div className="aurora"></div>
+      
       <motion.main 
-        className="construction-window"
-        initial={{ opacity: 0, y: 100 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, ease: "easeOut" }}
+        className="maintenance-card"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8 }}
       >
-        <div className="window-header">
-          <div className="danger-stripes"></div>
-          <span className="header-title">ZONE_STATUS: ACTIVE_BUILD</span>
-          <div className="danger-stripes"></div>
-        </div>
-
-        <div className="window-body">
-          {/* Geanimeerde Kraan Scene */}
-          <div className="crane-scene">
-            <motion.div 
-              className="crane-arm"
-              variants={craneArmVariants}
-              initial="initial"
-              animate="animate"
-            >
-              <div className="arm-structure"></div>
-              <div className="crane-cable"></div>
-            </motion.div>
-            <motion.div 
-              className="crane-block"
-              variants={craneBlockVariants}
-              initial="initial"
-              animate="animate"
-            >
-              <div className="block-symbol">🛠️</div>
-            </motion.div>
-            <div className="crane-base"></div>
-          </div>
-
-          <h1 className="title">Werken aan de weg</h1>
-          
-          <div className="description">
-            <p>
-              Hefboom, vijs en moer... we bouwen aan een <strong>betere</strong> ervaring.
-            </p>
-            <p className="sub-description">
-              [ Verwachte voltooiing: <span className="highlight">Snel</span> ]
-            </p>
-          </div>
-
-          {/* Waarschuwingsbord Loader */}
+        <div className="status-header">
           <motion.div 
-            className="warning-sign"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <div className="sign-icon">⚠️</div>
-            <div className="sign-text">WERK_IN_UITVOERING</div>
-          </motion.div>
+            className="pulse-ring"
+            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          <div className="status-dot"></div>
+          <span className="status-text">UNDER_MAINTENANCE</span>
         </div>
 
-        <div className="window-footer">
-          <span>&copy; HEAVY_LIFTING_CORP // ZONE_ID: BUILD_9</span>
+        <h1 className="main-title">
+          Bezig met <span className="text-primary">onderhoud</span>
+        </h1>
+
+        <div className="dna-visual">
+          {[...Array(5)].map((_, i) => (
+            <motion.div 
+              key={i}
+              className="dna-bar"
+              animate={{ 
+                height: [20, 60, 20],
+                backgroundColor: ["#BFBCFC", "#44FFFF", "#FF61D2", "#BFBCFC"]
+              }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity, 
+                delay: i * 0.2 
+              }}
+            />
+          ))}
+        </div>
+
+        <p className="description">
+          We werken aan de <strong>website</strong> kom later terug.
+        </p>
+
+        <div className="stats-grid">
+          <div className="stat-item">
+            <span className="stat-label">STATUS</span>
+            <span className="stat-value text-accent">offline</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">OWNED BY</span>
+            <span className="stat-value text-secondary">TraceMyMovies</span>
+          </div>
+        </div>
+
+        <div className="footer-links">
+          <a href="#" className="link-hover">GitHub</a>
+          <a href="#" className="link-hover">X.com</a>
         </div>
       </motion.main>
     </div>

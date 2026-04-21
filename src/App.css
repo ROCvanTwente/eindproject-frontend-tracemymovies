@@ -1,241 +1,166 @@
 :root {
-  --bg-color: #1a1a1a;
-  --text-primary: #fff;
-  --text-secondary: #ffc107; /* Industrieel Geel */
-  --danger-red: #dc3545;
-  --window-bg: #2d2d2d;
-  --header-bg: #404040;
+  --primary: #BFBCFC;     /* Electric Light Lavender */
+  --secondary: #FF61D2;   /* Electric Rose */
+  --accent: #44FFFF;      /* Electric Cyan */
+  --bg: #0B0E14;          /* Deep Base */
+  --surface: #151921;     /* Surface Card */
 }
 
-/* Forceer 100% breedte en hoogte */
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
+  background-color: var(--bg);
+  font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
-  background-color: var(--bg-color);
 }
 
-.construction-container {
+.neon-container {
   min-height: 100vh;
   width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
   position: relative;
-  box-sizing: border-box;
+  background: var(--bg);
 }
 
-/* Achtergrond Patroon */
-.bg-pattern {
+/* De zwevende achtergrondgloed */
+.aurora {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background-image: 
-    linear-gradient(45deg, var(--header-bg) 25%, transparent 25%), 
-    linear-gradient(-45deg, var(--header-bg) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--header-bg) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--header-bg) 75%);
-  background-size: 40px 40px;
-  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
-  opacity: 0.1;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(191, 188, 252, 0.1) 0%, transparent 70%);
+  filter: blur(100px);
+  z-index: 0;
+}
+
+.maintenance-card {
+  position: relative;
   z-index: 1;
-}
-
-.overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: radial-gradient(circle, transparent 20%, var(--bg-color) 80%);
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* Constructie Venster */
-.construction-window {
-  position: relative;
-  z-index: 3;
-  background-color: var(--window-bg);
-  border: 4px solid var(--header-bg);
-  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid rgba(191, 188, 252, 0.15);
+  padding: 3rem;
+  border-radius: 24px;
   width: 90%;
-  max-width: 650px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.window-header {
-  height: 40px;
-  background-color: var(--header-bg);
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  gap: 15px;
-  border-bottom: 4px solid var(--window-bg);
-}
-
-.danger-stripes {
-  width: 60px;
-  height: 12px;
-  background: repeating-linear-gradient(
-    45deg,
-    var(--text-secondary),
-    var(--text-secondary) 10px,
-    #000 10px,
-    #000 20px
-  );
-  border-radius: 4px;
-}
-
-.header-title {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 700;
-  margin-left: auto;
-  margin-right: auto;
-  letter-spacing: 0.1em;
-}
-
-.window-body {
-  padding: 2.5rem;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  max-width: 480px;
   text-align: center;
-  font-family: 'Montserrat', sans-serif;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
 }
 
-/* Kraan Scene */
-.crane-scene {
-  position: relative;
-  width: 250px;
-  height: 150px;
-  margin-bottom: 2rem;
-  border-bottom: 3px solid var(--header-bg);
-}
-
-.crane-arm {
-  position: absolute;
-  top: 10px;
-  left: 20px;
-  width: 180px;
-  height: 10px;
-  transform-origin: left center;
-}
-
-.arm-structure {
-  width: 100%;
-  height: 100%;
-  background-color: var(--text-secondary);
-  border-radius: 5px;
-  position: relative;
-}
-
-.crane-cable {
-  position: absolute;
-  top: 10px;
-  right: 5px;
-  width: 2px;
-  height: 130px;
-  background-color: var(--text-primary);
-}
-
-.crane-block {
-  position: absolute;
-  top: 130px;
-  right: 17px;
-  width: 40px;
-  height: 40px;
-  background-color: var(--text-secondary);
-  border-radius: 8px;
+/* Status Header */
+.status-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  gap: 10px;
+  margin-bottom: 2rem;
 }
 
-.block-symbol {
-  font-size: 1.3rem;
-  color: #000;
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent);
 }
 
-.crane-base {
+.pulse-ring {
   position: absolute;
-  bottom: 0;
-  left: 10px;
-  width: 30px;
-  height: 120px;
-  background-color: var(--header-bg);
-  border-radius: 5px 5px 0 0;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
 }
 
-.title {
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  margin: 0 0 1rem 0;
+.status-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.2em;
 }
+
+/* Typografie */
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.text-primary { color: var(--primary); }
+.text-secondary { color: var(--secondary); }
+.text-accent { color: var(--accent); }
 
 .description {
-  font-size: 1.15rem;
+  color: #94a3b8;
   line-height: 1.6;
-  color: var(--text-primary);
+  margin-bottom: 2.5rem;
+  font-size: 1.1rem;
+}
+
+/* DNA Animatie */
+.dna-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  height: 80px;
+  margin-bottom: 2rem;
+}
+
+.dna-bar {
+  width: 6px;
+  border-radius: 10px;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
   margin-bottom: 2.5rem;
 }
 
-.description strong {
-  color: var(--text-secondary);
-}
-
-.sub-description {
-  font-size: 0.9rem;
-  color: #a0a0a0;
-  margin-top: 10px;
-}
-
-.highlight {
-  color: var(--text-secondary);
-  font-weight: 700;
-}
-
-/* Waarschuwingsbord */
-.warning-sign {
+.stat-item {
   display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 12px 30px;
-  background-color: #000;
-  border: 4px solid var(--text-secondary);
-  border-radius: 8px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.stat-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.stat-value {
+  font-size: 0.9rem;
   font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  box-shadow: 0 5px 20px rgba(255, 193, 7, 0.3);
 }
 
-.sign-icon {
-  font-size: 1.5rem;
+/* Footer Links */
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
 }
 
-.sign-text {
-  font-size: 1rem;
-}
-
-.window-footer {
-  padding: 12px 2rem;
-  background-color: var(--header-bg);
-  color: #a0a0a0;
-  font-size: 0.8rem;
+.footer-links a {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.9rem;
   font-weight: 600;
-  border-top: 4px solid var(--window-bg);
-  text-align: center;
+  opacity: 0.6;
+  transition: 0.3s;
+}
+
+.link-hover:hover {
+  opacity: 1;
+  text-shadow: 0 0 10px var(--primary);
 }
