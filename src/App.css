@@ -164,3 +164,23 @@ html, body {
   opacity: 1;
   text-shadow: 0 0 10px var(--primary);
 }
+
+.logo-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.brand-logo {
+  height: 125px; /* Pas aan naar wens */
+  width: auto;
+  filter: drop-shadow(0 0 15px rgba(191, 188, 252, 0.5));
+}
+
+/* Zorg dat de maintenance-card flex-direction: column heeft (waarschijnlijk al zo) */
+.maintenance-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}

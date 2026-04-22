@@ -3,67 +3,50 @@ import './App.css';
 
 function App() {
   return (
+    // De 'neon-container' en 'aurora' behouden de algemene sfeer van de pagina
     <div className="neon-container">
-      {/* Geanimeerde achtergrond gloed */}
       <div className="aurora"></div>
       
+      {/* We hebben de 'maintenance-card' div verwijderd om de achtergrond weg te halen */}
       <motion.main 
-        className="maintenance-card"
+        className="logo-only-container" // Nieuwe classnaam voor specifieke styling indien nodig
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh', // Zorgt ervoor dat het logo gecentreerd is op het scherm
+          width: '100vw',
+          position: 'relative',
+          zIndex: 1
+        }}
       >
-        <div className="status-header">
-          <motion.div 
-            className="pulse-ring"
-            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
+        {/* --- ALLEEN LOGO (BEHOUDEN EN GECENTREERD) --- */}
+        <motion.div 
+          className="logo-wrapper"
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        >
+          {/* Vervang de 'src' door je eigen logo bestand indien nodig */}
+          <motion.img 
+            src="/logo.png" 
+            alt="TraceMyMovies Logo" 
+            className="brand-logo"
+            // We behouden de zweef-animatie
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              maxWidth: '200px', // Pas de grootte naar wens aan
+              height: 'auto',
+              display: 'block'
+            }}
           />
-          <div className="status-dot"></div>
-          <span className="status-text">UNDER_MAINTENANCE</span>
-        </div>
+        </motion.div>
+        {/* ------------------------------- */}
 
-        <h1 className="main-title">
-          Bezig met <span className="text-primary">onderhoud</span>
-        </h1>
-
-        <div className="dna-visual">
-          {[...Array(5)].map((_, i) => (
-            <motion.div 
-              key={i}
-              className="dna-bar"
-              animate={{ 
-                height: [20, 60, 20],
-                backgroundColor: ["#BFBCFC", "#44FFFF", "#FF61D2", "#BFBCFC"]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity, 
-                delay: i * 0.2 
-              }}
-            />
-          ))}
-        </div>
-
-        <p className="description">
-          We werken aan de <strong>website</strong> kom later terug.
-        </p>
-
-        <div className="stats-grid">
-          <div className="stat-item">
-            <span className="stat-label">STATUS</span>
-            <span className="stat-value text-accent">offline</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">OWNED BY</span>
-            <span className="stat-value text-secondary">TraceMyMovies</span>
-          </div>
-        </div>
-
-        <div className="footer-links">
-          <a href="#" className="link-hover">GitHub</a>
-          <a href="#" className="link-hover">X.com</a>
-        </div>
       </motion.main>
     </div>
   );
