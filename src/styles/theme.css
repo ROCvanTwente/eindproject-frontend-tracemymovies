@@ -1,0 +1,145 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* TraceMyMovies Design System - Electric Pastel */
+
+  /* Brand Colors */
+  --brand-primary: #BFBCFC;
+  --brand-secondary: #FF61D2;
+  --brand-accent: #44FFFF;
+
+  /* Layout Colors */
+  --color-background: #0B0E14;
+  --color-surface: #151921;
+
+  /* Typography Colors */
+  --color-text-high: #F8FAFC;
+  --color-text-low: #94A3B8;
+
+  /* Fonts */
+  --font-heading: 'Poppins', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-data: 'Roboto Mono', monospace;
+
+  /* Spacing (8px grid system) */
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 48px;
+
+  /* Border Radius */
+  --radius-standard: 12px;
+
+  /* Legacy theme support */
+  --font-size: 16px;
+  --background: #0B0E14;
+  --foreground: #F8FAFC;
+  --card: #151921;
+  --card-foreground: #F8FAFC;
+  --popover: #151921;
+  --popover-foreground: #F8FAFC;
+  --primary: #BFBCFC;
+  --primary-foreground: #0B0E14;
+  --secondary: #FF61D2;
+  --secondary-foreground: #F8FAFC;
+  --muted: #1F2937;
+  --muted-foreground: #94A3B8;
+  --accent: #44FFFF;
+  --accent-foreground: #0B0E14;
+  --destructive: #FF61D2;
+  --destructive-foreground: #F8FAFC;
+  --border: rgba(191, 188, 252, 0.15);
+  --input: transparent;
+  --input-background: #151921;
+  --switch-background: #1F2937;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+  --ring: #BFBCFC;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+
+  h1 {
+    font-weight: var(--font-weight-bold);
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-weight: var(--font-weight-bold);
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-weight: var(--font-weight-medium);
+    line-height: 1.4;
+  }
+
+  h4 {
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input, textarea {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+
+  .font-data {
+    font-family: var(--font-data);
+  }
+}
