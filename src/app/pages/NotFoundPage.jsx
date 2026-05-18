@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Film, Home } from 'lucide-react';
+import { Link } from 'react-router';
+export function NotFoundPage() {
+    return (_jsx("div", { className: "min-h-[80vh] flex items-center justify-center px-4", children: _jsxs("div", { className: "text-center max-w-md", children: [_jsx("div", { className: "mb-8 flex justify-center", children: _jsxs("div", { className: "relative", children: [_jsx(Film, { className: "w-32 h-32 text-[#BFBCFC]/20" }), _jsx("div", { className: "absolute inset-0 flex items-center justify-center", children: _jsx("span", { className: "text-7xl font-bold font-heading text-[#BFBCFC]", children: "404" }) })] }) }), _jsx("h1", { className: "text-4xl font-bold font-heading text-[#F8FAFC] mb-4", children: "Page Not Found" }), _jsx("p", { className: "text-[#94A3B8] text-lg mb-8", children: "Sorry, we couldn't find the page you're looking for. It might have been removed or the URL is incorrect." }), _jsxs(Link, { to: "/", className: "inline-flex items-center gap-2 bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium font-heading transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#BFBCFC]/40", children: [_jsx(Home, { className: "w-5 h-5" }), "Back to Home"] })] }) }));
+}
