@@ -72,6 +72,8 @@ export function MovieDetailPage() {
 
     const API_URL = 'https://localhost:7245/api/tmdbmovie/GetMovieDetails';
 
+    // const API_URL = `${import.meta.env.VITE_API_BASE_URL}/api/tmdbmovie/GetMovieDetails`;
+
     const fetchMovieData = async () => {
         setLoading(true);
         setError(false);
