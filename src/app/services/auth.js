@@ -1,149 +1,128 @@
-// Authentication Service
-const AUTH_API_URL = '/api/auth'; // Replace with your actual backend URL
-// Token management
-const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'auth_user';
+const API_URL = "https://localhost:7245/api/auth";
+
+const TOKEN_KEY = "auth_token";
+const USER_KEY = "auth_user";
+
+// ---------------- TOKEN ----------------
 export function getToken() {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
 }
-export function setToken(token) {
-    localStorage.setItem(TOKEN_KEY, token);
+
+export function setToken(token, remember = false) {
+    if (remember) {
+        localStorage.setItem(TOKEN_KEY, token);
+    } else {
+        sessionStorage.setItem(TOKEN_KEY, token);
+    }
 }
+
 export function removeToken() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
 }
+
+// ---------------- USER ----------------
+export function setStoredUser(user, remember = false) {
+    if (remember) {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+        sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+}
+
 export function getStoredUser() {
-    const userStr = localStorage.getItem(USER_KEY);
-    if (!userStr)
-        return null;
-    try {
-        return JSON.parse(userStr);
-    }
-    catch {
-        return null;
-    }
+    const user = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
+    return user ? JSON.parse(user) : null;
 }
-export function setStoredUser(user) {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-}
-// API calls (Mock implementation - replace with real API)
-export async function login(credentials) {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Admin account
-    if (credentials.email === 'admin@tracemymovies.com' && credentials.password === 'demo123') {
-        const adminUser = {
-            id: 999,
-            username: 'Admin',
-            email: credentials.email,
-            isAdmin: true,
-        };
-        const mockToken = 'mock_jwt_token_admin_' + Date.now();
-        // Store token and user
-        setToken(mockToken);
-        setStoredUser(adminUser);
-        return {
-            user: adminUser,
-            token: mockToken,
-        };
+
+// ---------------- LOGIN ----------------
+export async function login({ email, password, remember = false }) {
+    const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    });
+
+    if (!res.ok) {
+        throw new Error("Invalid email or password");
     }
-    // Regular user account
-    if (credentials.email === 'demo@tracemymovies.com' && credentials.password === 'demo123') {
-        const mockUser = {
-            id: 1,
-            username: 'MovieLover2024',
-            email: credentials.email,
-            isAdmin: false,
-        };
-        const mockToken = 'mock_jwt_token_' + Date.now();
-        // Store token and user
-        setToken(mockToken);
-        setStoredUser(mockUser);
-        return {
-            user: mockUser,
-            token: mockToken,
-        };
-    }
-    // Invalid credentials
-    throw new Error('Invalid email or password');
+
+    const data = await res.json();
+
+    setToken(data.token, remember);
+
+    setStoredUser({
+        email,
+        username: data.username || email.split("@")[0],
+        id: data.id,
+        isAdmin: data.isAdmin || false
+    }, remember);
+
+    return data;
 }
+
+// ---------------- REGISTER ----------------
 export async function register(data) {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Mock validation
-    if (data.password !== data.confirmPassword) {
-        throw new Error('Passwords do not match');
+    const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+            username: data.username
+        })
+    });
+
+    if (!res.ok) {
+        const error = await res.text();
+
+        // 👇 FIX: backend duplicate error mooi maken
+        if (error.includes("DuplicateUserName")) {
+            throw new Error("User already exists. Please login instead.");
+        }
+
+        throw new Error(error || "Register failed");
     }
-    if (data.password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
+
+    // auto login
+    const loginRes = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            email: data.email,
+            password: data.password
+        })
+    });
+
+    if (!loginRes.ok) {
+        throw new Error("Auto login failed");
     }
-    // Create mock user
-    const mockUser = {
-        id: Math.floor(Math.random() * 10000),
-        username: data.username,
+
+    const loginData = await loginRes.json();
+
+    const user = {
         email: data.email,
+        username: data.username || data.email,
+        isAdmin: false
     };
-    const mockToken = 'mock_jwt_token_' + Date.now();
-    // Store token and user
-    setToken(mockToken);
-    setStoredUser(mockUser);
-    return {
-        user: mockUser,
-        token: mockToken,
-    };
+
+    setToken(loginData.token);
+    setStoredUser(user);
+
+    return { user, token: loginData.token };
 }
-export async function logout() {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // Clear stored data
-    removeToken();
-}
-export async function resetPassword(email) {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Mock success
-    console.log('Password reset email sent to:', email);
-}
-export async function updateProfile(data) {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const currentUser = getStoredUser();
-    if (!currentUser) {
-        throw new Error('Not authenticated');
-    }
-    const updatedUser = { ...currentUser, ...data };
-    setStoredUser(updatedUser);
-    return updatedUser;
-}
-export async function changePassword(currentPassword, newPassword) {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Mock validation
-    if (newPassword.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-    }
-    // Mock success
-    console.log('Password changed successfully');
-}
-export async function deleteAccount() {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Clear all data
-    removeToken();
-}
-// Check if user is authenticated
-export function isAuthenticated() {
-    return !!getToken();
-}
-// Validate token (mock - in real app, validate with backend)
+
+// ---------------- VALIDATE ----------------
 export async function validateToken() {
     const token = getToken();
-    if (!token)
-        return null;
-    const user = getStoredUser();
-    if (!user)
-        return null;
-    // In a real app, validate token with backend
-    return user;
+    if (!token) return null;
+
+    return getStoredUser();
+}
+
+// ---------------- LOGOUT ----------------
+export function logout() {
+    removeToken();
 }
