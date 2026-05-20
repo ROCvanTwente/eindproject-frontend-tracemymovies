@@ -4,6 +4,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 // Check if API key is configured
 const isApiKeyConfigured = TMDB_API_KEY && TMDB_API_KEY !== 'YOUR_API_KEY_HERE';
+const DOTNET_BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
 // Export for banner component
 export const isUsingMockData = !isApiKeyConfigured;
 // Fetch from TMDB API
@@ -44,23 +45,46 @@ export function getImageUrl(path, size = 'original') {
 }
 // Get trending movies
 export async function getTrending(timeWindow = 'week', region = 'NL') {
-    const data = await fetchFromTMDB(`/trending/movie/${timeWindow}`, { region });
-    return data?.results || getMockMovies();
+    try {
+        const response = await fetch(`${DOTNET_BACKEND_URL}/Trending`);
+        if (!response.ok) return getMockMovies();
+        return await response.json();
+    } catch (error) {
+        return getMockMovies();
+    }
 }
+
 // Get popular movies
 export async function getPopular(region = 'NL', page = 1) {
-    const data = await fetchFromTMDB('/movie/popular', { region, page });
-    return data?.results || getMockMovies();
+    try {
+        const response = await fetch(`${DOTNET_BACKEND_URL}/Popular`);
+        if (!response.ok) return getMockMovies();
+        return await response.json();
+    } catch (error) {
+        return getMockMovies();
+    }
 }
+
 // Get top rated movies
 export async function getTopRated(region = 'NL', page = 1) {
-    const data = await fetchFromTMDB('/movie/top_rated', { region, page });
-    return data?.results || getMockMovies();
+    try {
+        const response = await fetch(`${DOTNET_BACKEND_URL}/TopRated`);
+        if (!response.ok) return getMockMovies();
+        return await response.json();
+    } catch (error) {
+        return getMockMovies();
+    }
 }
+
 // Get upcoming movies
 export async function getUpcoming(region = 'NL', page = 1) {
-    const data = await fetchFromTMDB('/movie/upcoming', { region, page });
-    return data?.results || getMockMovies();
+    try {
+        const response = await fetch(`${DOTNET_BACKEND_URL}/Upcoming`);
+        if (!response.ok) return getMockMovies();
+        return await response.json();
+    } catch (error) {
+        return getMockMovies();
+    }
 }
 // Get now playing movies
 export async function getNowPlaying(region = 'NL', page = 1) {
