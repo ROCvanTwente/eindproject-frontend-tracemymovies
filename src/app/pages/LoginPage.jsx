@@ -1,5 +1,4 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -18,184 +17,191 @@ export function LoginPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    try {
-        await login(formData.email, formData.password, formData.remember);
+        setError('');
+        setLoading(true);
 
-        toast.success("Welcome back!");
+        try {
+            await login(
+                formData.email,
+                formData.password,
+                formData.remember
+            );
 
-        navigate("/");
-    } 
-    catch (err) {
-        const msg = err.message || "Login failed";
+            toast.success('Welcome back!');
 
-        setError(msg);
-        toast.error(msg);
-    } 
-    finally {
-        setLoading(false);
-    }
-};
+            navigate('/');
+        } catch (err) {
+            const msg = err.message || 'Login failed';
+
+            setError(msg);
+            toast.error(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        _jsx("div", {
-            className: "min-h-[90vh] flex items-center justify-center px-4 py-8 md:py-12",
-            children: _jsx("div", {
-                className: "w-full max-w-md",
-                children: _jsxs("div", {
-                    className: "bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6 md:p-8 shadow-2xl",
-                    children: [
+        <div className="min-h-[90vh] flex items-center justify-center px-4 py-8 md:py-12">
+            <div className="w-full max-w-md">
+                <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6 md:p-8 shadow-2xl">
 
-                        // HEADER
-                        _jsxs("div", {
-                            className: "text-center mb-6 md:mb-8",
-                            children: [
-                                _jsx("div", {
-                                    className: "inline-flex items-center justify-center w-14 md:w-16 h-14 md:h-16 bg-[#BFBCFC]/10 rounded-full mb-3 md:mb-4",
-                                    children: _jsx(LogIn, {
-                                        className: "w-7 md:w-8 h-7 md:h-8 text-[#BFBCFC]"
+                    {/* HEADER */}
+                    <div className="text-center mb-6 md:mb-8">
+                        <div className="inline-flex items-center justify-center w-14 md:w-16 h-14 md:h-16 bg-[#BFBCFC]/10 rounded-full mb-3 md:mb-4">
+                            <LogIn className="w-7 md:w-8 h-7 md:h-8 text-[#BFBCFC]" />
+                        </div>
+
+                        <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-2">
+                            Welcome Back
+                        </h1>
+
+                        <p className="text-[#94A3B8] text-sm md:text-base">
+                            Sign in to continue to TraceMyMovies
+                        </p>
+                    </div>
+
+                    {/* ERROR */}
+                    {error && (
+                        <div className="bg-[#FF61D2]/10 border border-[#FF61D2]/30 rounded-xl p-4 mb-6 flex items-center gap-3">
+                            <AlertCircle className="w-5 h-5 text-[#FF61D2]" />
+
+                            <p className="text-[#F8FAFC] text-sm">
+                                {error}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* TEST ACCOUNT INFO */}
+<div className="bg-[#44FFFF]/10 border border-[#44FFFF]/20 rounded-xl p-4 mb-6">
+    <h3 className="text-[#44FFFF] font-semibold mb-3 text-sm md:text-base">
+        Development Test Account
+    </h3>
+
+    <div className="space-y-2 text-sm">
+
+        <p className="text-[#F8FAFC]">
+            <span className="text-[#94A3B8]">Email:</span>{' '}
+            dev@tracemymovies.com
+        </p>
+
+        <p className="text-[#F8FAFC]">
+            <span className="text-[#94A3B8]">Password:</span>{' '}
+            DevTeam@123
+        </p>
+    </div>
+</div>
+
+                    {/* FORM */}
+                    <form onSubmit={handleSubmit} className="space-y-6">
+
+                        {/* EMAIL */}
+                        <div>
+                            <label className="block text-[#F8FAFC] mb-2">
+                                <Mail className="w-4 h-4 inline mr-2" />
+                                Email
+                            </label>
+
+                            <input
+                                type="email"
+                                
+                                value={formData.email}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        email: e.target.value
                                     })
-                                }),
-                                _jsx("h1", {
-                                    className: "text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-2",
-                                    children: "Welcome Back"
-                                }),
-                                _jsx("p", {
-                                    className: "text-[#94A3B8] text-sm md:text-base",
-                                    children: "Sign in to continue to TraceMyMovies"
-                                })
-                            ]
-                        }),
+                                }
+                                className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
+                                placeholder="your@email.com"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
 
-                        // ERROR
-                        error && _jsxs("div", {
-                            className: "bg-[#FF61D2]/10 border border-[#FF61D2]/30 rounded-xl p-4 mb-6 flex items-center gap-3",
-                            children: [
-                                _jsx(AlertCircle, { className: "w-5 h-5 text-[#FF61D2]" }),
-                                _jsx("p", {
-                                    className: "text-[#F8FAFC] text-sm",
-                                    children: error
-                                })
-                            ]
-                        }),
+                        {/* PASSWORD */}
+                        <div>
+                            <label className="block text-[#F8FAFC] mb-2">
+                                <Lock className="w-4 h-4 inline mr-2" />
+                                Password
+                            </label>
 
-                        // FORM
-                        _jsxs("form", {
-                            onSubmit: handleSubmit,
-                            className: "space-y-6",
-                            children: [
+                            <input
+                                type="password"
+                                value={formData.password}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        password: e.target.value
+                                    })
+                                }
+                                className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
+                                placeholder="Enter your password"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
 
-                                // EMAIL
-                                _jsxs("div", {
-                                    children: [
-                                        _jsxs("label", {
-                                            className: "block text-[#F8FAFC] mb-2",
-                                            children: [
-                                                _jsx(Mail, { className: "w-4 h-4 inline mr-2" }),
-                                                "Email"
-                                            ]
-                                        }),
-                                        _jsx("input", {
-                                            type: "email",
-                                            value: formData.email,
-                                            onChange: (e) =>
-                                                setFormData({ ...formData, email: e.target.value }),
-                                            className: "w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all",
-                                            placeholder: "your@email.com",
-                                            required: true,
-                                            disabled: loading
+                        {/* REMEMBER + FORGOT */}
+                        <div className="flex items-center justify-between">
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="remember"
+                                    checked={formData.remember}
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            remember: e.target.checked
                                         })
-                                    ]
-                                }),
+                                    }
+                                    className="w-4 h-4 rounded border-[#BFBCFC]/30 bg-[#0B0E14] checked:bg-[#BFBCFC]"
+                                    
+                                    disabled={loading}
+                                />
 
-                                // PASSWORD
-                                _jsxs("div", {
-                                    children: [
-                                        _jsxs("label", {
-                                            className: "block text-[#F8FAFC] mb-2",
-                                            children: [
-                                                _jsx(Lock, { className: "w-4 h-4 inline mr-2" }),
-                                                "Password"
-                                            ]
-                                        }),
-                                        _jsx("input", {
-                                            type: "password",
-                                            value: formData.password,
-                                            onChange: (e) =>
-                                                setFormData({ ...formData, password: e.target.value }),
-                                            className: "w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all",
-                                            placeholder: "Enter your password",
-                                            required: true,
-                                            disabled: loading
-                                        })
-                                    ]
-                                }),
+                                <label
+                                    htmlFor="remember"
+                                    className="text-[#94A3B8] text-sm"
+                                >
+                                    Remember me
+                                </label>
+                            </div>
 
-                                // REMEMBER + FORGOT
-                                _jsxs("div", {
-                                    className: "flex items-center justify-between",
-                                    children: [
-                                        _jsxs("div", {
-                                            className: "flex items-center gap-2",
-                                            children: [
-                                                _jsx("input", {
-                                                    type: "checkbox",
-                                                    id: "remember",
-                                                    checked: formData.remember,
-                                                    onChange: (e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            remember: e.target.checked
-                                                        }),
-                                                    className: "w-4 h-4 rounded border-[#BFBCFC]/30 bg-[#0B0E14] checked:bg-[#BFBCFC]",
-                                                    disabled: loading
-                                                }),
-                                                _jsx("label", {
-                                                    htmlFor: "remember",
-                                                    className: "text-[#94A3B8] text-sm",
-                                                    children: "Remember me"
-                                                })
-                                            ]
-                                        }),
+                            <Link
+                                to="/forgot-password"
+                                className="text-[#BFBCFC] hover:text-[#AFA9FF] text-sm font-medium transition-colors"
+                            >
+                                Forgot Password?
+                            </Link>
+                        </div>
 
-                                        _jsx(Link, {
-                                            to: "/forgot-password",
-                                            className: "text-[#BFBCFC] hover:text-[#AFA9FF] text-sm font-medium transition-colors",
-                                            children: "Forgot Password?"
-                                        })
-                                    ]
-                                }),
+                        {/* BUTTON */}
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium font-heading transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#BFBCFC]/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                            {loading ? 'Logging in...' : 'Login'}
+                        </button>
+                    </form>
 
-                                // BUTTON
-                                _jsx("button", {
-                                    type: "submit",
-                                    disabled: loading,
-                                    className: "w-full bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium font-heading transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#BFBCFC]/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-                                    children: loading
-                                        ? "Logging in..."
-                                        : "Login"
-                                })
-                            ]
-                        }),
+                    {/* REGISTER LINK */}
+                    <p className="text-center text-[#94A3B8] mt-6">
+                        Don't have an account?{' '}
 
-                        // REGISTER LINK
-                        _jsxs("p", {
-                            className: "text-center text-[#94A3B8] mt-6",
-                            children: [
-                                "Don't have an account? ",
-                                _jsx(Link, {
-                                    to: "/register",
-                                    className: "text-[#BFBCFC] hover:text-[#AFA9FF] font-medium transition-colors",
-                                    children: "Create Account"
-                                })
-                            ]
-                        })
-                    ]
-                })
-            })
-        })
+                        <Link
+                            to="/register"
+                            className="text-[#BFBCFC] hover:text-[#AFA9FF] font-medium transition-colors"
+                        >
+                            Create Account
+                        </Link>
+                    </p>
+                </div>
+            </div>
+        </div>
     );
 }
