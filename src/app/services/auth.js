@@ -3,7 +3,6 @@ const API_URL = "https://localhost:7245/api/auth";
 const TOKEN_KEY = "auth_token";
 const USER_KEY = "auth_user";
 
-// ---------------- TOKEN ----------------
 export function getToken() {
     return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
 }
@@ -23,7 +22,6 @@ export function removeToken() {
     sessionStorage.removeItem(USER_KEY);
 }
 
-// ---------------- USER ----------------
 export function setStoredUser(user, remember = false) {
     if (remember) {
         localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -37,7 +35,6 @@ export function getStoredUser() {
     return user ? JSON.parse(user) : null;
 }
 
-// ---------------- LOGIN ----------------
 export async function login({ email, password, remember = false }) {
     const res = await fetch(`${API_URL}/login`, {
         method: "POST",
@@ -63,7 +60,6 @@ export async function login({ email, password, remember = false }) {
     return data;
 }
 
-// ---------------- REGISTER ----------------
 export async function register(data) {
     const res = await fetch(`${API_URL}/register`, {
         method: "POST",
@@ -78,7 +74,6 @@ export async function register(data) {
     if (!res.ok) {
         const error = await res.text();
 
-        // 👇 FIX: backend duplicate error mooi maken
         if (error.includes("DuplicateUserName")) {
             throw new Error("User already exists. Please login instead.");
         }
@@ -86,7 +81,6 @@ export async function register(data) {
         throw new Error(error || "Register failed");
     }
 
-    // auto login
     const loginRes = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,7 +108,6 @@ export async function register(data) {
     return { user, token: loginData.token };
 }
 
-// ---------------- VALIDATE ----------------
 export async function validateToken() {
     const token = getToken();
     if (!token) return null;
@@ -122,7 +115,6 @@ export async function validateToken() {
     return getStoredUser();
 }
 
-// ---------------- LOGOUT ----------------
 export function logout() {
     removeToken();
 }

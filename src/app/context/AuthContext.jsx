@@ -22,7 +22,6 @@ export function AuthProvider({ children }) {
         setIsLoading(false);
     }
 
-    // LOGIN
     async function login(email, password, remember = false) {
         const res = await loginService({ email, password, remember });
 
@@ -46,7 +45,6 @@ async function register(formData) {
     }
 }
 
-    // LOGOUT
     function logout() {
         logoutService();
         setUser(null);
