@@ -35,14 +35,17 @@ export function AuthProvider({ children }) {
     }
 
 async function register(formData) {
-    try {
-        const response = await registerService(formData);
+    const res = await registerService(formData);
 
-        setUser(response.user);
+    setUser({
+        email: formData.email,
+        username: res.username || formData.username,
+        id: res.id ?? null,
+        token: res.token,
+        isAdmin: res.isAdmin ?? false
+    });
 
-    } catch (error) {
-        throw error;
-    }
+    return res;
 }
 
     function logout() {

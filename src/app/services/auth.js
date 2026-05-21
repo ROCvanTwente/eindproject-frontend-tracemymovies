@@ -1,3 +1,5 @@
+// const API_URL = "https://tracemymoviesbackend.runasp.net/api/auth";
+
 const API_URL = "https://localhost:7245/api/auth";
 
 const TOKEN_KEY = "auth_token";
@@ -7,7 +9,7 @@ export function getToken() {
     return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
 }
 
-export function setToken(token, remember = false) {
+export function setToken(token, remember = true) {
     if (remember) {
         localStorage.setItem(TOKEN_KEY, token);
     } else {
@@ -60,14 +62,19 @@ export async function login({ email, password, remember = false }) {
     return data;
 }
 
-export async function register(data) {
+export async function register({
+    email,
+    password,
+    username,
+    remember = false
+}) {
     const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            email: data.email,
-            password: data.password,
-            username: data.username
+            email,
+            password,
+            username
         })
     });
 
@@ -81,31 +88,19 @@ export async function register(data) {
         throw new Error(error || "Register failed");
     }
 
-    const loginRes = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            email: data.email,
-            password: data.password
-        })
-    });
+    const data = await res.json();
+    console.log(data)
 
-    if (!loginRes.ok) {
-        throw new Error("Auto login failed");
-    }
+    setToken(data.token, remember);
 
-    const loginData = await loginRes.json();
+    setStoredUser({
+        email,
+        username: data.username || username,
+        id: data.id,
+        isAdmin: data.isAdmin || false
+    }, remember);
 
-    const user = {
-        email: data.email,
-        username: data.username || data.email,
-        isAdmin: false
-    };
-
-    setToken(loginData.token);
-    setStoredUser(user);
-
-    return { user, token: loginData.token };
+    return data;
 }
 
 export async function validateToken() {
