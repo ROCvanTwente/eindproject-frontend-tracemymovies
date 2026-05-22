@@ -93,12 +93,6 @@ export async function register({
 
     setToken(data.token, remember);
 
-    setStoredUser({
-        email,
-        username: data.username || username,
-        id: data.id,
-        isAdmin: data.isAdmin || false
-    }, remember);
 
     return data;
 }
