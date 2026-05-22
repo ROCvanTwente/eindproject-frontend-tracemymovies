@@ -82,7 +82,7 @@ export function AnalyticsPage() {
         }
 
         const response = await fetch(
-          "https://localhost:7245/api/UserActivity/Recent",
+          `${import.meta.env.VITE_API_BASE_URL}/UserActivity/Recent`,
           {
             method: "GET",
             headers: {
