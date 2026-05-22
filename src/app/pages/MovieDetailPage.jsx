@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "react-router";
 import { 
     Heart, Plus, Star, DollarSign, Globe, Calendar, 
@@ -58,12 +58,17 @@ export function MovieDetailPage() {
     const { id } = useParams();
     const auth = useAuth();
 
-    const token = auth?.token || 
-                  auth?.user?.token || 
-                  auth?.user?.jwtToken || 
-                  localStorage.getItem("authToken") || 
-                  localStorage.getItem("auth_token") || 
-                  localStorage.getItem("token");
+    // Gecorrigeerde token lookup: Zoekt in AuthContext, dan LocalStorage (Remember Me), dan SessionStorage
+    const token = useMemo(() => {
+        return auth?.token || 
+               auth?.user?.token || 
+               localStorage.getItem("authToken") || 
+               localStorage.getItem("auth_token") || 
+               localStorage.getItem("token") ||
+               sessionStorage.getItem("authToken") || 
+               sessionStorage.getItem("auth_token") ||
+               sessionStorage.getItem("token");
+    }, [auth]);
     
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -74,7 +79,6 @@ export function MovieDetailPage() {
     const [isWatched, setIsWatched] = useState(false);
     const [showWatchLogModal, setShowWatchLogModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
-    
     const [showTrailerModal, setShowTrailerModal] = useState(false);
     const [isAnimateIn, setIsAnimateIn] = useState(false);
 
@@ -86,27 +90,8 @@ export function MovieDetailPage() {
     const REMOVE_WATCH_URL = `https://localhost:7245/api/database/RemoveWatchActivity/${id}`;
     const TOGGLE_LIKE_URL = 'https://localhost:7245/api/database/ToggleLikeStatus';
 
-    const fetchMovieData = async () => {
-        setLoading(true);
-        setError(false);
-        try {
-            const res = await fetch(`${API_URL}?id=${id}`);
-            if (!res.ok) throw new Error("Fout bij laden");
-            const data = await res.json();
-            setMovie(data);
-            
-            if (token) {
-                fetchUserStatus();
-            }
-        } catch (error) {
-            setError(true);
-            toast.error("Fout bij het laden van de filmgegevens");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchUserStatus = async () => {
+    const fetchUserStatus = useCallback(async () => {
+        if (!token || !id) return;
         try {
             const res = await fetch(`https://localhost:7245/api/database/GetMovieStatus/${id}`, {
                 headers: { 
@@ -124,11 +109,36 @@ export function MovieDetailPage() {
         } catch (err) {
             console.error("Kon status niet ophalen", err);
         }
-    };
+    }, [id, token]);
+
+    const fetchMovieData = useCallback(async () => {
+        setLoading(true);
+        setError(false);
+        try {
+            const res = await fetch(`${API_URL}?id=${id}`);
+            if (!res.ok) throw new Error("Fout bij laden");
+            const data = await res.json();
+            setMovie(data);
+        } catch (error) {
+            setError(true);
+            toast.error("Fout bij het laden van de filmgegevens");
+        } finally {
+            setLoading(false);
+        }
+    }, [id]);
 
     useEffect(() => {
-        if (id) fetchMovieData();
-    }, [id]);
+        if (id) {
+            fetchMovieData();
+        }
+    }, [id, fetchMovieData]);
+
+    // Aparte effect voor status zodat deze ook update als de user later inlogt
+    useEffect(() => {
+        if (token && id) {
+            fetchUserStatus();
+        }
+    }, [token, id, fetchUserStatus]);
 
     const trailerVideo = useMemo(() => {
         return movie?.videos?.results?.find(v => v.type === "Trailer" && v.site === "YouTube") || movie?.videos?.results?.[0];
@@ -157,7 +167,6 @@ export function MovieDetailPage() {
         setIsSavingWatch(true);
         try {
             if (isWatched) {
-                // Klik 2: Weer weghalen
                 const response = await fetch(REMOVE_WATCH_URL, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -167,7 +176,6 @@ export function MovieDetailPage() {
                     toast.success("Verwijderd van bekeken films");
                 }
             } else {
-                // Klik 1: Activeren / Toevoegen
                 const response = await fetch(SAVE_WATCH_URL, {
                     method: 'POST',
                     headers: {
@@ -211,7 +219,7 @@ export function MovieDetailPage() {
                 setIsFavorite(nextLikeState);
                 toast.success(nextLikeState ? "Toegevoegd aan favorieten" : "Verwijderd uit favorieten");
             } else {
-                toast.error("Er is iets misgegaan bij het updaten van je favorieten.");
+                toast.error("Er is iets misgegaan.");
             }
         } catch (err) {
             toast.error("Er is een netwerkfout opgetreden.");
@@ -244,7 +252,6 @@ export function MovieDetailPage() {
                                     {movie.age_rating && <span className="bg-[#FF61D2]/20 text-[#FF61D2] px-2 py-0.5 rounded-lg text-xs font-medium">{movie.age_rating}</span>}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    {/* Volledig stabiele Watched-button zonder felle hover of breedteveranderingen */}
                                     <button 
                                         onClick={handleToggleWatch}
                                         disabled={isSavingWatch}
