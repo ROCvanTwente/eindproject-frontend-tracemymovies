@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, SlidersHorizontal, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { MovieCard } from '../components/MovieCard';
 
-const API_URL = 'https://localhost:7245/api/tmdbmovie/get20movies';
-
-// const API_URL = `${import.meta.env.VITE_API_BASE_URL}/api/tmdbmovie/get20movies`;
+const API_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/get20movies`;
 
 export function SearchPage() {
     const [searchQuery, setSearchQuery] = useState('');
