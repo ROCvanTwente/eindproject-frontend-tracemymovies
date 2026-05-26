@@ -7,19 +7,22 @@ const SliderComponent = (ReactSlick.default?.default ??
     ReactSlick.default ??
     ReactSlick);
 function NextArrow(props) {
-    const { onClick } = props;
-    if (!onClick)
-        return null;
+    const { className, onClick } = props;
+    if (className?.includes('slick-disabled')) return null;
+    if (!onClick) return null;
+
     return (_jsx("button", { type: "button", onClick: (e) => {
             e.preventDefault();
             e.stopPropagation();
             onClick();
         }, className: "absolute right-2 top-1/2 -translate-y-1/2 z-50 bg-[#151921]/90 backdrop-blur-sm hover:bg-[#BFBCFC] hover:text-[#0B0E14] text-[#F8FAFC] p-3 rounded-xl transition-all duration-200 hover:scale-110 border border-[#BFBCFC]/20 hover:shadow-lg hover:shadow-[#BFBCFC]/30 cursor-pointer", style: { pointerEvents: 'auto' }, children: _jsx(ChevronRight, { className: "w-6 h-6" }) }));
 }
+
 function PrevArrow(props) {
-    const { onClick } = props;
-    if (!onClick)
-        return null;
+    const { className, onClick } = props;
+    if (className?.includes('slick-disabled')) return null;
+    if (!onClick) return null;
+
     return (_jsx("button", { type: "button", onClick: (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -63,7 +66,7 @@ export function MovieCarousel({ title, movies, showRanking = false, showReleaseD
     };
     const settings = {
         dots: false,
-        infinite: movies.length > 5,
+        infinite: false,
         speed: 500,
         slidesToShow: 6,
         slidesToScroll: 3,

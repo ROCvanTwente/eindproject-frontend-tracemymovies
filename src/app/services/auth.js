@@ -93,12 +93,6 @@ export async function register({
 
     setToken(data.token, remember);
 
-    setStoredUser({
-        email,
-        username: data.username || username,
-        id: data.id,
-        isAdmin: data.isAdmin || false
-    }, remember);
 
     return data;
 }
@@ -107,7 +101,30 @@ export async function validateToken() {
     const token = getToken();
     if (!token) return null;
 
-    return getStoredUser();
+    try {
+        const res = await fetch(`${API_URL}/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            removeToken();
+            return null;
+        }
+
+        const profile = await res.json();
+        const stored = getStoredUser() ?? {};
+
+        return {
+            ...stored,
+            username: profile.userName,
+            email: profile.email,
+            profilePicture: profile.profileImageBase64
+                ? `data:image/jpeg;base64,${profile.profileImageBase64}`
+                : null
+        };
+    } catch {
+        return getStoredUser();
+    }
 }
 
 export function logout() {
