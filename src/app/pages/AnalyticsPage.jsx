@@ -59,7 +59,7 @@ export function AnalyticsPage() {
   const removeFavorite = async (movieId) => {
     const token = getToken();
     if (!token) return;
-    await fetch(`https://localhost:7245/api/Favorites/${movieId}`, {
+    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites/${movieId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -73,30 +73,37 @@ export function AnalyticsPage() {
     setSearchModalOpen(true);
   };
 
-  useEffect(() => {
-    if (!searchModalOpen) return;
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const res = await fetch(
-          `https://localhost:7245/api/tmdbmovie/search?query=${encodeURIComponent(searchQuery)}`
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        const all = data.results || data;
-        setSearchResults(Array.isArray(all) ? all.slice(0, 8) : []);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setSearchLoading(false);
+useEffect(() => {
+  if (!searchModalOpen) return;
+
+  const q = searchQuery.trim();
+
+  const timer = setTimeout(async () => {
+    setSearchLoading(true);
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search?query=${encodeURIComponent(q)}`
+      );
+
+      if (!res.ok) {
+        setSearchResults([]);
+        return;
       }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchModalOpen]);
+
+      const data = await res.json();
+
+      setSearchResults(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, [searchQuery, searchModalOpen]);
 
   const addFavorite = async (movie) => {
     if (favoriteMovies.length >= 4) return;
@@ -105,29 +112,28 @@ export function AnalyticsPage() {
       return;
     }
     setDuplicateError("");
-
     setSearchModalOpen(false);
+
+    // Optimistic update — toon direct met data uit zoekresultaten
+    setFavoriteMovies((prev) => [...prev, movie]);
 
     try {
       const token = getToken();
       const res = await fetch(
-        `https://localhost:7245/api/Favorites/${movie.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/Favorites/${movie.id}`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         }
       );
       if (!res.ok) {
+        // Rollback bij fout
+        setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
         console.error("Favoriet toevoegen mislukt:", await res.text());
-        return;
       }
-
-      const detailsRes = await fetch(
-        `https://localhost:7245/api/tmdbmovie/GetMovieDetails?id=${movie.id}`
-      );
-      const fullMovie = detailsRes.ok ? await detailsRes.json() : movie;
-      setFavoriteMovies((prev) => [...prev, fullMovie]);
     } catch (e) {
+      // Rollback bij fout
+      setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
       console.error("Favoriet toevoegen mislukt:", e);
     }
   };
@@ -141,7 +147,7 @@ export function AnalyticsPage() {
 
         if (!token) return;
 
-        const idsRes = await fetch("https://localhost:7245/api/Favorites", {
+        const idsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -156,7 +162,7 @@ export function AnalyticsPage() {
         const movies = await Promise.all(
           top4.map((id) =>
             fetch(
-              `https://localhost:7245/api/tmdbmovie/GetMovieDetails?id=${id}`
+              `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/GetMovieDetails?id=${id}`
             ).then((r) => (r.ok ? r.json() : null))
           )
         );

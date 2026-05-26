@@ -3,7 +3,9 @@ import {
     login as loginService,
     register as registerService,
     logout as logoutService,
-    validateToken
+    validateToken,
+    setStoredUser,
+    getToken
 } from "../services/auth";
 
 const AuthContext = createContext(null);
@@ -23,15 +25,10 @@ export function AuthProvider({ children }) {
     }
 
     async function login(email, password, remember = false) {
-        const res = await loginService({ email, password, remember });
-
-        setUser({
-            email,
-            username: res.username || res.userName || email.split("@")[0],
-            token: res.token,
-            id: res.id,
-            isAdmin: res.isAdmin || false
-        });
+        await loginService({ email, password, remember });
+        // validateToken haalt het volledige profiel op inclusief profielfoto
+        const fullUser = await validateToken();
+        setUser(fullUser);
     }
 
 async function register(formData) {
@@ -53,6 +50,17 @@ async function register(formData) {
         setUser(null);
     }
 
+    function updateUser(updates) {
+        setUser((prev) => {
+            const updated = { ...prev, ...updates };
+            const remember = !!localStorage.getItem("auth_token");
+            // Sla profilePicture NIET op in localStorage — base64 is te groot en maakt alles traag
+            const { profilePicture, ...storableUser } = updated;
+            setStoredUser(storableUser, remember);
+            return updated;
+        });
+    }
+
     return (
         <AuthContext.Provider
             value={{
@@ -61,7 +69,8 @@ async function register(formData) {
                 isLoading,
                 login,
                 register,
-                logout
+                logout,
+                updateUser
             }}
         >
             {children}
