@@ -296,7 +296,7 @@ export function Header() {
                                 <img
                                   src={movie.poster}
                                   alt={movie.title}
-                                  className="w-12 h-16 object-cover rounded-lg"
+                                  className="w-12 h-16 object-cover rounded-sm"
                                 />
 
                                 <div className="flex-1 min-w-0">
@@ -316,13 +316,13 @@ export function Header() {
                         {/* FOOTER */}
                         <div className="p-3 border-t border-[#BFBCFC]/15">
                           <Link
-                            to="/liked"
+                            to="/likedmoviespage"
                             onClick={() =>
                               setShowLikedDropdown(false)
                             }
                             className="block w-full text-center bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 text-[#BFBCFC] py-2.5 rounded-xl transition-all font-medium"
                           >
-                            View All Likes
+                            View All
                           </Link>
                         </div>
                       </div>

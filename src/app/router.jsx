@@ -19,6 +19,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
+import  LikedMoviesPage  from './pages/LikedMoviesPage';
 export const router = createBrowserRouter([
     {
         path: '/',
@@ -31,6 +32,10 @@ export const router = createBrowserRouter([
             {
                 path: 'search',
                 element: _jsx(SearchPage, {}),
+            },
+            {
+                path: 'LikedMoviesPage',
+                element: _jsx(LikedMoviesPage, {}),
             },
             {
                 path: 'movies',
