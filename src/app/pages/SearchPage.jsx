@@ -1,51 +1,80 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, SlidersHorizontal, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router';
 import { MovieCard } from '../components/MovieCard';
 
-const API_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/get20movies`;
+const BROWSE_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/get20movies`;
+const SEARCH_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search`;
 
 export function SearchPage() {
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urlQuery = searchParams.get('q') || '';
+
+    const [searchQuery, setSearchQuery] = useState(urlQuery);
     const [showFilters, setShowFilters] = useState(false);
     const [movies, setMovies] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
-    const [totalResults, setTotalResults] = useState(0);
-    const [filters, setFilters] = useState({
-        genre: [],
-    });
+    const [filters, setFilters] = useState({ genre: [] });
     const [sortBy, setSortBy] = useState('popularity');
 
-    const fetch100Movies = async () => {
+    const fetchSearchResults = useCallback(async (query) => {
         setLoading(true);
         setError(false);
-        let allFetchedMovies = [];
-
         try {
-            for (let i = 0; i < 5; i++) {
-                const response = await fetch(`${API_URL}?page=${i + 1}`);
-                if (!response.ok) throw new Error("API faal");
-                
-                const data = await response.json();
-                const newMovies = data.results || data;
-                
-                if (Array.isArray(newMovies)) {
-                    allFetchedMovies = [...allFetchedMovies, ...newMovies];
-                }
-            }
-            setMovies(allFetchedMovies);
-            setTotalResults(allFetchedMovies.length);
+            const response = await fetch(`${SEARCH_URL}?query=${encodeURIComponent(query)}`);
+            if (!response.ok) throw new Error('Search failed');
+            const data = await response.json();
+            setMovies(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error(err);
             setError(true);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    const fetch100Movies = useCallback(async () => {
+        setLoading(true);
+        setError(false);
+        let allFetchedMovies = [];
+        try {
+            for (let i = 0; i < 5; i++) {
+                const response = await fetch(`${BROWSE_URL}?page=${i + 1}`);
+                if (!response.ok) throw new Error('API faal');
+                const data = await response.json();
+                const newMovies = data.results || data;
+                if (Array.isArray(newMovies)) {
+                    allFetchedMovies = [...allFetchedMovies, ...newMovies];
+                }
+            }
+            setMovies(allFetchedMovies);
+        } catch (err) {
+            console.error(err);
+            setError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        fetch100Movies();
-    }, []);
+        setSearchQuery(urlQuery);
+        if (urlQuery.trim()) {
+            fetchSearchResults(urlQuery);
+        } else {
+            fetch100Movies();
+        }
+    }, [urlQuery]);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        const trimmed = searchQuery.trim();
+        if (trimmed) {
+            setSearchParams({ q: trimmed });
+        } else {
+            setSearchParams({});
+        }
+    };
 
     const toggleGenre = (genre) => {
         setFilters(prev => ({
@@ -56,9 +85,11 @@ export function SearchPage() {
         }));
     };
 
-    const filteredMovies = movies.filter(movie =>
-        movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredMovies = urlQuery
+        ? movies
+        : movies.filter(movie =>
+            movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+          );
 
     const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation'];
 
@@ -92,25 +123,26 @@ export function SearchPage() {
             <div className="bg-[#151921]/70 backdrop-blur-xl border-b border-[#BFBCFC]/15 py-6 md:py-8">
                 <div className="container mx-auto px-4 max-w-7xl">
                     <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-4 md:mb-6">Search Movies</h1>
-                    <div className="flex gap-3 md:gap-4">
+                    <form onSubmit={handleSearch} className="flex gap-3 md:gap-4">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 md:w-5 h-4 md:h-5" />
-                            <input 
-                                type="text" 
-                                value={searchQuery} 
-                                onChange={(e) => setSearchQuery(e.target.value)} 
-                                placeholder="Search movies..." 
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search movies..."
                                 className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-10 md:pl-12 pr-4 py-3 md:py-4 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
                             />
                         </div>
-                        <button 
-                            onClick={() => setShowFilters(!showFilters)} 
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            type="button"
                             className="bg-[#151921] hover:bg-[#1E293B] text-[#F8FAFC] px-4 md:px-6 py-3 md:py-4 rounded-xl border border-[#BFBCFC]/15 transition-all flex items-center gap-2"
                         >
                             <Filter className="w-4 md:w-5 h-4 md:h-5" />
                             <span className="hidden md:inline">Filters</span>
                         </button>
-                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -150,7 +182,10 @@ export function SearchPage() {
                     <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <p className="text-[#94A3B8] text-sm md:text-base">
-                                Found <span className="text-[#44FFFF] font-medium">{filteredMovies.length}</span> results
+                                {urlQuery
+                                    ? <>Results for <span className="text-[#BFBCFC] font-medium">"{urlQuery}"</span>: <span className="text-[#44FFFF] font-medium">{filteredMovies.length}</span></>
+                                    : <>Found <span className="text-[#44FFFF] font-medium">{filteredMovies.length}</span> movies</>
+                                }
                             </p>
                             <div className="flex items-center gap-2">
                                 <SlidersHorizontal className="w-4 h-4 text-[#94A3B8]" />

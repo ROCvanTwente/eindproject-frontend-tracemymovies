@@ -8,6 +8,7 @@ import {
   Plus,
   Heart,
   Loader2,
+  Film,
 } from "lucide-react";
 
 import { Link, useNavigate } from "react-router";
@@ -22,6 +23,10 @@ import { WatchLogModal } from "./WatchLogModal";
 
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showWatchLogModal, setShowWatchLogModal] = useState(false);
@@ -80,6 +85,10 @@ export function Header() {
       if (likedRef.current && !likedRef.current.contains(event.target)) {
         setShowLikedDropdown(false);
       }
+
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -89,13 +98,48 @@ export function Header() {
     };
   }, []);
 
+  // SEARCH SUGGESTIONS DEBOUNCE
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSuggestionsLoading(true);
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search?query=${encodeURIComponent(q)}`
+        );
+        if (!res.ok) { setSuggestions([]); return; }
+        const data = await res.json();
+        setSuggestions(Array.isArray(data) ? data : []);
+        setShowSuggestions(true);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // SEARCH
   const handleSearch = (e) => {
     e.preventDefault();
-
     if (searchQuery.trim()) {
+      setShowSuggestions(false);
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
+  };
+
+  const handleSuggestionClick = (movie) => {
+    setShowSuggestions(false);
+    setSearchQuery("");
+    navigate(`/movie/${movie.id}`);
   };
 
 
@@ -212,20 +256,58 @@ export function Header() {
             {/* RIGHT SIDE */}
             <div className="flex items-center gap-2 md:gap-4">
               {/* SEARCH */}
-              <form
-                onSubmit={handleSearch}
-                className="relative hidden lg:block"
-              >
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 h-4" />
+              <div ref={searchRef} className="relative hidden lg:block">
+                <form onSubmit={handleSearch}>
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 h-4 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    placeholder="Search movies..."
+                    className="bg-[#151921] text-[#F8FAFC] placeholder:text-[#94A3B8] pl-10 pr-4 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 w-64 transition-all duration-200"
+                  />
+                </form>
 
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search movies..."
-                  className="bg-[#151921] text-[#F8FAFC] placeholder:text-[#94A3B8] pl-10 pr-4 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 w-64 transition-all duration-200"
-                />
-              </form>
+                {/* SUGGESTIONS DROPDOWN */}
+                {showSuggestions && (
+                  <div className="absolute top-full mt-2 left-0 w-80 bg-[#151921]/95 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl shadow-2xl overflow-hidden z-50">
+                    {suggestionsLoading ? (
+                      <div className="flex justify-center py-6">
+                        <Loader2 className="w-5 h-5 text-[#BFBCFC] animate-spin" />
+                      </div>
+                    ) : suggestions.length === 0 ? (
+                      <p className="text-[#94A3B8] text-sm text-center py-6">Geen films gevonden.</p>
+                    ) : (
+                      <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-[#BFBCFC]/40 scrollbar-track-transparent hover:scrollbar-thumb-[#BFBCFC]/60">
+                        {suggestions.map((movie) => (
+                          <button
+                            key={movie.id}
+                            onMouseDown={() => handleSuggestionClick(movie)}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-b border-[#BFBCFC]/10 last:border-none"
+                          >
+                            {movie.poster_path ? (
+                              <img
+                                src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
+                                alt={movie.title}
+                                className="w-9 h-14 object-cover rounded flex-none"
+                              />
+                            ) : (
+                              <div className="w-9 h-14 bg-[#0B0E14] rounded flex-none flex items-center justify-center">
+                                <Film className="w-4 h-4 text-[#94A3B8]" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-[#F8FAFC] text-sm font-medium truncate">{movie.title}</p>
+                              <p className="text-[#94A3B8] text-xs">{movie.release_date?.slice(0, 4)}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* MOBILE SEARCH */}
               <Link
