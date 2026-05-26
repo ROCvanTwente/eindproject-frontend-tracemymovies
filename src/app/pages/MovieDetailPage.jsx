@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router";
 import { 
-    Heart, Plus, Star, DollarSign, Globe, Calendar, 
+    Heart, Plus, DollarSign, Globe, Calendar, 
     Clock, Eye, Share2, Loader2, User, ChevronRight, AlertCircle, RefreshCw,
     Play, X
 } from "lucide-react";
+import { MovieCarousel } from "../components/MovieCarousel";
+import { ReviewSection } from "../components/ReviewSection";
 import { WatchLogModal } from "../components/WatchLogModal";
 import { ShareModal } from "../components/ShareModal";
 import { toast } from "sonner";
@@ -134,6 +136,10 @@ export function MovieDetailPage() {
         return movie?.videos?.results?.find(v => v.type === "Trailer" && v.site === "YouTube") || movie?.videos?.results?.[0];
     }, [movie]);
 
+    const recommendations = useMemo(() => {
+        return movie?.recommendations?.results || movie?.similar?.results || [];
+    }, [movie]);
+
     const openTrailer = () => {
         if (trailerVideo?.key) {
             setShowTrailerModal(true);
@@ -150,7 +156,7 @@ export function MovieDetailPage() {
 
     const handleToggleWatch = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn.");
+            toast.error("Je moet ingelogd zijn om films toe te voegen aan je lijst.");
             return;
         }
 
@@ -244,28 +250,27 @@ export function MovieDetailPage() {
                                     {movie.age_rating && <span className="bg-[#FF61D2]/20 text-[#FF61D2] px-2 py-0.5 rounded-lg text-xs font-medium">{movie.age_rating}</span>}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    {/* Volledig stabiele Watched-button zonder felle hover of breedteveranderingen */}
-                                    <button 
+                                    <button
                                         onClick={handleToggleWatch}
                                         disabled={isSavingWatch}
-                                        className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1.5 text-xs md:text-sm w-[115px] justify-center
-                                            ${isWatched 
-                                                ? "bg-[#44FFFF] text-[#000000]" 
+                                        className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1.5 text-xs md:text-sm w-[115px] justify-center ${
+                                            isWatched
+                                                ? "bg-[#44FFFF] text-[#000000]"
                                                 : "bg-[#151921]/70 text-[#F8FAFC] border border-[#BFBCFC]/20 hover:bg-[#151921]"
-                                            }`}
+                                        }`}
                                     >
                                         {isSavingWatch ? (
                                             <Loader2 className="w-3.5 md:w-4 animate-spin" />
                                         ) : (
                                             <>
-                                                <Eye className="w-3.5 md:w-4" /> 
+                                                <Eye className="w-3.5 md:w-4" />
                                                 <span>Watched</span>
                                             </>
                                         )}
                                     </button>
 
-                                    <button 
-                                        onClick={handleToggleLike} 
+                                    <button
+                                        onClick={handleToggleLike}
                                         disabled={isSavingLike}
                                         className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1.5 text-xs md:text-sm ${isFavorite ? "bg-[#44FFFF] text-[#000000]" : "bg-[#151921]/70 text-[#F8FAFC] border border-[#BFBCFC]/20"}`}
                                     >
@@ -273,10 +278,10 @@ export function MovieDetailPage() {
                                             <Loader2 className="w-3.5 md:w-4 animate-spin" />
                                         ) : (
                                             <Heart className={`w-3.5 md:w-4 ${isFavorite ? "fill-current" : ""}`} />
-                                        )} 
+                                        )}
                                         <span className="hidden sm:inline">Like</span>
                                     </button>
-                                    
+
                                     <button onClick={() => setIsInWatchlist(!isInWatchlist)} className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1.5 text-xs md:text-sm ${isInWatchlist ? "bg-[#44FFFF] text-[#0B0E14]" : "bg-[#151921]/70 text-[#F8FAFC] border border-[#BFBCFC]/20"}`}>
                                         <Plus className="w-3.5 md:w-4" /> <span className="hidden sm:inline">Watchlist</span>
                                     </button>
@@ -301,12 +306,19 @@ export function MovieDetailPage() {
                             <h2 className="text-xl font-bold font-heading text-[#F8FAFC] mb-3">Overview</h2>
                             <p className="text-[#94A3B8] leading-relaxed text-sm">{movie.overview}</p>
                         </div>
-                        <CastSection cast={movie.credits?.cast || []} />
+
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <InfoCard icon={<Calendar className="w-3.5 h-3.5 text-[#44FFFF]" />} label="Release Date" value={movie.release_date} />
                             <InfoCard icon={<Clock className="w-3.5 h-3.5 text-[#44FFFF]" />} label="Runtime" value={`${movie.runtime} min`} />
                             <InfoCard icon={<DollarSign className="w-3.5 h-3.5 text-[#44FFFF]" />} label="Budget" value={movie.budget > 0 ? `$${(movie.budget / 1000000).toFixed(0)}M` : "N/A"} />
+                            <InfoCard icon={<DollarSign className="w-3.5 h-3.5 text-[#44FFFF]" />} label="Revenue" value={movie.revenue > 0 ? `$${(movie.revenue / 1000000).toFixed(0)}M` : "N/A"} />
+                            <InfoCard icon={<Globe className="w-3.5 h-3.5 text-[#44FFFF]" />} label="Language" value={movie.original_language || "N/A"} />
+                            <InfoCard icon={<Globe className="w-3.5 h-3.5 text-[#44FFFF]" />} label="Status" value={movie.status || "N/A"} />
                         </div>
+
+                        <CastSection cast={movie.credits?.cast || []} />
+
+                        <ReviewSection movieId={movie.id} movieTitle={movie.title} />
                     </div>
                     <div className="space-y-6">
                         <div className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-6">
@@ -320,12 +332,19 @@ export function MovieDetailPage() {
                             <h3 className="text-xl font-bold font-heading text-[#F8FAFC] mb-4">Genres</h3>
                             <div className="flex flex-wrap gap-2">
                                 {movie.genres?.map((genre) => (
-                                    <span key={genre.id} className="bg-[#BFBCFC]/10 text-[#BFBCFC] px-3 py-1 rounded-lg text-sm border border-[#BFBCFC]/20">{genre.name}</span>
+                                    <span key={genre.id || genre.name} className="bg-[#BFBCFC]/10 text-[#BFBCFC] px-3 py-1 rounded-lg text-sm border border-[#BFBCFC]/20">{genre.name || genre}</span>
                                 ))}
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {recommendations.length > 0 && (
+                    <div className="mt-12">
+                        <h2 className="text-2xl font-bold font-heading text-[#F8FAFC] mb-6">Omdat je keek...</h2>
+                        <MovieCarousel title="" movies={recommendations} />
+                    </div>
+                )}
             </div>
 
             {/* Trailer Modal */}

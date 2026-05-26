@@ -9,10 +9,7 @@ export function MovieCard({ movie }) {
         ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
         : 'https://via.placeholder.com/500x750/151921/BFBCFC?text=No+Poster';
     const handleClick = (e) => {
-        if (!isAuthenticated) {
-            e.preventDefault();
-            navigate('/login');
-        }
+        e.stopPropagation();
     };
     const handleLike = (e) => {
         e.preventDefault();
