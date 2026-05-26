@@ -1,5 +1,14 @@
-import React, { Fragment, useEffect, useRef, useState } from "react";
-import { Search, LogOut, Menu, X, MessageCircle, Plus } from "lucide-react";
+import React, { Fragment, useEffect, useRef, useState, useMemo } from "react";
+import {
+  Search,
+  LogOut,
+  Menu,
+  X,
+  MessageCircle,
+  Plus,
+  Heart,
+  Loader2,
+} from "lucide-react";
 
 import { Link, useNavigate } from "react-router";
 
@@ -17,10 +26,31 @@ export function Header() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showWatchLogModal, setShowWatchLogModal] = useState(false);
 
-  // NEW
+  // LOGOUT POPUP
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
 
+  // LIKED DROPDOWN
+  const [showLikedDropdown, setShowLikedDropdown] = useState(false);
+  const [likedMovies, setLikedMovies] = useState([]);
+  const [likedLoading, setLikedLoading] = useState(false);
+
   const menuRef = useRef(null);
+  const likedRef = useRef(null);
+
+  const auth = useAuth();
+
+  const token = useMemo(() => {
+          return (
+              auth?.token ||
+              auth?.user?.token ||
+              localStorage.getItem("authToken") ||
+              localStorage.getItem("auth_token") ||
+              localStorage.getItem("token") ||
+              sessionStorage.getItem("authToken") ||
+              sessionStorage.getItem("auth_token") ||
+              sessionStorage.getItem("token")
+          );
+      }, [auth]);
 
   const {
     user,
@@ -46,11 +76,17 @@ export function Header() {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
+
+      if (likedRef.current && !likedRef.current.contains(event.target)) {
+        setShowLikedDropdown(false);
+      }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
 
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   // SEARCH
@@ -60,6 +96,42 @@ export function Header() {
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
+  };
+
+
+ // FETCH LIKED MOVIES
+  const fetchLikedMovies = async () => {
+    try {
+      setLikedLoading(true);
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMovies`, { 
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },});
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch liked movies");
+      }
+
+      const data = await response.json();
+
+      setLikedMovies(data.slice(0, 3));
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load liked movies");
+    } finally {
+      setLikedLoading(false);
+    }
+  };
+  // OPEN/CLOSE LIKED DROPDOWN
+  const handleLikedDropdown = async () => {
+    if (!showLikedDropdown) {
+      await fetchLikedMovies();
+    }
+
+    setShowLikedDropdown(!showLikedDropdown);
   };
 
   // LOGOUT
@@ -177,6 +249,85 @@ export function Header() {
                   >
                     <MessageCircle className="w-5 h-5" />
                   </Link>
+
+                  {/* LIKED DROPDOWN */}
+                  <div
+                    className="relative hidden md:block"
+                    ref={likedRef}
+                  >
+                    <button
+                      onClick={handleLikedDropdown}
+                      className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5"
+                      title="Liked"
+                    >
+                      <Heart className="w-5 h-5" />
+                    </button>
+
+                    {showLikedDropdown && (
+                      <div className="absolute right-0 mt-2 w-80 bg-[#151921]/95 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl shadow-2xl overflow-hidden z-50">
+                        
+                        {/* HEADER */}
+                        <div className="px-4 py-3 border-b border-[#BFBCFC]/15">
+                          <h3 className="text-[#F8FAFC] font-semibold">
+                            Recently Liked
+                          </h3>
+                        </div>
+
+                        {/* CONTENT */}
+                        <div className="max-h-[320px] overflow-y-auto">
+                          {likedLoading ? (
+                            <div className="flex items-center justify-center py-10">
+                              <Loader2 className="w-5 h-5 animate-spin text-[#BFBCFC]" />
+                            </div>
+                          ) : likedMovies.length === 0 ? (
+                            <div className="py-10 text-center text-[#94A3B8]">
+                              No liked movies yet
+                            </div>
+                          ) : (
+                            likedMovies.map((movie) => (
+                              <Link
+                                key={movie._id}
+                                to={`/movie/${movie.movieId}`}
+                                onClick={() =>
+                                  setShowLikedDropdown(false)
+                                }
+                                className="flex items-center gap-3 p-4 hover:bg-white/5 transition-colors border-b border-[#BFBCFC]/10 last:border-none"
+                              >
+                                <img
+                                  src={movie.poster}
+                                  alt={movie.title}
+                                  className="w-12 h-16 object-cover rounded-lg"
+                                />
+
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[#F8FAFC] font-medium truncate">
+                                    {movie.title}
+                                  </p>
+
+                                  <p className="text-[#94A3B8] text-sm">
+                                    {movie.year}
+                                  </p>
+                                </div>
+                              </Link>
+                            ))
+                          )}
+                        </div>
+
+                        {/* FOOTER */}
+                        <div className="p-3 border-t border-[#BFBCFC]/15">
+                          <Link
+                            to="/liked"
+                            onClick={() =>
+                              setShowLikedDropdown(false)
+                            }
+                            className="block w-full text-center bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 text-[#BFBCFC] py-2.5 rounded-xl transition-all font-medium"
+                          >
+                            View All Likes
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     onClick={() => setShowWatchLogModal(true)}
@@ -314,7 +465,9 @@ export function Header() {
       {showLogoutPopup && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="w-full max-w-sm bg-[#151921] border border-[#BFBCFC]/15 rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95">
-            <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">Logout</h2>
+            <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">
+              Logout
+            </h2>
 
             <p className="text-[#94A3B8] mb-6">
               Are you sure you want to logout?
