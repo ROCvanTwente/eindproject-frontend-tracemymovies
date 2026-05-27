@@ -51,13 +51,7 @@ export function MovieCarousel({ title, movies, showRanking = false, showReleaseD
         console.log('Log movie:', movieId);
     };
     const handleMovieClick = (e, movieId) => {
-        if (!isAuthenticated) {
-            e.preventDefault();
-            navigate('/login');
-        }
-        else {
-            navigate(`/movie/${movieId}`);
-        }
+        navigate(`/movie/${movieId}`);
     };
     const getRankingBadge = (index) => {
         if (!showRanking || index > 2)

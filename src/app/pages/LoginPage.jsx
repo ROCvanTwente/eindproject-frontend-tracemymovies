@@ -84,12 +84,21 @@ export function LoginPage() {
 
         <p className="text-[#F8FAFC]">
             <span className="text-[#94A3B8]">Email:</span>{' '}
-            dev@tracemymovies.com
+            admin@site.com
         </p>
 
         <p className="text-[#F8FAFC]">
             <span className="text-[#94A3B8]">Password:</span>{' '}
-            DevTeam@123
+            Admin123!
+        </p>
+               <p className="text-[#F8FAFC]">
+            <span className="text-[#94A3B8]">Email:</span>{' '}
+            team@site.com
+        </p>
+
+        <p className="text-[#F8FAFC]">
+            <span className="text-[#94A3B8]">Password:</span>{' '}
+            Team123!
         </p>
     </div>
 </div>
