@@ -232,10 +232,6 @@ export function MovieDetailPage() {
         );
     }, [movie]);
 
-    const recommendations = useMemo(() => {
-        return movie?.recommendations?.results || movie?.similar?.results || [];
-    }, [movie]);
-
     const openTrailer = () => {
         if (trailerVideo?.key) {
             setShowTrailerModal(true);
