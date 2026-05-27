@@ -63,13 +63,8 @@ export function HeroSection({ movies }) {
         setOffsetX(0);
     };
 
-    const handleViewDetails = (movieId) => {
-        if (!isAuthenticated) {
-            navigate('/login');
-        }
-        else {
-            navigate(`/movie/${movieId}`);
-        }
+    const handleViewDetails = () => {
+            navigate(`/movie/${movie.id}`);
     };
 
     return (_jsxs("div", { 

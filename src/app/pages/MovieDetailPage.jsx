@@ -1,25 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "react-router";
-
-import {
-    Heart,
-    Plus,
-    Star,
-    DollarSign,
-    Globe,
-    Calendar,
-    Clock,
-    Eye,
-    Share2,
-    Loader2,
-    User,
-    ChevronRight,
-    AlertCircle,
-    RefreshCw,
-    Play,
-    X
+import { 
+    Heart, Plus, DollarSign, Globe, Calendar, 
+    Clock, Eye, Share2, Loader2, User, ChevronRight, AlertCircle, RefreshCw,
+    Play, X
 } from "lucide-react";
-
+import { MovieCarousel } from "../components/MovieCarousel";
+import { ReviewSection } from "../components/ReviewSection";
 import { WatchLogModal } from "../components/WatchLogModal";
 import { ShareModal } from "../components/ShareModal";
 
@@ -245,6 +232,10 @@ export function MovieDetailPage() {
         );
     }, [movie]);
 
+    const recommendations = useMemo(() => {
+        return movie?.recommendations?.results || movie?.similar?.results || [];
+    }, [movie]);
+
     const openTrailer = () => {
         if (trailerVideo?.key) {
             setShowTrailerModal(true);
@@ -263,7 +254,7 @@ export function MovieDetailPage() {
 
     const handleToggleWatch = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn.");
+            toast.error("Je moet ingelogd zijn om films toe te voegen aan je lijst.");
             return;
         }
 
@@ -638,6 +629,10 @@ export function MovieDetailPage() {
                                 </p>
                             )}
                         </div>
+
+                        <CastSection cast={movie.credits?.cast || []} />
+
+                        <ReviewSection movieId={movie.id} movieTitle={movie.title} />
                     </div>
 
                     {/* Sidebar */}
@@ -676,6 +671,13 @@ export function MovieDetailPage() {
                         </div>
                     </div>
                 </div>
+
+                {recommendations.length > 0 && (
+                    <div className="mt-12">
+                        <h2 className="text-2xl font-bold font-heading text-[#F8FAFC] mb-6">Omdat je keek...</h2>
+                        <MovieCarousel title="" movies={recommendations} />
+                    </div>
+                )}
             </div>
 
             {/* Trailer Modal */}
