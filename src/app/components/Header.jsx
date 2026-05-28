@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Plus,
   Heart,
+  Users,
   Loader2,
 } from "lucide-react";
 
@@ -256,7 +257,7 @@ export function Header() {
                       className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5"
                       title="Liked"
                     >
-                      <Heart className="w-5 h-5" />
+                      <Heart  className="w-5 h-5" />
                     </button>
 
                     {showLikedDropdown && (
@@ -324,6 +325,14 @@ export function Header() {
                       </div>
                     )}
                   </div>
+
+                  <Link
+                    to="/test"
+                    className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5 hidden md:block"
+                    title="test"
+                  >
+                    <Users className="w-5 h-5" />
+                  </Link>
 
                   <button
                     onClick={() => setShowWatchLogModal(true)}
