@@ -626,8 +626,6 @@ export function MovieDetailPage() {
                             )}
                         </div>
 
-                        <CastSection cast={movie.credits?.cast || []} />
-
                         <ReviewSection movieId={movie.id} movieTitle={movie.title} />
                     </div>
 
@@ -667,13 +665,6 @@ export function MovieDetailPage() {
                         </div>
                     </div>
                 </div>
-
-                {recommendations.length > 0 && (
-                    <div className="mt-12">
-                        <h2 className="text-2xl font-bold font-heading text-[#F8FAFC] mb-6">Omdat je keek...</h2>
-                        <MovieCarousel title="" movies={recommendations} />
-                    </div>
-                )}
             </div>
 
             {/* Trailer Modal */}
