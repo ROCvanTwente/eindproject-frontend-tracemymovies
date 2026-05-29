@@ -1,114 +1,335 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, SlidersHorizontal, X, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Loader2, AlertCircle, RefreshCw, Film, Tv, User, Building2, Library, Tag, SlidersHorizontal, X } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router';
 import { MovieCard } from '../components/MovieCard';
 
+
+const SEARCH_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search/all`;
 const BROWSE_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/get20movies`;
-const SEARCH_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search`;
+
+
+const FILTERS = [
+    { id: 'all',        label: 'All' },
+    { id: 'movie',      label: 'Films' },
+    { id: 'tv',         label: 'TV Shows' },
+    { id: 'person',     label: 'Cast & Crew' },
+    { id: 'company',    label: 'Studios' },
+    { id: 'collection', label: 'Collections' },
+    { id: 'keyword',    label: 'Keywords' },
+    { id: 'user',       label: 'Members' },
+];
+
+
+const TYPE_COLOR = {
+    movie:      'text-[#BFBCFC]',
+    tv:         'text-[#44FFFF]',
+    person:     'text-[#FF61D2]',
+    company:    'text-amber-400',
+    collection: 'text-green-400',
+    keyword:    'text-slate-300',
+};
+
+
+// ── Row components ────────────────────────────────────────────────
+
+
+function MovieTvRow({ item, onClick }) {
+    return (
+        <div
+            onClick={onClick}
+            className={`flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group ${onClick ? 'cursor-pointer' : ''}`}
+        >
+            {/* Poster */}
+            <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
+                {item.poster ? (
+                    <img
+                        src={`https://image.tmdb.org/t/p/w185${item.poster}`}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Film className="w-5 h-5 text-[#94A3B8]" />
+                    </div>
+                )}
+            </div>
+
+
+            {/* Info */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex items-baseline gap-2 flex-wrap mb-1">
+                    <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-[#BFBCFC] transition-colors">
+                        {item.title}
+                    </h3>
+                    {item.releaseDate && (
+                        <span className="text-[#94A3B8] text-sm flex-none">
+                            {item.releaseDate.slice(0, 4)}
+                        </span>
+                    )}
+                    {item.voteAverage > 0 && (
+                        <span className="text-[#44FFFF] text-xs font-bold flex-none">
+                            ★ {item.voteAverage.toFixed(1)}
+                        </span>
+                    )}
+                </div>
+
+
+                {item.overview && (
+                    <p className="text-[#94A3B8] text-sm line-clamp-2 leading-relaxed">
+                        {item.overview}
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+
+function PersonRow({ item }) {
+    return (
+        <div className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group">
+            {/* Profile photo */}
+            <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
+                {item.profile ? (
+                    <img
+                        src={`https://image.tmdb.org/t/p/w185${item.profile}`}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-[#94A3B8]" />
+                    </div>
+                )}
+            </div>
+
+
+            {/* Info */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex items-baseline gap-2 mb-1">
+                    <h3 className="text-[#F8FAFC] font-bold text-base">{item.name}</h3>
+                    {item.department && (
+                        <span className="text-[#FF61D2] text-xs font-semibold">{item.department}</span>
+                    )}
+                </div>
+
+
+                {item.knownFor && Array.isArray(item.knownFor) && item.knownFor.length > 0 && (
+                    <p className="text-[#94A3B8] text-sm">
+                        Known for:{' '}
+                        <span className="text-[#F8FAFC]/70">
+                            {item.knownFor.map(k => k.title).filter(Boolean).slice(0, 3).join(', ')}
+                        </span>
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+
+function CompanyRow({ item }) {
+    return (
+        <div className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none items-center">
+            <div className="w-16 h-10 flex-none rounded-lg overflow-hidden bg-white flex items-center justify-center p-1">
+                {item.logo ? (
+                    <img
+                        src={`https://image.tmdb.org/t/p/w185${item.logo}`}
+                        alt={item.name}
+                        className="w-full h-full object-contain"
+                    />
+                ) : (
+                    <Building2 className="w-5 h-5 text-[#94A3B8]" />
+                )}
+            </div>
+            <div className="min-w-0">
+                <h3 className="text-[#F8FAFC] font-bold text-base">{item.name}</h3>
+                {item.country && <p className="text-[#94A3B8] text-sm">{item.country}</p>}
+            </div>
+        </div>
+    );
+}
+
+
+function CollectionRow({ item, onClick }) {
+    return (
+        <div
+            onClick={onClick}
+            className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group cursor-pointer"
+        >
+            <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
+                {item.poster ? (
+                    <img
+                        src={`https://image.tmdb.org/t/p/w185${item.poster}`}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Library className="w-5 h-5 text-[#94A3B8]" />
+                    </div>
+                )}
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-green-400 transition-colors">
+                    {item.name}
+                </h3>
+                <span className="text-green-400 text-xs font-semibold mt-0.5">Collection</span>
+            </div>
+        </div>
+    );
+}
+
+
+function UserRow({ item, navigate }) {
+    return (
+        <div
+            onClick={() => navigate(`/user/${item.id}`)}
+            className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none items-center group cursor-pointer"
+        >
+            <div className="w-10 h-10 flex-none rounded-full overflow-hidden bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] flex items-center justify-center">
+                {item.profilePicture ? (
+                    <img src={item.profilePicture} alt={item.username} className="w-full h-full object-cover" />
+                ) : (
+                    <span className="text-[#0B0E14] font-bold text-sm">
+                        {item.username?.charAt(0).toUpperCase()}
+                    </span>
+                )}
+            </div>
+            <div className="min-w-0">
+                <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-[#BFBCFC] transition-colors">
+                    {item.username}
+                </h3>
+                <span className="text-[#94A3B8] text-xs">Member</span>
+            </div>
+        </div>
+    );
+}
+
+
+function ResultRow({ item, navigate }) {
+    if (item.type === 'person')     return <PersonRow item={item} />;
+    if (item.type === 'company')    return <CompanyRow item={item} />;
+    if (item.type === 'collection') return <CollectionRow item={item} onClick={() => {}} />;
+    if (item.type === 'user')       return <UserRow item={item} navigate={navigate} />;
+    if (item.type === 'keyword')    return null;
+    return (
+        <MovieTvRow
+            item={item}
+            onClick={item.type === 'movie' ? () => navigate(`/movie/${item.id}`) : null}
+        />
+    );
+}
+
+
+// ── Main page ──────────────────────────────────────────────────────
+
 
 export function SearchPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const urlQuery = searchParams.get('q') || '';
+    const navigate = useNavigate();
 
-    const [searchQuery, setSearchQuery] = useState(urlQuery);
-    const [showFilters, setShowFilters] = useState(false);
-    const [movies, setMovies] = useState([]);
+
+    const [inputValue, setInputValue] = useState(urlQuery);
+    const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
-    const [filters, setFilters] = useState({ genre: [] });
-    const [sortBy, setSortBy] = useState('popularity');
+    const [activeFilter, setActiveFilter] = useState('all');
+    const [browseMovies, setBrowseMovies] = useState([]);
+    const [showFilterMenu, setShowFilterMenu] = useState(false);
 
-    const fetchSearchResults = useCallback(async (query) => {
+
+    const fetchSearch = useCallback(async (query) => {
         setLoading(true);
         setError(false);
         try {
-            const response = await fetch(`${SEARCH_URL}?query=${encodeURIComponent(query)}`);
-            if (!response.ok) throw new Error('Search failed');
-            const data = await response.json();
-            setMovies(Array.isArray(data) ? data : []);
-        } catch (err) {
-            console.error(err);
+            const res = await fetch(`${SEARCH_URL}?query=${encodeURIComponent(query)}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const combined = [
+                ...(data.movies      ?? []),
+                ...(data.tvShows     ?? []),
+                ...(data.people      ?? []),
+                ...(data.companies   ?? []),
+                ...(data.collections ?? []),
+                ...(data.keywords    ?? []),
+                ...(data.users       ?? []),
+            ];
+            setResults(combined);
+        } catch {
             setError(true);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    const fetch100Movies = useCallback(async () => {
+
+    const fetchBrowse = useCallback(async () => {
         setLoading(true);
         setError(false);
-        let allFetchedMovies = [];
+        let all = [];
         try {
             for (let i = 0; i < 5; i++) {
-                const response = await fetch(`${BROWSE_URL}?page=${i + 1}`);
-                if (!response.ok) throw new Error('API faal');
-                const data = await response.json();
-                const newMovies = data.results || data;
-                if (Array.isArray(newMovies)) {
-                    allFetchedMovies = [...allFetchedMovies, ...newMovies];
-                }
+                const res = await fetch(`${BROWSE_URL}?page=${i + 1}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                const movies = data.results || data;
+                if (Array.isArray(movies)) all = [...all, ...movies];
             }
-            setMovies(allFetchedMovies);
-        } catch (err) {
-            console.error(err);
+            setBrowseMovies(all);
+        } catch {
             setError(true);
         } finally {
             setLoading(false);
         }
     }, []);
 
+
     useEffect(() => {
-        setSearchQuery(urlQuery);
-        if (urlQuery.trim()) {
-            fetchSearchResults(urlQuery);
-        } else {
-            fetch100Movies();
-        }
+        setInputValue(urlQuery);
+        setActiveFilter('all');
+        if (urlQuery.trim()) fetchSearch(urlQuery);
+        else { setResults([]); fetchBrowse(); }
     }, [urlQuery]);
 
-    const handleSearch = (e) => {
+
+    const handleSubmit = (e) => {
         e.preventDefault();
-        const trimmed = searchQuery.trim();
-        if (trimmed) {
-            setSearchParams({ q: trimmed });
-        } else {
-            setSearchParams({});
-        }
+        const q = inputValue.trim();
+        if (q) setSearchParams({ q });
+        else setSearchParams({});
     };
 
-    const toggleGenre = (genre) => {
-        setFilters(prev => ({
-            ...prev,
-            genre: prev.genre.includes(genre)
-                ? prev.genre.filter((g) => g !== genre)
-                : [...prev.genre, genre],
-        }));
-    };
 
-    const filteredMovies = urlQuery
-        ? movies
-        : movies.filter(movie =>
-            movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-          );
+    const countFor = (id) => id === 'all'
+        ? results.filter(r => r.type !== 'keyword').length
+        : results.filter(r => r.type === id).length;
 
-    const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation'];
 
-    // --- Error View (Geen kaders/randjes) ---
+    const filtered = activeFilter === 'all'
+        ? [...results.filter(r => r.type !== 'keyword')]
+            .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+        : results.filter(r => r.type === activeFilter);
+
+
+    const keywords = results.filter(r => r.type === 'keyword');
+
+
+
+
+    // ── Error ──
     if (error && !loading) {
         return (
             <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#0B0E14] px-4 text-center">
                 <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
                     <AlertCircle className="w-10 h-10 text-red-500" />
                 </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-[#F8FAFC] mb-3 font-heading">
-                    Verbinding mislukt
-                </h2>
-                <p className="text-[#94A3B8] mb-10 max-w-md leading-relaxed">
-                    De films konden niet worden opgehaald. Controleer of de API <span className="text-[#BFBCFC]">actief</span> is.
-                </p>
-                <button 
-                    onClick={fetch100Movies}
-                    className="flex items-center gap-3 bg-[#44FFFF] text-[#0B0E14] py-4 px-10 rounded-2xl font-bold hover:scale-105 transition-all shadow-lg shadow-[#44FFFF]/20"
+                <h2 className="text-2xl font-bold text-[#F8FAFC] mb-3">Verbinding mislukt</h2>
+                <p className="text-[#94A3B8] mb-10 max-w-md">Kon geen resultaten ophalen. Controleer of de API actief is.</p>
+                <button
+                    onClick={() => urlQuery ? fetchSearch(urlQuery) : fetchBrowse()}
+                    className="flex items-center gap-3 bg-[#44FFFF] text-[#0B0E14] py-4 px-10 rounded-2xl font-bold hover:scale-105 transition-all"
                 >
                     <RefreshCw className="w-5 h-5" />
                     Opnieuw proberen
@@ -117,110 +338,209 @@ export function SearchPage() {
         );
     }
 
+
     return (
         <div className="min-h-screen bg-[#0B0E14]">
-            {/* Header & Search */}
-            <div className="bg-[#151921]/70 backdrop-blur-xl border-b border-[#BFBCFC]/15 py-6 md:py-8">
+
+
+            {/* Search bar */}
+            <div className="bg-[#151921]/70 backdrop-blur-xl border-b border-[#BFBCFC]/15 py-5">
                 <div className="container mx-auto px-4 max-w-7xl">
-                    <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-4 md:mb-6">Search Movies</h1>
-                    <form onSubmit={handleSearch} className="flex gap-3 md:gap-4">
+                    <form onSubmit={handleSubmit} className="flex gap-3">
                         <div className="flex-1 relative">
-                            <Search className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 md:w-5 h-4 md:h-5" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] w-5 h-5 pointer-events-none" />
                             <input
                                 type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search movies..."
-                                className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-10 md:pl-12 pr-4 py-3 md:py-4 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                placeholder="Search movies, TV shows, people, studios..."
+                                className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-12 pr-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
                             />
                         </div>
                         <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            type="button"
-                            className="bg-[#151921] hover:bg-[#1E293B] text-[#F8FAFC] px-4 md:px-6 py-3 md:py-4 rounded-xl border border-[#BFBCFC]/15 transition-all flex items-center gap-2"
+                            type="submit"
+                            className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 rounded-xl font-semibold transition-all hover:scale-105"
                         >
-                            <Filter className="w-4 md:w-5 h-4 md:h-5" />
-                            <span className="hidden md:inline">Filters</span>
+                            Search
                         </button>
                     </form>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="container mx-auto px-4 max-w-7xl py-6 md:py-8">
-                <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-                    
-                    {/* Sidebar Filters */}
-                    {showFilters && (
-                        <aside className="w-full lg:w-80 flex-shrink-0">
-                            <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-xl p-4 lg:sticky lg:top-24">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl font-heading font-bold text-[#F8FAFC]">Filters</h2>
-                                    <button onClick={() => setShowFilters(false)} className="text-[#94A3B8] hover:text-[#F8FAFC]">
-                                        <X className="w-5 h-5" />
+
+            <div className="container mx-auto px-4 max-w-7xl py-8">
+
+
+                {/* Loading */}
+                {loading && (
+                    <div className="flex flex-col items-center justify-center py-24 gap-4">
+                        <Loader2 className="w-12 h-12 animate-spin text-[#BFBCFC]" />
+                        <p className="text-[#94A3B8]">Searching...</p>
+                    </div>
+                )}
+
+
+                {/* Browse mode */}
+                {!loading && !urlQuery && (
+                    <>
+                        <h2 className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8] mb-6">
+                            Browse Movies
+                        </h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                            {browseMovies.map((movie, i) => (
+                                <MovieCard key={`${movie.id}-${i}`} movie={movie} />
+                            ))}
+                        </div>
+                    </>
+                )}
+
+
+                {/* Search results */}
+                {!loading && urlQuery && (
+                    <div className="flex gap-10">
+
+
+                        {/* ── Left: results ── */}
+                        <div className="flex-1 min-w-0">
+
+
+                            {/* Heading + mobile filter button */}
+                            <div className="flex items-center justify-between mb-1 pb-3 border-b border-[#BFBCFC]/15">
+                                <h2 className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8]">
+                                    Showing matches for &ldquo;{urlQuery}&rdquo;
+                                </h2>
+                                {results.length > 0 && (
+                                    <button
+                                        onClick={() => setShowFilterMenu(true)}
+                                        className="lg:hidden flex items-center gap-1.5 text-sm text-[#BFBCFC] bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 px-3 py-1.5 rounded-lg transition-colors"
+                                    >
+                                        <SlidersHorizontal className="w-4 h-4" />
+                                        {activeFilter !== 'all' && (
+                                            <span className="w-2 h-2 rounded-full bg-[#BFBCFC] inline-block" />
+                                        )}
+                                        Filter
                                     </button>
+                                )}
+                            </div>
+
+                            {/* Mobile filter overlay */}
+                            {showFilterMenu && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+                                        onClick={() => setShowFilterMenu(false)}
+                                    />
+                                    <div className="fixed top-0 left-0 right-0 z-50 bg-[#151921] border-b border-[#BFBCFC]/15 lg:hidden">
+                                        <div className="px-4 py-5">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <p className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8]">
+                                                    Show results for
+                                                </p>
+                                                <button
+                                                    onClick={() => setShowFilterMenu(false)}
+                                                    className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+                                                >
+                                                    <X className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {FILTERS.map(({ id, label }) => {
+                                                    const count = countFor(id);
+                                                    return (
+                                                        <button
+                                                            key={id}
+                                                            onClick={() => { setActiveFilter(id); setShowFilterMenu(false); }}
+                                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                                                                activeFilter === id
+                                                                    ? 'bg-[#BFBCFC] text-[#0B0E14] font-semibold'
+                                                                    : 'bg-[#0B0E14] text-[#94A3B8] border border-[#BFBCFC]/15 hover:text-[#F8FAFC]'
+                                                            }`}
+                                                        >
+                                                            {label}
+                                                            {count > 0 && (
+                                                                <span className="text-xs opacity-70">{count}</span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+
+                            {filtered.length === 0 ? (
+                                <div className="text-center py-24">
+                                    <Search className="w-16 h-16 text-[#BFBCFC]/20 mx-auto mb-4" />
+                                    <h3 className="text-xl font-bold text-[#F8FAFC]">No results found</h3>
+                                    <p className="text-[#94A3B8] mt-2">Try a different search term or filter.</p>
                                 </div>
+                            ) : (
                                 <div>
-                                    <label className="block text-[#F8FAFC] mb-3 font-medium">Genre</label>
+                                    {filtered.map(item => (
+                                        <ResultRow
+                                            key={`${item.type}-${item.id}`}
+                                            item={item}
+                                            navigate={navigate}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+
+                            {/* Keywords as chips at the bottom */}
+                            {(activeFilter === 'all' || activeFilter === 'keyword') && keywords.length > 0 && (
+                                <div className="mt-6 pt-6 border-t border-[#BFBCFC]/15">
+                                    <p className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8] mb-3">Keywords</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {genres.map((genre) => (
-                                            <button 
-                                                key={genre}
-                                                onClick={() => toggleGenre(genre)} 
-                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filters.genre.includes(genre) ? 'bg-[#BFBCFC] text-[#0B0E14]' : 'bg-[#0B0E14] text-[#94A3B8] border border-[#BFBCFC]/15'}`}
+                                        {keywords.map(k => (
+                                            <span
+                                                key={k.id}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#151921] border border-[#BFBCFC]/15 rounded-full text-[#F8FAFC] text-sm hover:border-[#BFBCFC]/40 transition-colors"
                                             >
-                                                {genre}
-                                            </button>
+                                                <Tag className="w-3 h-3 text-[#94A3B8]" />
+                                                {k.name}
+                                            </span>
                                         ))}
                                     </div>
                                 </div>
-                            </div>
-                        </aside>
-                    )}
-
-                    {/* Movie Grid Area */}
-                    <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                            <p className="text-[#94A3B8] text-sm md:text-base">
-                                {urlQuery
-                                    ? <>Results for <span className="text-[#BFBCFC] font-medium">"{urlQuery}"</span>: <span className="text-[#44FFFF] font-medium">{filteredMovies.length}</span></>
-                                    : <>Found <span className="text-[#44FFFF] font-medium">{filteredMovies.length}</span> movies</>
-                                }
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <SlidersHorizontal className="w-4 h-4 text-[#94A3B8]" />
-                                <select 
-                                    value={sortBy} 
-                                    onChange={(e) => setSortBy(e.target.value)} 
-                                    className="bg-[#151921] text-[#F8FAFC] px-3 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC]"
-                                >
-                                    <option value="popularity">Popularity</option>
-                                    <option value="rating-high">Highest Rating</option>
-                                </select>
-                            </div>
+                            )}
                         </div>
 
-                        {loading ? (
-                            <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                <Loader2 className="w-12 h-12 animate-spin text-[#BFBCFC]" />
-                                <p className="text-[#94A3B8]">Loading movies...</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-    {filteredMovies.map((movie, index) => (
-        <MovieCard key={`${movie.id}-${index}`} movie={movie} />
-    ))}
-</div>
-                        )}
 
-                        {!loading && filteredMovies.length === 0 && (
-                            <div className="text-center py-20">
-                                <Search className="w-16 h-16 text-[#BFBCFC]/20 mx-auto mb-4" />
-                                <h3 className="text-xl font-bold text-[#F8FAFC]">No results found</h3>
-                            </div>
+                        {/* ── Right: filter sidebar ── */}
+                        {results.length > 0 && (
+                            <aside className="hidden lg:block w-48 flex-none">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8] mb-3 pb-3 border-b border-[#BFBCFC]/15">
+                                    Show results for
+                                </p>
+                                <ul className="space-y-1">
+                                    {FILTERS.map(({ id, label }) => {
+                                        const count = countFor(id);
+                                        return (
+                                            <li key={id}>
+                                                <button
+                                                    onClick={() => setActiveFilter(id)}
+                                                    className={`w-full text-left flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors ${
+                                                        activeFilter === id
+                                                            ? 'text-[#F8FAFC] font-semibold bg-[#BFBCFC]/10'
+                                                            : 'text-[#94A3B8] hover:text-[#F8FAFC]'
+                                                    }`}
+                                                >
+                                                    {label}
+                                                    {count > 0 && (
+                                                        <span className="text-xs text-[#94A3B8]">{count}</span>
+                                                    )}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </aside>
                         )}
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
