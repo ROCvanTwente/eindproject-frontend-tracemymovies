@@ -65,12 +65,16 @@ export function LoginPage() {
 
                     {/* ERROR */}
                     {error && (
-                        <div className="bg-[#FF61D2]/10 border border-[#FF61D2]/30 rounded-xl p-4 mb-6 flex items-center gap-3">
-                            <AlertCircle className="w-5 h-5 text-[#FF61D2]" />
-
-                            <p className="text-[#F8FAFC] text-sm">
-                                {error}
-                            </p>
+                        <div className="bg-[#FF61D2]/10 border border-[#FF61D2]/30 rounded-xl p-4 mb-6">
+                            <div className="flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-[#FF61D2] mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[#F8FAFC] text-sm font-medium">{error}</p>
+                                    <p className="text-[#94A3B8] text-xs mt-1">
+                                        Check your email and password and try again.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     )}
 

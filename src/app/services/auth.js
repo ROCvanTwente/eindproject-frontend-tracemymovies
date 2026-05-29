@@ -43,7 +43,12 @@ export async function login({ email, password, remember = false }) {
     });
 
     if (!res.ok) {
-        throw new Error("Invalid email or password");
+        let message = "Invalid email or password";
+        try {
+            const data = await res.json();
+            if (data.message) message = data.message;
+        } catch {}
+        throw new Error(message);
     }
 
     const data = await res.json();
@@ -77,13 +82,12 @@ export async function register({
     });
 
     if (!res.ok) {
-        const error = await res.text();
-
-        if (error.includes("DuplicateUserName")) {
-            throw new Error("User already exists. Please login instead.");
-        }
-
-        throw new Error(error || "Register failed");
+        let message = "Registration failed";
+        try {
+            const data = await res.json();
+            if (data.message) message = data.message;
+        } catch {}
+        throw new Error(message);
     }
 
     const data = await res.json();
