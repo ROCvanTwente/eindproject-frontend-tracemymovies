@@ -64,6 +64,10 @@ export const router = createBrowserRouter([
                 element: _jsx(TheQueuePage, {}),
             },
             {
+                path: 'my-profile',
+                element: _jsx(UserProfilePage, {}),
+            },
+            {
                 path: 'profile',
                 element: _jsx(ProfilePage, {}),
             },
@@ -114,3 +118,7 @@ export const router = createBrowserRouter([
         ],
     },
 ]);
+
+
+
+
