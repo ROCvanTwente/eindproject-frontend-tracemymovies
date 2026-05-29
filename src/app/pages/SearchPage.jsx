@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, RefreshCw, Film, Tv, User, Building2, Library, Tag, SlidersHorizontal, X } from 'lucide-react';
+import { Search, Loader2, AlertCircle, RefreshCw, Film, User, Building2, Library, Tag, SlidersHorizontal, X } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router';
 import { MovieCard } from '../components/MovieCard';
 
@@ -226,12 +226,10 @@ function ResultRow({ item, navigate }) {
 
 
 export function SearchPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const urlQuery = searchParams.get('q') || '';
     const navigate = useNavigate();
 
-
-    const [inputValue, setInputValue] = useState(urlQuery);
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
@@ -287,19 +285,10 @@ export function SearchPage() {
 
 
     useEffect(() => {
-        setInputValue(urlQuery);
         setActiveFilter('all');
         if (urlQuery.trim()) fetchSearch(urlQuery);
         else { setResults([]); fetchBrowse(); }
     }, [urlQuery]);
-
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const q = inputValue.trim();
-        if (q) setSearchParams({ q });
-        else setSearchParams({});
-    };
 
 
     const countFor = (id) => id === 'all'
@@ -341,33 +330,6 @@ export function SearchPage() {
 
     return (
         <div className="min-h-screen bg-[#0B0E14]">
-
-
-            {/* Search bar */}
-            <div className="bg-[#151921]/70 backdrop-blur-xl border-b border-[#BFBCFC]/15 py-5">
-                <div className="container mx-auto px-4 max-w-7xl">
-                    <form onSubmit={handleSubmit} className="flex gap-3">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] w-5 h-5 pointer-events-none" />
-                            <input
-                                type="text"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                placeholder="Search movies, TV shows, people, studios..."
-                                className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-12 pr-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 rounded-xl font-semibold transition-all hover:scale-105"
-                        >
-                            Search
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-
             <div className="container mx-auto px-4 max-w-7xl py-8">
 
 

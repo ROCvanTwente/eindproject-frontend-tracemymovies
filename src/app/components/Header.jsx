@@ -11,7 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { Link, useNavigate } from "react-router";
+import { Link, NavLink, useNavigate, useSearchParams } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
@@ -22,7 +22,12 @@ import { NotificationDropdown } from "./NotificationDropdown";
 import { WatchLogModal } from "./WatchLogModal";
 
 export function Header() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || "");
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get('q') || "");
+  }, [searchParams]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showWatchLogModal, setShowWatchLogModal] = useState(false);
@@ -95,7 +100,6 @@ export function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
     }
   };
 
@@ -169,44 +173,28 @@ export function Header() {
               </Link>
 
               <div className="hidden lg:flex gap-6">
-                <Link
-                  to="/"
-                  className="text-[#F8FAFC] hover:text-[#BFBCFC] transition-colors duration-200"
-                >
-                  Home
-                </Link>
-
-                <Link
-                  to="/movies"
-                  className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                >
-                  Movies
-                </Link>
-
-                {isAuthenticated && (
-                  <Fragment>
-                    <Link
-                      to="/the-queue"
-                      className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                    >
-                      Lists
-                    </Link>
-
-                    <Link
-                      to="/weekly-favorites"
-                      className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                    >
-                      Trends
-                    </Link>
-
-                    <Link
-                      to="/global-dna"
-                      className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                    >
-                      Community
-                    </Link>
-                  </Fragment>
-                )}
+                {[
+                  { to: "/", label: "Home", end: true },
+                  { to: "/movies", label: "Movies" },
+                  ...(isAuthenticated ? [
+                    { to: "/the-queue", label: "Lists" },
+                    { to: "/weekly-favorites", label: "Trends" },
+                    { to: "/global-dna", label: "Community" },
+                  ] : []),
+                ].map(({ to, label, end }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      isActive
+                        ? "text-[#F8FAFC] font-medium transition-colors duration-200"
+                        : "text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                ))}
               </div>
             </nav>
 
@@ -239,13 +227,17 @@ export function Header() {
                     <NotificationDropdown />
                   </div>
 
-                  <Link
+                  <NavLink
                     to="/messages"
-                    className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5 hidden md:block"
+                    className={({ isActive }) =>
+                      `p-2 transition-colors duration-200 rounded-lg hidden md:block ${
+                        isActive ? "text-[#F8FAFC] bg-white/10" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                      }`
+                    }
                     title="Messages"
                   >
                     <MessageCircle className="w-5 h-5" />
-                  </Link>
+                  </NavLink>
 
                   {/* LIKED DROPDOWN */}
                   <div
@@ -326,13 +318,17 @@ export function Header() {
                     )}
                   </div>
 
-                  <Link
+                  <NavLink
                     to="/FriendPage"
-                    className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5 hidden md:block"
-                    title="test"
+                    className={({ isActive }) =>
+                      `p-2 transition-colors duration-200 rounded-lg hidden md:block ${
+                        isActive ? "text-[#F8FAFC] bg-white/10" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                      }`
+                    }
+                    title="Friends"
                   >
                     <Users className="w-5 h-5" />
-                  </Link>
+                  </NavLink>
 
                   <button
                     onClick={() => setShowWatchLogModal(true)}
@@ -386,46 +382,42 @@ export function Header() {
                         </p>
                       </div>
 
-                      <Link
-                        to="/profile"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        Account
-                      </Link>
-
-                      <Link
-                        to="/my-lists"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        My Lists
-                      </Link>
-
-                      <Link
-                        to="/my-profile"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        Profiel
-                      </Link>
-
-                      <Link
-                        to="/messages"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        Messages
-                      </Link>
+                      {[
+                        { to: "/my-profile", label: "Profiel" },
+                        { to: "/my-lists", label: "My Lists" },
+                        { to: "/profile", label: "Account" },
+                        { to: "/messages", label: "Messages" },
+                      ].map(({ to, label }) => (
+                        <NavLink
+                          key={to}
+                          to={to}
+                          onClick={() => setShowUserMenu(false)}
+                          className={({ isActive }) =>
+                            `block px-4 py-2 transition-colors ${
+                              isActive
+                                ? "bg-[#BFBCFC]/15 text-[#F8FAFC] font-medium"
+                                : "text-[#F8FAFC] hover:bg-[#BFBCFC]/10"
+                            }`
+                          }
+                        >
+                          {label}
+                        </NavLink>
+                      ))}
 
                       {user.isAdmin && (
-                        <Link
+                        <NavLink
                           to="/admin"
                           onClick={() => setShowUserMenu(false)}
-                          className="block px-4 py-2 text-[#44FFFF] hover:bg-[#44FFFF]/10 transition-colors font-medium"
+                          className={({ isActive }) =>
+                            `block px-4 py-2 transition-colors font-medium ${
+                              isActive
+                                ? "bg-[#44FFFF]/15 text-[#44FFFF]"
+                                : "text-[#44FFFF] hover:bg-[#44FFFF]/10"
+                            }`
+                          }
                         >
                           Admin Panel
-                        </Link>
+                        </NavLink>
                       )}
 
                       {/* LOGOUT BUTTON */}
