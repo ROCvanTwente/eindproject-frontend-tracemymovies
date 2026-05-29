@@ -327,7 +327,7 @@ export function Header() {
                   </div>
 
                   <Link
-                    to="/test"
+                    to="/FriendPage"
                     className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5 hidden md:block"
                     title="test"
                   >
