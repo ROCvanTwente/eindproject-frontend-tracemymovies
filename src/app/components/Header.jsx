@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef, useState, useMemo } from "react";
+﻿import React, { Fragment, useEffect, useRef, useState, useMemo } from "react";
 import {
   Search,
   LogOut,
@@ -403,11 +403,11 @@ export function Header() {
                       </Link>
 
                       <Link
-                        to="/analytics"
+                        to="/my-profile"
                         onClick={() => setShowUserMenu(false)}
                         className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
                       >
-                        Profile
+                        Profiel
                       </Link>
 
                       <Link
