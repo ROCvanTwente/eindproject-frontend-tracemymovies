@@ -35,10 +35,13 @@ export const addReview = async (reviewData, token) => {
     }
 };
 
-export const deleteReview = async (reviewId) => {
+export const deleteReview = async (reviewId, token) => {
     try {
         const response = await fetch(`${API_BASE_URL}/DeleteReview?id=${reviewId}`, {
             method: "DELETE",
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
         });
 
         if (!response.ok) {
@@ -49,5 +52,142 @@ export const deleteReview = async (reviewId) => {
     } catch (error) {
         console.error("Fout bij verwijderen review:", error);
         return false;
+    }
+};
+
+export const getReviewById = async (reviewId, token) => {
+    const candidates = [
+        `${API_BASE_URL}/GetReview?id=${reviewId}`,
+        `${API_BASE_URL}/GetReviewById?id=${reviewId}`,
+        `${API_BASE_URL}/Get?id=${reviewId}`,
+        `${API_BASE_URL}/GetReview?reviewId=${reviewId}`,
+        `${API_BASE_URL}/Get?reviewId=${reviewId}`,
+    ];
+
+    for (const url of candidates) {
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+
+            if (!response.ok) {
+                // try next candidate on 404 or other non-ok
+                continue;
+            }
+
+            try {
+                return await response.json();
+            } catch (e) {
+                try {
+                    const text = await response.text();
+                    return text;
+                } catch (_) {
+                    return null;
+                }
+            }
+        } catch (err) {
+            continue;
+        }
+    }
+
+    console.error("Fout bij ophalen review: geen endpoint reageerde met succes");
+    return null;
+};
+
+export const toggleLikeReview = async (reviewId, token) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/ToggleLike`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ reviewId }),
+        });
+        let payload = null;
+        try {
+            payload = await response.json();
+        } catch (e) {
+            // non-json response
+            try {
+                payload = await response.text();
+            } catch (_) {
+                payload = null;
+            }
+        }
+
+        
+
+        if (!response.ok) {
+            throw new Error("Kon like niet togglen");
+        }
+
+        return payload;
+    } catch (error) {
+        console.error("Fout bij togglen like:", error);
+        return null;
+    }
+};
+
+export const addLikeReview = async (reviewId, token) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/AddLike?reviewId=${reviewId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        });
+
+        let payload = null;
+        try {
+            payload = await response.json();
+        } catch (e) {
+            try {
+                payload = await response.text();
+            } catch (_) {
+                payload = null;
+            }
+        }
+
+        
+
+        if (!response.ok) {
+            throw new Error("Kon like niet toevoegen");
+        }
+
+        return payload;
+    } catch (error) {
+        console.error("Fout bij toevoegen like:", error);
+        return null;
+    }
+};
+
+export const reportReview = async (reviewId, reason, token) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/ReportReview`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ reviewId, reason }),
+        });
+
+        if (!response.ok) {
+            throw new Error("Kon review niet rapporteren");
+        }
+
+        try {
+            return await response.json();
+        } catch {
+            return true;
+        }
+    } catch (error) {
+        console.error("Fout bij rapporteren review:", error);
+        return null;
     }
 };

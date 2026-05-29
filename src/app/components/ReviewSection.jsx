@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Star, AlertCircle, Send } from "lucide-react";
+import { Star, AlertCircle, Send, MoreVertical, Flag, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
-import { addReview, getReviewsVoorFilm } from "../services/reviews";
-import { getToken } from "../services/auth";
+import { addReview, getReviewsVoorFilm, addLikeReview, deleteReview, reportReview, getReviewById } from "../services/reviews";
+import { getToken, getCurrentUserId } from "../services/auth";
 
 export function ReviewSection({ movieId, movieTitle }) {
     const auth = useAuth();
     const isAuthenticated = !!(auth?.user || getToken());
     const token = auth?.user?.token ?? auth?.token ?? getToken();
+    const currentUserId = getCurrentUserId();
 
     const [reviewText, setReviewText] = useState("");
     const [reviewRating, setReviewRating] = useState(0);
@@ -17,9 +18,39 @@ export function ReviewSection({ movieId, movieTitle }) {
     const [reviews, setReviews] = useState([]);
     const [isLoadingReviews, setIsLoadingReviews] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [revealedSpoilers, setRevealedSpoilers] = useState({});
+    const [likedMap, setLikedMap] = useState({});
+    const [openMenuKey, setOpenMenuKey] = useState(null);
+
+    const MAX_REVIEW_LENGTH = 500;
+
+    const getReviewKey = (review, index = 0) => {
+        if (review?.id != null) return `review-${review.id}`;
+        if (review?.reviewId != null) return `review-${review.reviewId}`;
+
+        const author = review?.user?.userName || review?.userName || (review?.userId ? `User #${review.userId}` : "Anonymous");
+        const content = review?.review || review?.content || review?.reviewText || review?.text || "";
+        return `${author}-${content.slice(0, 40)}-${index}`;
+    };
+
+    const getReviewOwnerId = (review) => review?.userId ?? review?.user?.id ?? review?.user?.userId ?? review?.user?.userID ?? null;
+
+    const refreshReviews = async () => {
+        const refreshed = await getReviewsVoorFilm(movieId);
+        const loaded = Array.isArray(refreshed) ? refreshed : refreshed?.reviews || [];
+        setReviews(loaded);
+
+        const seeded = {};
+        loaded.forEach((r, index) => {
+            seeded[getReviewKey(r, index)] = !!(r.userLiked ?? r.likedByCurrentUser ?? r.isLiked ?? false);
+        });
+        setLikedMap(seeded);
+    };
 
     useEffect(() => {
         if (!movieId) return;
+
+        // (debug logs removed)
 
         let isMounted = true;
 
@@ -28,7 +59,14 @@ export function ReviewSection({ movieId, movieTitle }) {
             try {
                 const data = await getReviewsVoorFilm(movieId);
                 if (isMounted) {
-                    setReviews(Array.isArray(data) ? data : data?.reviews || []);
+                    const loaded = Array.isArray(data) ? data : data?.reviews || [];
+                    setReviews(loaded);
+
+                    const seeded = {};
+                    loaded.forEach((r, index) => {
+                        seeded[getReviewKey(r, index)] = !!(r.userLiked ?? r.likedByCurrentUser ?? r.isLiked ?? false);
+                    });
+                    setLikedMap(seeded);
                 }
             } finally {
                 if (isMounted) {
@@ -46,6 +84,131 @@ export function ReviewSection({ movieId, movieTitle }) {
 
     const normalizedReviews = useMemo(() => reviews || [], [reviews]);
 
+    const handleToggleLike = async (review, reviewKey) => {
+        if (!token) {
+            toast.error("Log in om een review te liken.");
+            return;
+        }
+
+        const currentlyLiked = !!likedMap[reviewKey];
+        if (currentlyLiked) {
+            toast.info("Je hebt dit al geliked.");
+            return;
+        }
+
+        setLikedMap((prev) => ({ ...prev, [reviewKey]: true }));
+        setReviews((prev) => prev.map((r, index) => {
+            const key = getReviewKey(r, index);
+            if (key !== reviewKey) return r;
+            return { ...r, likes: (r.likes ?? r.likeCount ?? 0) + 1 };
+        }));
+
+        const res = await addLikeReview(review.id ?? review.reviewId ?? reviewKey, token);
+
+        if (!res) {
+            setLikedMap((prev) => ({ ...prev, [reviewKey]: false }));
+            setReviews((prev) => prev.map((r, index) => {
+                const key = getReviewKey(r, index);
+                if (key !== reviewKey) return r;
+                return { ...r, likes: (r.likes ?? r.likeCount ?? 0) - 1 };
+            }));
+            toast.error("Kon like niet bijwerken.");
+            return;
+        }
+
+        try {
+            await refreshReviews();
+        } catch {
+            // ignore refresh failures
+        }
+    };
+
+    const handleDeleteReview = async (review, reviewKey) => {
+        const reviewId = review.id ?? review.reviewId;
+        if (!reviewId) {
+            toast.error("Kon review-id niet vinden.");
+            return false;
+        }
+
+        // re-fetch the review from the server to verify ownership before confirming
+        // many backends don't expose a single-review endpoint (404). First try list lookup which is known to work.
+        let latest = null;
+            try {
+                const all = await getReviewsVoorFilm(movieId);
+                const loaded = Array.isArray(all) ? all : all?.reviews || [];
+                latest = loaded.find((r) => String(r.id ?? r.reviewId) === String(reviewId));
+            } catch (e) {
+                latest = null;
+            }
+
+        // if not found in list, try single-review endpoint as last resort
+        if (!latest) {
+            latest = await getReviewById(reviewId, token);
+        }
+
+        if (!latest) {
+            toast.error("Kon review niet verifiëren. Probeer opnieuw of herlaad de pagina.");
+            return false;
+        }
+
+        const latestOwnerId = getReviewOwnerId(latest);
+        if (!currentUserId || latestOwnerId == null || String(latestOwnerId) !== String(currentUserId)) {
+            toast.error(`Je kunt alleen je eigen review verwijderen. (owner: ${latestOwnerId ?? 'nvt'}, jouw id: ${currentUserId ?? 'nvt'})`);
+            return false;
+        }
+
+        const confirmed = window.confirm("Weet je zeker dat je deze review wilt verwijderen?");
+        if (!confirmed) return false;
+
+        const removed = await deleteReview(reviewId, token);
+        if (!removed) {
+            toast.error("Kon review niet verwijderen.");
+            return false;
+        }
+
+        setReviews((prev) => prev.filter((r, index) => getReviewKey(r, index) !== reviewKey));
+        setLikedMap((prev) => {
+            const next = { ...prev };
+            delete next[reviewKey];
+            return next;
+        });
+        setRevealedSpoilers((prev) => {
+            const next = { ...prev };
+            delete next[reviewKey];
+            return next;
+        });
+        toast.success("Review verwijderd.");
+        // close any open menu for this review
+        setOpenMenuKey((prev) => (prev === reviewKey ? null : prev));
+        return true;
+    };
+
+    const handleReportReview = async (review, reviewKey) => {
+        const reviewId = review.id ?? review.reviewId;
+        if (!reviewId) {
+            toast.error("Kon review-id niet vinden.");
+            return;
+        }
+
+        const reason = window.prompt("Waarom wil je deze review rapporteren?");
+        if (reason === null) return;
+
+        const trimmedReason = reason.trim();
+        if (!trimmedReason) {
+            toast.error("Geef een reden op.");
+            return;
+        }
+
+        const result = await reportReview(reviewId, trimmedReason, token);
+        if (!result) {
+            toast.error("Kon review niet rapporteren.");
+            return;
+        }
+
+        setOpenMenuKey((prev) => (prev === reviewKey ? null : prev));
+        toast.success("Review gerapporteerd.");
+    };
+
     const handleSubmitReview = async () => {
         if (reviewRating === 0) {
             toast.error("Selecteer een score.");
@@ -54,6 +217,11 @@ export function ReviewSection({ movieId, movieTitle }) {
 
         if (!reviewText.trim()) {
             toast.error("Schrijf eerst een review.");
+            return;
+        }
+
+        if (reviewText.trim().length > MAX_REVIEW_LENGTH) {
+            toast.error(`Maximaal ${MAX_REVIEW_LENGTH} tekens toegestaan.`);
             return;
         }
 
@@ -82,8 +250,7 @@ export function ReviewSection({ movieId, movieTitle }) {
             setContainsSpoilers(false);
             setHoverRating(0);
 
-            const refreshed = await getReviewsVoorFilm(movieId);
-            setReviews(Array.isArray(refreshed) ? refreshed : refreshed?.reviews || []);
+            await refreshReviews();
         } finally {
             setIsSubmitting(false);
         }
@@ -132,8 +299,12 @@ export function ReviewSection({ movieId, movieTitle }) {
                                 onChange={(e) => setReviewText(e.target.value)}
                                 placeholder={`Share your thoughts about ${movieTitle}...`}
                                 rows={4}
+                                maxLength={MAX_REVIEW_LENGTH}
                                 className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none placeholder:text-[#94A3B8]"
                             />
+                            <div className="text-right text-sm text-[#94A3B8] mt-1">
+                                {reviewText.length} / {MAX_REVIEW_LENGTH} tekens
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -167,37 +338,100 @@ export function ReviewSection({ movieId, movieTitle }) {
             ) : normalizedReviews.length === 0 ? (
                 <div className="text-[#94A3B8] text-sm">Nog geen reviews voor deze film.</div>
             ) : (
-                normalizedReviews.map((review) => {
+                normalizedReviews.map((review, index) => {
                     const author = review.user?.userName || review.userName || (review.userId ? `User #${review.userId}` : "Anonymous");
                     const content = review.review || review.content || review.reviewText || review.text || "";
                     const rating = review.rating ?? review.score ?? 0;
-                    const spoiler = review.spoiler ?? review.containsSpoilers ?? false;
-                    const likes = review.likes ?? 0;
+                    const spoiler = review.spoiler ?? review.containsSpoilers ?? review.containSpoilers ?? review.containSpoiler ?? false;
+                    const likes = review.likes ?? review.likeCount ?? 0;
+                    const reviewOwnerId = getReviewOwnerId(review);
+                    const canDeleteReview = currentUserId != null && reviewOwnerId != null && String(reviewOwnerId) === String(currentUserId);
+                    const reviewKey = getReviewKey(review, index);
+
+                    const toggleReveal = (key) => {
+                        setRevealedSpoilers((prev) => ({ ...prev, [key]: !prev[key] }));
+                    };
 
                     return (
-                        <div key={review.id || `${author}-${content.slice(0, 20)}`} className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-4 md:p-6 mb-4">
+                        <div key={reviewKey} className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-4 md:p-6 mb-4">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-[#BFBCFC]/10 rounded-full flex items-center justify-center">
                                         <span className="text-[#BFBCFC] font-bold">{author.charAt(0)}</span>
                                     </div>
                                     <div>
-                                        <p className="text-[#F8FAFC] font-medium">{author}</p>
+                                        <p className="text-[#F8FAFC] font-medium break-words break-all">{author}</p>
                                         <div className="flex items-center gap-1">
                                             <Star className="w-4 h-4 text-[#44FFFF]" fill="currentColor" />
                                             <span className="text-[#44FFFF] font-data text-sm">{rating}/10</span>
                                         </div>
                                     </div>
                                 </div>
-                                <button className="text-[#94A3B8] hover:text-[#BFBCFC] transition-colors">♥ {likes}</button>
+
+                                <div className="flex items-center gap-3 flex-wrap justify-end relative">
+                                    <button
+                                        onClick={() => handleToggleLike(review, reviewKey)}
+                                        className={`transition-colors font-medium ${likedMap[reviewKey] ? "text-[#FF61D2]" : "text-[#94A3B8] hover:text-[#BFBCFC]"}`}
+                                    >
+                                        ♥ {likes}
+                                    </button>
+
+                                    <div className="relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => setOpenMenuKey((prev) => (prev === reviewKey ? null : reviewKey))}
+                                            className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+                                            aria-label="Review actions"
+                                        >
+                                            <MoreVertical className="w-5 h-5" />
+                                        </button>
+
+                                        {openMenuKey === reviewKey && (
+                                            <div className="absolute right-0 top-9 z-20 w-56 rounded-2xl border border-[#BFBCFC]/15 bg-[#151921] shadow-2xl shadow-black/40 p-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => { await handleDeleteReview(review, reviewKey); }}
+                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#FF61D2] hover:bg-[#1E2230] transition-colors"
+                                                >
+                                                    <Trash className="w-4 h-4 text-[#FF61D2]/90" />
+                                                    Delete
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleReportReview(review, reviewKey)}
+                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#F8FAFC] hover:bg-[#1E2230] transition-colors"
+                                                >
+                                                    <Flag className="w-4 h-4 text-[#F8FAFC]/80" />
+                                                    Report
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                </div>
                             </div>
+
                             {spoiler && (
                                 <div className="mb-2 inline-flex items-center gap-1 bg-[#FF61D2]/10 border border-[#FF61D2]/30 text-[#FF61D2] px-2 py-1 rounded text-xs font-medium">
                                     <AlertCircle className="w-3 h-3" />
                                     Contains Spoilers
                                 </div>
                             )}
-                            <p className="text-[#94A3B8] leading-relaxed text-sm md:text-base">{content}</p>
+
+                            {spoiler && !revealedSpoilers[reviewKey] ? (
+                                <div className="relative">
+                                    <p className="text-[#94A3B8] leading-relaxed text-sm md:text-base break-words break-all blur-sm select-none">{content}</p>
+                                    <button
+                                        onClick={() => toggleReveal(reviewKey)}
+                                        className="absolute inset-0 flex items-center justify-center text-[#FF61D2] bg-black/30 hover:bg-black/40 rounded-xl font-medium"
+                                    >
+                                        Contains Spoilers — Click to reveal
+                                    </button>
+                                </div>
+                            ) : (
+                                <p className="text-[#94A3B8] leading-relaxed text-sm md:text-base break-words break-all">{content}</p>
+                            )}
                         </div>
                     );
                 })
