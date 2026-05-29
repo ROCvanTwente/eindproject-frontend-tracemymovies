@@ -76,18 +76,9 @@ export function RegisterPage() {
             navigate('/');
 
         } catch (err) {
-
             const msg = err.message || 'Registration failed';
-
             setError(msg);
-
-            if (msg.includes('already exists')) {
-                toast.error('Account already exists. Please login.');
-                navigate('/login');
-            } else {
-                toast.error(msg);
-            }
-
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -118,13 +109,21 @@ export function RegisterPage() {
 
                     {/* ERROR */}
                     {error && (
-                        <div className="bg-[#FF61D2]/10 border border-[#FF61D2]/30 rounded-xl p-4 mb-6 flex items-center gap-3">
-
-                            <AlertCircle className="w-5 h-5 text-[#FF61D2]" />
-
-                            <p className="text-[#F8FAFC] text-sm">
-                                {error}
-                            </p>
+                        <div className="bg-[#FF61D2]/10 border border-[#FF61D2]/30 rounded-xl p-4 mb-6">
+                            <div className="flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-[#FF61D2] mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[#F8FAFC] text-sm font-medium">{error}</p>
+                                    {(error.toLowerCase().includes('email already exists') || error.toLowerCase().includes('username already exists')) && (
+                                        <Link
+                                            to="/login"
+                                            className="text-[#BFBCFC] hover:text-[#AFA9FF] text-sm underline underline-offset-2 mt-1 inline-block transition-colors"
+                                        >
+                                            Already have an account? Login here
+                                        </Link>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
 
