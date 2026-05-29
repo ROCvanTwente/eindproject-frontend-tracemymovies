@@ -5,7 +5,6 @@ import { AnalyticsHeader } from "../components/analytics/AnalyticsHeader";
 import { StatsGrid } from "../components/analytics/StatsGrid";
 import { RecentActivity } from "../components/analytics/RecentActivity";
 import { FavoriteFilms } from "../components/analytics/FavoriteFilms";
-import { WatchlistShort } from "../components/analytics/WatchlistShort";
 import { SearchMovieModal } from "../components/analytics/SearchMovieModal";
 import { BottomInsights } from "../components/analytics/BottomInsights";
 import { YearlyChart } from "../components/analytics/YearlyChart";
@@ -31,7 +30,6 @@ export function AnalyticsPage() {
 
   const [favoriteMovies, setFavoriteMovies] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
-  const [watchlistShort, setWatchlistShort] = useState([]);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -174,57 +172,21 @@ export function AnalyticsPage() {
     fetchRecentActivity();
   }, []);
 
-  useEffect(() => {
-    const fetchWatchlistShort = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/UserActivity/WatchlistShort`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!response.ok) throw new Error("Failed to fetch watchlist short");
-
-        const data = await response.json();
-        setWatchlistShort(Array.isArray(data) ? data : [data]);
-      } catch (error) {
-        console.error("Error fetching watchlist short:", error);
-      }
-    };
-    fetchWatchlistShort();
-  }, []);
-
   return (
     <div className="min-h-screen py-6 md:py-8">
       <div className="container mx-auto px-4 max-w-7xl">
         <AnalyticsHeader />
         <StatsGrid />
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 md:mb-8 items-stretch">
-          <div className="lg:col-span-1">
-            <RecentActivity recentActivity={recentActivity} />
-          </div>
-          <div className="lg:col-span-1">
-            <FavoriteFilms
-              favoriteMovies={favoriteMovies}
-              onOpenSearch={openSearch}
-              onRemoveFavorite={removeFavorite}
-              onNavigate={navigate}
-            />
-          </div>
-          <div className="lg:col-span-1">
-            <WatchlistShort 
-              watchlist={watchlistShort} 
-              onNavigate={navigate} 
-            />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 md:mb-8 items-start">
+          <RecentActivity recentActivity={recentActivity} />
+          
+          <FavoriteFilms
+            favoriteMovies={favoriteMovies}
+            onOpenSearch={openSearch}
+            onRemoveFavorite={removeFavorite}
+            onNavigate={navigate}
+          />
         </div>
 
         <SearchMovieModal
