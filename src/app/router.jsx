@@ -19,9 +19,6 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
-import  FriendPage from './pages/FriendPage';  
-import  LikedMoviesPage  from './pages/LikedMoviesPage';
-  
 export const router = createBrowserRouter([
     {
         path: '/',
@@ -36,16 +33,8 @@ export const router = createBrowserRouter([
                 element: _jsx(SearchPage, {}),
             },
             {
-                path: 'LikedMoviesPage',
-                element: _jsx(LikedMoviesPage, {}),
-            },
-            {
                 path: 'movies',
                 element: _jsx(SearchPage, {}),
-            },
-            {
-                path: 'FriendPage',
-                element: _jsx(FriendPage, {}),
             },
             {
                 path: 'movie/:id',
@@ -62,10 +51,6 @@ export const router = createBrowserRouter([
             {
                 path: 'the-queue',
                 element: _jsx(TheQueuePage, {}),
-            },
-            {
-                path: 'my-profile',
-                element: _jsx(UserProfilePage, {}),
             },
             {
                 path: 'profile',
@@ -118,7 +103,3 @@ export const router = createBrowserRouter([
         ],
     },
 ]);
-
-
-
-

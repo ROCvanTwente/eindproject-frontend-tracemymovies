@@ -1,547 +1,119 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, RefreshCw, Film, Tv, User, Building2, Library, Tag, SlidersHorizontal, X } from 'lucide-react';
-import { useSearchParams, useNavigate } from 'react-router';
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState, useEffect, useRef } from 'react';
+import { Search, Filter, SlidersHorizontal, X, Loader2 } from 'lucide-react';
 import { MovieCard } from '../components/MovieCard';
-
-
-const SEARCH_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search/all`;
-const BROWSE_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/get20movies`;
-
-
-const FILTERS = [
-    { id: 'all',        label: 'All' },
-    { id: 'movie',      label: 'Films' },
-    { id: 'tv',         label: 'TV Shows' },
-    { id: 'person',     label: 'Cast & Crew' },
-    { id: 'company',    label: 'Studios' },
-    { id: 'collection', label: 'Collections' },
-    { id: 'keyword',    label: 'Keywords' },
-    { id: 'user',       label: 'Members' },
+const MOCK_MOVIES = [
+    {
+        id: 1,
+        title: 'The Shawshank Redemption',
+        poster_path: '/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg',
+        vote_average: 8.7,
+        release_date: '1994-09-23',
+    },
+    {
+        id: 2,
+        title: 'The Godfather',
+        poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
+        vote_average: 8.7,
+        release_date: '1972-03-14',
+    },
+    {
+        id: 550,
+        title: 'Fight Club',
+        poster_path: '/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg',
+        vote_average: 8.4,
+        release_date: '1999-10-15',
+    },
+    {
+        id: 27205,
+        title: 'Inception',
+        poster_path: '/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg',
+        vote_average: 8.4,
+        release_date: '2010-07-16',
+    },
+    {
+        id: 157336,
+        title: 'Interstellar',
+        poster_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+        vote_average: 8.4,
+        release_date: '2014-11-07',
+    },
+    {
+        id: 155,
+        title: 'The Dark Knight',
+        poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+        vote_average: 8.5,
+        release_date: '2008-07-18',
+    },
 ];
-
-
-const TYPE_COLOR = {
-    movie:      'text-[#BFBCFC]',
-    tv:         'text-[#44FFFF]',
-    person:     'text-[#FF61D2]',
-    company:    'text-amber-400',
-    collection: 'text-green-400',
-    keyword:    'text-slate-300',
-};
-
-
-// ── Row components ────────────────────────────────────────────────
-
-
-function MovieTvRow({ item, onClick }) {
-    return (
-        <div
-            onClick={onClick}
-            className={`flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group ${onClick ? 'cursor-pointer' : ''}`}
-        >
-            {/* Poster */}
-            <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
-                {item.poster ? (
-                    <img
-                        src={`https://image.tmdb.org/t/p/w185${item.poster}`}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <Film className="w-5 h-5 text-[#94A3B8]" />
-                    </div>
-                )}
-            </div>
-
-
-            {/* Info */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className="flex items-baseline gap-2 flex-wrap mb-1">
-                    <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-[#BFBCFC] transition-colors">
-                        {item.title}
-                    </h3>
-                    {item.releaseDate && (
-                        <span className="text-[#94A3B8] text-sm flex-none">
-                            {item.releaseDate.slice(0, 4)}
-                        </span>
-                    )}
-                    {item.voteAverage > 0 && (
-                        <span className="text-[#44FFFF] text-xs font-bold flex-none">
-                            ★ {item.voteAverage.toFixed(1)}
-                        </span>
-                    )}
-                </div>
-
-
-                {item.overview && (
-                    <p className="text-[#94A3B8] text-sm line-clamp-2 leading-relaxed">
-                        {item.overview}
-                    </p>
-                )}
-            </div>
-        </div>
-    );
-}
-
-
-function PersonRow({ item }) {
-    return (
-        <div className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group">
-            {/* Profile photo */}
-            <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
-                {item.profile ? (
-                    <img
-                        src={`https://image.tmdb.org/t/p/w185${item.profile}`}
-                        alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-[#94A3B8]" />
-                    </div>
-                )}
-            </div>
-
-
-            {/* Info */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <div className="flex items-baseline gap-2 mb-1">
-                    <h3 className="text-[#F8FAFC] font-bold text-base">{item.name}</h3>
-                    {item.department && (
-                        <span className="text-[#FF61D2] text-xs font-semibold">{item.department}</span>
-                    )}
-                </div>
-
-
-                {item.knownFor && Array.isArray(item.knownFor) && item.knownFor.length > 0 && (
-                    <p className="text-[#94A3B8] text-sm">
-                        Known for:{' '}
-                        <span className="text-[#F8FAFC]/70">
-                            {item.knownFor.map(k => k.title).filter(Boolean).slice(0, 3).join(', ')}
-                        </span>
-                    </p>
-                )}
-            </div>
-        </div>
-    );
-}
-
-
-function CompanyRow({ item }) {
-    return (
-        <div className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none items-center">
-            <div className="w-16 h-10 flex-none rounded-lg overflow-hidden bg-white flex items-center justify-center p-1">
-                {item.logo ? (
-                    <img
-                        src={`https://image.tmdb.org/t/p/w185${item.logo}`}
-                        alt={item.name}
-                        className="w-full h-full object-contain"
-                    />
-                ) : (
-                    <Building2 className="w-5 h-5 text-[#94A3B8]" />
-                )}
-            </div>
-            <div className="min-w-0">
-                <h3 className="text-[#F8FAFC] font-bold text-base">{item.name}</h3>
-                {item.country && <p className="text-[#94A3B8] text-sm">{item.country}</p>}
-            </div>
-        </div>
-    );
-}
-
-
-function CollectionRow({ item, onClick }) {
-    return (
-        <div
-            onClick={onClick}
-            className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group cursor-pointer"
-        >
-            <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
-                {item.poster ? (
-                    <img
-                        src={`https://image.tmdb.org/t/p/w185${item.poster}`}
-                        alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <Library className="w-5 h-5 text-[#94A3B8]" />
-                    </div>
-                )}
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-green-400 transition-colors">
-                    {item.name}
-                </h3>
-                <span className="text-green-400 text-xs font-semibold mt-0.5">Collection</span>
-            </div>
-        </div>
-    );
-}
-
-
-function UserRow({ item, navigate }) {
-    return (
-        <div
-            onClick={() => navigate(`/user/${item.id}`)}
-            className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none items-center group cursor-pointer"
-        >
-            <div className="w-10 h-10 flex-none rounded-full overflow-hidden bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] flex items-center justify-center">
-                {item.profilePicture ? (
-                    <img src={item.profilePicture} alt={item.username} className="w-full h-full object-cover" />
-                ) : (
-                    <span className="text-[#0B0E14] font-bold text-sm">
-                        {item.username?.charAt(0).toUpperCase()}
-                    </span>
-                )}
-            </div>
-            <div className="min-w-0">
-                <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-[#BFBCFC] transition-colors">
-                    {item.username}
-                </h3>
-                <span className="text-[#94A3B8] text-xs">Member</span>
-            </div>
-        </div>
-    );
-}
-
-
-function ResultRow({ item, navigate }) {
-    if (item.type === 'person')     return <PersonRow item={item} />;
-    if (item.type === 'company')    return <CompanyRow item={item} />;
-    if (item.type === 'collection') return <CollectionRow item={item} onClick={() => {}} />;
-    if (item.type === 'user')       return <UserRow item={item} navigate={navigate} />;
-    if (item.type === 'keyword')    return null;
-    return (
-        <MovieTvRow
-            item={item}
-            onClick={item.type === 'movie' ? () => navigate(`/movie/${item.id}`) : null}
-        />
-    );
-}
-
-
-// ── Main page ──────────────────────────────────────────────────────
-
-
 export function SearchPage() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const urlQuery = searchParams.get('q') || '';
-    const navigate = useNavigate();
-
-
-    const [inputValue, setInputValue] = useState(urlQuery);
-    const [results, setResults] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [movies, setMovies] = useState(MOCK_MOVIES);
+    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(false);
-    const [activeFilter, setActiveFilter] = useState('all');
-    const [browseMovies, setBrowseMovies] = useState([]);
-    const [showFilterMenu, setShowFilterMenu] = useState(false);
-
-
-    const fetchSearch = useCallback(async (query) => {
-        setLoading(true);
-        setError(false);
-        try {
-            const res = await fetch(`${SEARCH_URL}?query=${encodeURIComponent(query)}`);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            const combined = [
-                ...(data.movies      ?? []),
-                ...(data.tvShows     ?? []),
-                ...(data.people      ?? []),
-                ...(data.companies   ?? []),
-                ...(data.collections ?? []),
-                ...(data.keywords    ?? []),
-                ...(data.users       ?? []),
-            ];
-            setResults(combined);
-        } catch {
-            setError(true);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-
-    const fetchBrowse = useCallback(async () => {
-        setLoading(true);
-        setError(false);
-        let all = [];
-        try {
-            for (let i = 0; i < 5; i++) {
-                const res = await fetch(`${BROWSE_URL}?page=${i + 1}`);
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                const movies = data.results || data;
-                if (Array.isArray(movies)) all = [...all, ...movies];
-            }
-            setBrowseMovies(all);
-        } catch {
-            setError(true);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-
-    useEffect(() => {
-        setInputValue(urlQuery);
-        setActiveFilter('all');
-        if (urlQuery.trim()) fetchSearch(urlQuery);
-        else { setResults([]); fetchBrowse(); }
-    }, [urlQuery]);
-
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const q = inputValue.trim();
-        if (q) setSearchParams({ q });
-        else setSearchParams({});
+    const [hasMore, setHasMore] = useState(true);
+    const observerTarget = useRef(null);
+    const [filters, setFilters] = useState({
+        genre: [],
+        year: '',
+        rating: '',
+        language: '',
+        country: '',
+        platform: '',
+        runtime: '',
+        ageRating: '',
+    });
+    const [sortBy, setSortBy] = useState('popularity');
+    const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller', 'Animation'];
+    const years = Array.from({ length: 50 }, (_, i) => (2024 - i).toString());
+    const platforms = ['Netflix', 'Disney+', 'Prime Video', 'HBO Max', 'Apple TV+'];
+    const toggleGenre = (genre) => {
+        setFilters({
+            ...filters,
+            genre: filters.genre.includes(genre)
+                ? filters.genre.filter((g) => g !== genre)
+                : [...filters.genre, genre],
+        });
     };
-
-
-    const countFor = (id) => id === 'all'
-        ? results.filter(r => r.type !== 'keyword').length
-        : results.filter(r => r.type === id).length;
-
-
-    const filtered = activeFilter === 'all'
-        ? [...results.filter(r => r.type !== 'keyword')]
-            .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
-        : results.filter(r => r.type === activeFilter);
-
-
-    const keywords = results.filter(r => r.type === 'keyword');
-
-
-
-
-    // ── Error ──
-    if (error && !loading) {
-        return (
-            <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#0B0E14] px-4 text-center">
-                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
-                    <AlertCircle className="w-10 h-10 text-red-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-[#F8FAFC] mb-3">Verbinding mislukt</h2>
-                <p className="text-[#94A3B8] mb-10 max-w-md">Kon geen resultaten ophalen. Controleer of de API actief is.</p>
-                <button
-                    onClick={() => urlQuery ? fetchSearch(urlQuery) : fetchBrowse()}
-                    className="flex items-center gap-3 bg-[#44FFFF] text-[#0B0E14] py-4 px-10 rounded-2xl font-bold hover:scale-105 transition-all"
-                >
-                    <RefreshCw className="w-5 h-5" />
-                    Opnieuw proberen
-                </button>
-            </div>
-        );
-    }
-
-
-    return (
-        <div className="min-h-screen bg-[#0B0E14]">
-
-
-            {/* Search bar */}
-            <div className="bg-[#151921]/70 backdrop-blur-xl border-b border-[#BFBCFC]/15 py-5">
-                <div className="container mx-auto px-4 max-w-7xl">
-                    <form onSubmit={handleSubmit} className="flex gap-3">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] w-5 h-5 pointer-events-none" />
-                            <input
-                                type="text"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                placeholder="Search movies, TV shows, people, studios..."
-                                className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-12 pr-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 rounded-xl font-semibold transition-all hover:scale-105"
-                        >
-                            Search
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-
-            <div className="container mx-auto px-4 max-w-7xl py-8">
-
-
-                {/* Loading */}
-                {loading && (
-                    <div className="flex flex-col items-center justify-center py-24 gap-4">
-                        <Loader2 className="w-12 h-12 animate-spin text-[#BFBCFC]" />
-                        <p className="text-[#94A3B8]">Searching...</p>
-                    </div>
-                )}
-
-
-                {/* Browse mode */}
-                {!loading && !urlQuery && (
-                    <>
-                        <h2 className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8] mb-6">
-                            Browse Movies
-                        </h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                            {browseMovies.map((movie, i) => (
-                                <MovieCard key={`${movie.id}-${i}`} movie={movie} />
-                            ))}
-                        </div>
-                    </>
-                )}
-
-
-                {/* Search results */}
-                {!loading && urlQuery && (
-                    <div className="flex gap-10">
-
-
-                        {/* ── Left: results ── */}
-                        <div className="flex-1 min-w-0">
-
-
-                            {/* Heading + mobile filter button */}
-                            <div className="flex items-center justify-between mb-1 pb-3 border-b border-[#BFBCFC]/15">
-                                <h2 className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8]">
-                                    Showing matches for &ldquo;{urlQuery}&rdquo;
-                                </h2>
-                                {results.length > 0 && (
-                                    <button
-                                        onClick={() => setShowFilterMenu(true)}
-                                        className="lg:hidden flex items-center gap-1.5 text-sm text-[#BFBCFC] bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 px-3 py-1.5 rounded-lg transition-colors"
-                                    >
-                                        <SlidersHorizontal className="w-4 h-4" />
-                                        {activeFilter !== 'all' && (
-                                            <span className="w-2 h-2 rounded-full bg-[#BFBCFC] inline-block" />
-                                        )}
-                                        Filter
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Mobile filter overlay */}
-                            {showFilterMenu && (
-                                <>
-                                    <div
-                                        className="fixed inset-0 z-40 bg-black/60 lg:hidden"
-                                        onClick={() => setShowFilterMenu(false)}
-                                    />
-                                    <div className="fixed top-0 left-0 right-0 z-50 bg-[#151921] border-b border-[#BFBCFC]/15 lg:hidden">
-                                        <div className="px-4 py-5">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <p className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8]">
-                                                    Show results for
-                                                </p>
-                                                <button
-                                                    onClick={() => setShowFilterMenu(false)}
-                                                    className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
-                                                >
-                                                    <X className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {FILTERS.map(({ id, label }) => {
-                                                    const count = countFor(id);
-                                                    return (
-                                                        <button
-                                                            key={id}
-                                                            onClick={() => { setActiveFilter(id); setShowFilterMenu(false); }}
-                                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                                                                activeFilter === id
-                                                                    ? 'bg-[#BFBCFC] text-[#0B0E14] font-semibold'
-                                                                    : 'bg-[#0B0E14] text-[#94A3B8] border border-[#BFBCFC]/15 hover:text-[#F8FAFC]'
-                                                            }`}
-                                                        >
-                                                            {label}
-                                                            {count > 0 && (
-                                                                <span className="text-xs opacity-70">{count}</span>
-                                                            )}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-
-                            {filtered.length === 0 ? (
-                                <div className="text-center py-24">
-                                    <Search className="w-16 h-16 text-[#BFBCFC]/20 mx-auto mb-4" />
-                                    <h3 className="text-xl font-bold text-[#F8FAFC]">No results found</h3>
-                                    <p className="text-[#94A3B8] mt-2">Try a different search term or filter.</p>
-                                </div>
-                            ) : (
-                                <div>
-                                    {filtered.map(item => (
-                                        <ResultRow
-                                            key={`${item.type}-${item.id}`}
-                                            item={item}
-                                            navigate={navigate}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-
-
-                            {/* Keywords as chips at the bottom */}
-                            {(activeFilter === 'all' || activeFilter === 'keyword') && keywords.length > 0 && (
-                                <div className="mt-6 pt-6 border-t border-[#BFBCFC]/15">
-                                    <p className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8] mb-3">Keywords</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {keywords.map(k => (
-                                            <span
-                                                key={k.id}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#151921] border border-[#BFBCFC]/15 rounded-full text-[#F8FAFC] text-sm hover:border-[#BFBCFC]/40 transition-colors"
-                                            >
-                                                <Tag className="w-3 h-3 text-[#94A3B8]" />
-                                                {k.name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-
-                        {/* ── Right: filter sidebar ── */}
-                        {results.length > 0 && (
-                            <aside className="hidden lg:block w-48 flex-none">
-                                <p className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8] mb-3 pb-3 border-b border-[#BFBCFC]/15">
-                                    Show results for
-                                </p>
-                                <ul className="space-y-1">
-                                    {FILTERS.map(({ id, label }) => {
-                                        const count = countFor(id);
-                                        return (
-                                            <li key={id}>
-                                                <button
-                                                    onClick={() => setActiveFilter(id)}
-                                                    className={`w-full text-left flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors ${
-                                                        activeFilter === id
-                                                            ? 'text-[#F8FAFC] font-semibold bg-[#BFBCFC]/10'
-                                                            : 'text-[#94A3B8] hover:text-[#F8FAFC]'
-                                                    }`}
-                                                >
-                                                    {label}
-                                                    {count > 0 && (
-                                                        <span className="text-xs text-[#94A3B8]">{count}</span>
-                                                    )}
-                                                </button>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </aside>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+    // Load more movies (simulated infinite scroll)
+    const loadMoreMovies = async () => {
+        if (loading || !hasMore)
+            return;
+        setLoading(true);
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Add more movies (duplicating for demo)
+        const newMovies = MOCK_MOVIES.map((movie) => ({
+            ...movie,
+            id: movie.id + page * 1000,
+        }));
+        setMovies((prev) => [...prev, ...newMovies]);
+        setPage((prev) => prev + 1);
+        // Stop after 3 pages for demo
+        if (page >= 3) {
+            setHasMore(false);
+        }
+        setLoading(false);
+    };
+    // Infinite scroll observer
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && hasMore && !loading) {
+                loadMoreMovies();
+            }
+        }, { threshold: 0.1 });
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading, page]);
+    return (_jsxs("div", { className: "min-h-screen", children: [_jsx("div", { className: "bg-[#151921]/70 backdrop-blur-xl border-b border-[#BFBCFC]/15 py-6 md:py-8", children: _jsxs("div", { className: "container mx-auto px-4 max-w-7xl", children: [_jsx("h1", { className: "text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-4 md:mb-6", children: "Search Movies" }), _jsxs("div", { className: "flex gap-3 md:gap-4", children: [_jsxs("div", { className: "flex-1 relative", children: [_jsx(Search, { className: "absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 md:w-5 h-4 md:h-5" }), _jsx("input", { type: "text", value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), placeholder: "Search movies...", className: "w-full bg-[#0B0E14] text-[#F8FAFC] pl-10 md:pl-12 pr-4 py-3 md:py-4 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-base md:text-lg" })] }), _jsxs("button", { onClick: () => setShowFilters(!showFilters), className: "bg-[#151921] hover:bg-[#1E293B] text-[#F8FAFC] px-4 md:px-6 py-3 md:py-4 rounded-xl border border-[#BFBCFC]/15 transition-all flex items-center gap-2", children: [_jsx(Filter, { className: "w-4 md:w-5 h-4 md:h-5" }), _jsx("span", { className: "hidden md:inline", children: "Filters" })] })] })] }) }), _jsx("div", { className: "container mx-auto px-4 max-w-7xl py-6 md:py-8", children: _jsxs("div", { className: "flex flex-col lg:flex-row gap-4 md:gap-6", children: [showFilters && (_jsx("aside", { className: "w-full lg:w-80 flex-shrink-0", children: _jsxs("div", { className: "bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-xl p-3 md:p-4 lg:sticky lg:top-24", children: [_jsxs("div", { className: "flex items-center justify-between mb-6", children: [_jsx("h2", { className: "text-xl font-heading font-bold text-[#F8FAFC]", children: "Filters" }), _jsx("button", { onClick: () => setShowFilters(false), className: "text-[#94A3B8] hover:text-[#F8FAFC] transition-colors", children: _jsx(X, { className: "w-5 h-5" }) })] }), _jsxs("div", { className: "space-y-6", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-[#F8FAFC] mb-3 font-medium", children: "Genre" }), _jsx("div", { className: "flex flex-wrap gap-2", children: genres.map((genre) => (_jsx("button", { onClick: () => toggleGenre(genre), className: `px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filters.genre.includes(genre)
+                                                                ? 'bg-[#BFBCFC] text-[#0B0E14]'
+                                                                : 'bg-[#0B0E14] text-[#94A3B8] hover:text-[#F8FAFC] border border-[#BFBCFC]/15'}`, children: genre }, genre))) })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-[#F8FAFC] mb-2 font-medium", children: "Year" }), _jsxs("select", { value: filters.year, onChange: (e) => setFilters({ ...filters, year: e.target.value }), className: "w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC]", children: [_jsx("option", { value: "", children: "All Years" }), years.map((year) => (_jsx("option", { value: year, children: year }, year)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-[#F8FAFC] mb-2 font-medium", children: "Streaming Platform" }), _jsxs("select", { value: filters.platform, onChange: (e) => setFilters({ ...filters, platform: e.target.value }), className: "w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC]", children: [_jsx("option", { value: "", children: "All Platforms" }), platforms.map((platform) => (_jsx("option", { value: platform, children: platform }, platform)))] })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-[#F8FAFC] mb-2 font-medium", children: "Rating" }), _jsxs("select", { value: filters.rating, onChange: (e) => setFilters({ ...filters, rating: e.target.value }), className: "w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC]", children: [_jsx("option", { value: "", children: "All Ratings" }), _jsx("option", { value: "9+", children: "9+ Stars" }), _jsx("option", { value: "8+", children: "8+ Stars" }), _jsx("option", { value: "7+", children: "7+ Stars" }), _jsx("option", { value: "6+", children: "6+ Stars" })] })] })] })] }) })), _jsxs("div", { className: "flex-1", children: [_jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6", children: [_jsxs("p", { className: "text-[#94A3B8] text-sm md:text-base", children: ["Found ", _jsx("span", { className: "text-[#44FFFF] font-data font-medium", children: "234" }), " results"] }), _jsxs("div", { className: "flex items-center gap-2", children: [_jsx(SlidersHorizontal, { className: "w-4 h-4 text-[#94A3B8]" }), _jsxs("select", { value: sortBy, onChange: (e) => setSortBy(e.target.value), className: "bg-[#151921] text-[#F8FAFC] px-3 md:px-4 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] text-sm md:text-base", children: [_jsx("option", { value: "popularity", children: "Popularity" }), _jsx("option", { value: "newest", children: "Newest" }), _jsx("option", { value: "oldest", children: "Oldest" }), _jsx("option", { value: "rating-high", children: "Highest Rating" }), _jsx("option", { value: "rating-low", children: "Lowest Rating" }), _jsx("option", { value: "alphabetical", children: "Alphabetical" })] })] })] }), _jsx("div", { className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6", children: movies.map((movie) => (_jsx(MovieCard, { movie: movie }, movie.id))) }), hasMore && (_jsx("div", { ref: observerTarget, className: "flex justify-center py-8", children: loading && (_jsxs("div", { className: "flex items-center gap-2 text-[#BFBCFC]", children: [_jsx(Loader2, { className: "w-6 h-6 animate-spin" }), _jsx("span", { className: "font-medium", children: "Loading more movies..." })] })) })), !hasMore && movies.length > 0 && (_jsx("div", { className: "text-center py-8", children: _jsx("p", { className: "text-[#94A3B8]", children: "No more movies to load" }) })), movies.length === 0 && (_jsxs("div", { className: "text-center py-20", children: [_jsx(Search, { className: "w-24 h-24 text-[#BFBCFC]/20 mx-auto mb-4" }), _jsx("h3", { className: "text-2xl font-heading font-bold text-[#F8FAFC] mb-2", children: "No results found" }), _jsx("p", { className: "text-[#94A3B8]", children: "Try adjusting your filters or search query" })] }))] })] }) })] }));
 }
