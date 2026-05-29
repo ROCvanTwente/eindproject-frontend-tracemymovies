@@ -1,6 +1,4 @@
-// const API_URL = "https://tracemymoviesbackend.runasp.net/api/auth";
-
-const API_URL = "https://localhost:7245/api/auth";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const TOKEN_KEY = "auth_token";
 const USER_KEY = "auth_user";
@@ -38,7 +36,7 @@ export function getStoredUser() {
 }
 
 export async function login({ email, password, remember = false }) {
-    const res = await fetch(`${API_URL}/login`, {
+    const res = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -68,7 +66,7 @@ export async function register({
     username,
     remember = false
 }) {
-    const res = await fetch(`${API_URL}/register`, {
+    const res = await fetch(`${API_BASE_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -106,7 +104,7 @@ export async function validateToken() {
     if (!token) return null;
 
     try {
-        const res = await fetch(`${API_URL}/profile`, {
+        const res = await fetch(`${API_BASE_URL}/profile`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 
