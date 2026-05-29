@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef, useState, useMemo } from "react";
+﻿import React, { Fragment, useEffect, useRef, useState, useMemo } from "react";
 import {
   Search,
   LogOut,
@@ -7,6 +7,7 @@ import {
   MessageCircle,
   Plus,
   Heart,
+  Users,
   Loader2,
 } from "lucide-react";
 
@@ -256,7 +257,7 @@ export function Header() {
                       className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5"
                       title="Liked"
                     >
-                      <Heart className="w-5 h-5" />
+                      <Heart  className="w-5 h-5" />
                     </button>
 
                     {showLikedDropdown && (
@@ -324,6 +325,14 @@ export function Header() {
                       </div>
                     )}
                   </div>
+
+                  <Link
+                    to="/FriendPage"
+                    className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5 hidden md:block"
+                    title="test"
+                  >
+                    <Users className="w-5 h-5" />
+                  </Link>
 
                   <button
                     onClick={() => setShowWatchLogModal(true)}
@@ -394,11 +403,11 @@ export function Header() {
                       </Link>
 
                       <Link
-                        to="/analytics"
+                        to="/my-profile"
                         onClick={() => setShowUserMenu(false)}
                         className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
                       >
-                        Profile
+                        Profiel
                       </Link>
 
                       <Link
