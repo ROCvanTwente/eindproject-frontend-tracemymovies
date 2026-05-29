@@ -58,6 +58,13 @@ export function ProfilePage() {
     };
 
     const closeReAuth = () => {
+        if (reAuthModal.purpose === 'update') {
+            setFormData((prev) => ({
+                ...prev,
+                username: savedData.username,
+                email: savedData.email,
+            }));
+        }
         setReAuthModal({ open: false, purpose: null });
         setReAuthPassword('');
         setReAuthError('');
