@@ -1,53 +1,96 @@
-import { jsx as _jsx } from "react/jsx-runtime";
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from "../context/AuthContext";
+
 const NotificationContext = createContext(undefined);
+
 export function NotificationProvider({ children }) {
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            type: 'friend_request',
-            title: 'New Friend Request',
-            message: 'John Doe sent you a friend request',
-            time: '2 minutes ago',
-            read: false,
-        },
-        {
-            id: 2,
-            type: 'friend_accepted',
-            title: 'Friend Request Accepted',
-            message: 'Sarah Williams accepted your friend request',
-            time: '1 hour ago',
-            read: false,
-        },
-    ]);
-    const addNotification = (notification) => {
-        const newNotification = {
-            ...notification,
-            id: Date.now(),
-            time: 'Just now',
-            read: false,
-        };
-        setNotifications((prev) => [newNotification, ...prev]);
-    };
-    const markAsRead = (id) => {
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-    };
-    const markAllAsRead = () => {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    };
-    const removeNotification = (id) => {
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
-    };
-    const unreadCount = notifications.filter((n) => !n.read).length;
-    return (_jsx(NotificationContext.Provider, { value: {
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const auth = useAuth();
+
+    const token = useMemo(() => {
+        return (
+            auth?.token || auth?.user?.token || localStorage.getItem("authToken") ||
+            localStorage.getItem("auth_token") || localStorage.getItem("token") ||
+            sessionStorage.getItem("authToken") || sessionStorage.getItem("auth_token") ||
+            sessionStorage.getItem("token")
+        );
+    }, [auth]);
+
+    // Ophalen van notificaties
+    const fetchNotifications = useCallback(async () => {
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Notification/GetMyNotifications`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) throw new Error("Kon notificaties niet ophalen");
+
+            const data = await response.json();
+            // Filter hier alvast op ongelezen notificaties als je wilt dat ze "verdwijnen"
+            setNotifications(data.filter(n => !n.read));
+        } catch (err) {
+            console.error("Fout bij ophalen notificaties:", err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [token]);
+
+    // Notificatie markeren als gelezen
+    const markAsRead = useCallback(async (notificationId) => {
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Notification/MarkAsRead/${notificationId}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                // Verwijder de notificatie direct uit de lijst in de state
+                setNotifications(prev => prev.filter(n => n.id !== notificationId));
+            }
+        } catch (err) {
+            console.error("Fout bij markeren als gelezen:", err);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        if (token) {
+            fetchNotifications();
+        } else {
+            setLoading(false);
+        }
+    }, [token, fetchNotifications]);
+
+    return (
+        <NotificationContext.Provider value={{
             notifications,
-            addNotification,
-            markAsRead,
-            markAllAsRead,
-            removeNotification,
-            unreadCount,
-        }, children: children }));
+            loading,
+            error,
+            refreshNotifications: fetchNotifications,
+            markAsRead
+        }}>
+            {children}
+        </NotificationContext.Provider>
+    );
 }
+
 export function useNotifications() {
     const context = useContext(NotificationContext);
     if (!context) {
