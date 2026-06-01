@@ -3,7 +3,7 @@ import { MovieOverview } from "./MovieOverview";
 import { CastSection } from "./CastSection";
 import { InfoCards } from "./InfoCards";
 import { RecommendationsSection } from "./RecommendationsSection";
-import { ReviewSection } from "../ReviewSection";
+import { ReviewSection } from "../review/ReviewSection";
 import { MovieSidebar } from "./MovieSidebar";
 
 export function MovieDetailContent({ movie, loadingRecommendations, recommendations }) {

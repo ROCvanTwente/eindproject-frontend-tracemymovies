@@ -1,5 +1,12 @@
 import React, { useMemo } from "react";
 import { useParams } from "react-router";
+import {
+    Heart, Plus, DollarSign, Globe, Calendar,
+    Clock, Eye, Share2, Loader2, User, ChevronRight, AlertCircle, RefreshCw,
+    Play, X
+} from "lucide-react";
+import { MovieCarousel } from "../components/MovieCarousel";
+import { ReviewSection } from "../components/review/ReviewSection";
 import { WatchLogModal } from "../components/WatchLogModal";
 import { ShareModal } from "../components/ShareModal";
 import { MovieHero } from "../components/movie/MovieHero";
