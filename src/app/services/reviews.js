@@ -2,7 +2,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const getReviewsVoorFilm = async (movieId) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/GetReviews?movieId=${movieId}`);
+        const response = await fetch(`${API_BASE_URL}/Review/GetReviews?movieId=${movieId}`);
         if (!response.ok) {
             throw new Error("Kon reviews niet ophalen");
         }
@@ -15,7 +15,7 @@ export const getReviewsVoorFilm = async (movieId) => {
 
 export const addReview = async (reviewData, token) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/AddReview`, {
+        const response = await fetch(`${API_BASE_URL}/Review/AddReview`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -37,7 +37,7 @@ export const addReview = async (reviewData, token) => {
 
 export const deleteReview = async (reviewId, token) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/DeleteReview?id=${reviewId}`, {
+        const response = await fetch(`${API_BASE_URL}/Review/DeleteReview?id=${reviewId}`, {
             method: "DELETE",
             headers: {
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -57,11 +57,11 @@ export const deleteReview = async (reviewId, token) => {
 
 export const getReviewById = async (reviewId, token) => {
     const candidates = [
-        `${API_BASE_URL}/GetReview?id=${reviewId}`,
-        `${API_BASE_URL}/GetReviewById?id=${reviewId}`,
-        `${API_BASE_URL}/Get?id=${reviewId}`,
-        `${API_BASE_URL}/GetReview?reviewId=${reviewId}`,
-        `${API_BASE_URL}/Get?reviewId=${reviewId}`,
+        `${API_BASE_URL}/Review/GetReview?id=${reviewId}`,
+        `${API_BASE_URL}/Review/GetReviewById?id=${reviewId}`,
+        `${API_BASE_URL}/Review/Get?id=${reviewId}`,
+        `${API_BASE_URL}/Review/GetReview?reviewId=${reviewId}`,
+        `${API_BASE_URL}/Review/Get?reviewId=${reviewId}`,
     ];
 
     for (const url of candidates) {
@@ -99,7 +99,7 @@ export const getReviewById = async (reviewId, token) => {
 
 export const toggleLikeReview = async (reviewId, token) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/ToggleLike`, {
+        const response = await fetch(`${API_BASE_URL}/Review/ToggleLike`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -134,7 +134,7 @@ export const toggleLikeReview = async (reviewId, token) => {
 
 export const addLikeReview = async (reviewId, token) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/AddLike?reviewId=${reviewId}`, {
+        const response = await fetch(`${API_BASE_URL}/Review/AddLike?reviewId=${reviewId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -168,7 +168,7 @@ export const addLikeReview = async (reviewId, token) => {
 
 export const removeLikeReview = async (reviewId, token) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/RemoveLike?reviewId=${reviewId}`, {
+        const response = await fetch(`${API_BASE_URL}/Review/RemoveLike?reviewId=${reviewId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -200,7 +200,7 @@ export const removeLikeReview = async (reviewId, token) => {
 
 export const reportReview = async (reviewId, reason, token) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/ReportReview`, {
+        const response = await fetch(`${API_BASE_URL}/Review/ReportReview`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -226,7 +226,7 @@ export const reportReview = async (reviewId, reason, token) => {
 
 export const updateReview = async (reviewId, reviewData, token) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/EditReview?id=${reviewId}`, {
+        const response = await fetch(`${API_BASE_URL}/Review/EditReview?id=${reviewId}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

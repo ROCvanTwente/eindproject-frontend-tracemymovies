@@ -94,7 +94,6 @@ export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingRevi
 
                     <div className="flex gap-3">
                         <button type="submit" className="flex-1 bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium font-heading transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#BFBCFC]/40">{existingReview ? 'Update Review' : 'Submit Review'}</button>
-                        {existingReview && (<button type="button" onClick={handleDelete} className="px-6 py-3 bg-[#FF61D2]/10 hover:bg-[#FF61D2]/20 text-[#FF61D2] rounded-xl font-medium transition-all border border-[#FF61D2]/30">Delete</button>)}
                         <button type="button" onClick={onClose} className="px-6 py-3 bg-[#151921] hover:bg-[#1E293B] text-[#F8FAFC] rounded-xl font-medium transition-all border border-[#BFBCFC]/15">Cancel</button>
                     </div>
                 </form>
