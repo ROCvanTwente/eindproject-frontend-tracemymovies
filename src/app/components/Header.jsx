@@ -11,7 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { Link, useNavigate } from "react-router";
+import { Link, NavLink, useNavigate, useSearchParams } from "react-router";
 
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
@@ -22,7 +22,12 @@ import { NotificationDropdown } from "./NotificationDropdown";
 import { WatchLogModal } from "./WatchLogModal";
 
 export function Header() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || "");
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get('q') || "");
+  }, [searchParams]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showWatchLogModal, setShowWatchLogModal] = useState(false);
@@ -95,7 +100,6 @@ export function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
     }
   };
 
@@ -169,44 +173,28 @@ export function Header() {
               </Link>
 
               <div className="hidden lg:flex gap-6">
-                <Link
-                  to="/"
-                  className="text-[#F8FAFC] hover:text-[#BFBCFC] transition-colors duration-200"
-                >
-                  Home
-                </Link>
-
-                <Link
-                  to="/movies"
-                  className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                >
-                  Movies
-                </Link>
-
-                {isAuthenticated && (
-                  <Fragment>
-                    <Link
-                      to="/the-queue"
-                      className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                    >
-                      Lists
-                    </Link>
-
-                    <Link
-                      to="/weekly-favorites"
-                      className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                    >
-                      Trends
-                    </Link>
-
-                    <Link
-                      to="/global-dna"
-                      className="text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
-                    >
-                      Community
-                    </Link>
-                  </Fragment>
-                )}
+                {[
+                  { to: "/", label: "Home", end: true },
+                  { to: "/movies", label: "Movies" },
+                  ...(isAuthenticated ? [
+                    { to: "/the-queue", label: "Lists" },
+                    { to: "/weekly-favorites", label: "Trends" },
+                    { to: "/global-dna", label: "Community" },
+                  ] : []),
+                ].map(({ to, label, end }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      isActive
+                        ? "text-[#F8FAFC] font-medium transition-colors duration-200"
+                        : "text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200"
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                ))}
               </div>
             </nav>
 
@@ -239,13 +227,17 @@ export function Header() {
                     <NotificationDropdown />
                   </div>
 
-                  <Link
+                  <NavLink
                     to="/messages"
-                    className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5 hidden md:block"
+                    className={({ isActive }) =>
+                      `p-2 transition-colors duration-200 rounded-lg hidden md:block ${
+                        isActive ? "text-[#F8FAFC] bg-white/10" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                      }`
+                    }
                     title="Messages"
                   >
                     <MessageCircle className="w-5 h-5" />
-                  </Link>
+                  </NavLink>
 
                   {/* LIKED DROPDOWN */}
                   <div
@@ -254,85 +246,108 @@ export function Header() {
                   >
                     <button
                       onClick={handleLikedDropdown}
-                      className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5"
-                      title="Liked"
+                      className={`p-2 transition-all duration-200 rounded-lg ${
+                        showLikedDropdown
+                          ? "text-[#FF61D2] bg-[#FF61D2]/10"
+                          : "text-[#94A3B8] hover:text-[#FF61D2] hover:bg-[#FF61D2]/10"
+                      }`}
+                      title="Liked Movies"
                     >
-                      <Heart  className="w-5 h-5" />
+                      <Heart
+                        className={`w-5 h-5 transition-all duration-200 ${
+                          showLikedDropdown ? "fill-[#FF61D2] scale-110" : ""
+                        }`}
+                      />
                     </button>
 
                     {showLikedDropdown && (
-                      <div className="absolute right-0 mt-2 w-80 bg-[#151921]/95 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl shadow-2xl overflow-hidden z-50">
-                        
+                      <div className="absolute right-0 mt-2 w-80 bg-[#151921]/95 backdrop-blur-xl border border-[#FF61D2]/20 rounded-2xl shadow-2xl shadow-[#FF61D2]/10 overflow-hidden z-50">
+
                         {/* HEADER */}
-                        <div className="px-4 py-3 border-b border-[#BFBCFC]/15">
-                          <h3 className="text-[#F8FAFC] font-semibold">
-                            Recently Liked
-                          </h3>
+                        <div className="px-4 py-3.5 border-b border-[#FF61D2]/15 flex items-center gap-2.5 bg-gradient-to-r from-[#FF61D2]/8 to-transparent">
+                          <div className="w-7 h-7 bg-[#FF61D2]/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />
+                          </div>
+                          <div>
+                            <h3 className="text-[#F8FAFC] font-semibold text-sm leading-none">
+                              Recently Liked
+                            </h3>
+                            <p className="text-[#94A3B8] text-xs mt-0.5">Your latest favorites</p>
+                          </div>
                         </div>
 
                         {/* CONTENT */}
-                        <div className="max-h-[320px] overflow-y-auto">
+                        <div className="max-h-[300px] overflow-y-auto">
                           {likedLoading ? (
-                            <div className="flex items-center justify-center py-10">
-                              <Loader2 className="w-5 h-5 animate-spin text-[#BFBCFC]" />
+                            <div className="flex flex-col items-center justify-center py-10 gap-2">
+                              <div className="relative w-8 h-8">
+                                <div className="absolute inset-0 rounded-full border-t-2 border-[#FF61D2] animate-spin" />
+                                <Heart className="absolute inset-0 m-auto w-3.5 h-3.5 text-[#FF61D2]/50" />
+                              </div>
+                              <p className="text-[#94A3B8] text-xs">Loading...</p>
                             </div>
                           ) : likedMovies.length === 0 ? (
-                            <div className="py-10 text-center text-[#94A3B8]">
-                              No liked movies yet
+                            <div className="py-10 text-center px-4">
+                              <Heart className="w-8 h-8 text-[#94A3B8]/30 mx-auto mb-2" />
+                              <p className="text-[#94A3B8] text-sm">No liked movies yet</p>
                             </div>
                           ) : (
                             likedMovies.map((movie) => (
                               <Link
                                 key={movie._id}
                                 to={`/movie/${movie.movieId}`}
-                                onClick={() =>
-                                  setShowLikedDropdown(false)
-                                }
-                                className="flex items-center gap-3 p-4 hover:bg-white/5 transition-colors border-b border-[#BFBCFC]/10 last:border-none"
+                                onClick={() => setShowLikedDropdown(false)}
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-[#FF61D2]/5 transition-colors border-b border-[#BFBCFC]/8 last:border-none group"
                               >
-                                <img
-                                  src={movie.poster}
-                                  alt={movie.title}
-                                  className="w-12 h-16 object-cover rounded-sm"
-                                />
-
+                                <div className="relative flex-shrink-0">
+                                  <img
+                                    src={movie.poster}
+                                    alt={movie.title}
+                                    className="w-10 h-14 object-cover rounded-lg border border-[#BFBCFC]/10 group-hover:border-[#FF61D2]/30 transition-colors"
+                                  />
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[#F8FAFC] font-medium truncate">
+                                  <p className="text-[#F8FAFC] font-medium text-sm truncate group-hover:text-[#FF61D2] transition-colors">
                                     {movie.title}
                                   </p>
-
-                                  <p className="text-[#94A3B8] text-sm">
-                                    {movie.year}
-                                  </p>
+                                  {movie.year && (
+                                    <p className="text-[#94A3B8] text-xs mt-0.5">
+                                      {movie.year}
+                                    </p>
+                                  )}
                                 </div>
+                                <Heart className="w-3.5 h-3.5 text-[#FF61D2]/40 fill-[#FF61D2]/40 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </Link>
                             ))
                           )}
                         </div>
 
                         {/* FOOTER */}
-                        <div className="p-3 border-t border-[#BFBCFC]/15">
+                        <div className="p-3 border-t border-[#FF61D2]/15">
                           <Link
                             to="/likedmoviespage"
-                            onClick={() =>
-                              setShowLikedDropdown(false)
-                            }
-                            className="block w-full text-center bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 text-[#BFBCFC] py-2.5 rounded-xl transition-all font-medium"
+                            onClick={() => setShowLikedDropdown(false)}
+                            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-[#FF61D2]/15 to-[#BFBCFC]/10 hover:from-[#FF61D2]/25 hover:to-[#BFBCFC]/15 text-[#FF61D2] py-2.5 rounded-xl transition-all font-medium text-sm border border-[#FF61D2]/20 hover:border-[#FF61D2]/35"
                           >
-                            View All
+                            <Heart className="w-3.5 h-3.5 fill-[#FF61D2]" />
+                            View All Liked Movies
                           </Link>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <Link
+                  <NavLink
                     to="/FriendPage"
-                    className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors duration-200 rounded-lg hover:bg-white/5 hidden md:block"
-                    title="test"
+                    className={({ isActive }) =>
+                      `p-2 transition-colors duration-200 rounded-lg hidden md:block ${
+                        isActive ? "text-[#F8FAFC] bg-white/10" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                      }`
+                    }
+                    title="Friends"
                   >
                     <Users className="w-5 h-5" />
-                  </Link>
+                  </NavLink>
 
                   <button
                     onClick={() => setShowWatchLogModal(true)}
@@ -386,46 +401,42 @@ export function Header() {
                         </p>
                       </div>
 
-                      <Link
-                        to="/profile"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        Account
-                      </Link>
-
-                      <Link
-                        to="/my-lists"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        My Lists
-                      </Link>
-
-                      <Link
-                        to="/my-profile"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        Profiel
-                      </Link>
-
-                      <Link
-                        to="/messages"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors"
-                      >
-                        Messages
-                      </Link>
+                      {[
+                        { to: "/my-profile", label: "Profiel" },
+                        { to: "/my-lists", label: "My Lists" },
+                        { to: "/profile", label: "Account" },
+                        { to: "/messages", label: "Messages" },
+                      ].map(({ to, label }) => (
+                        <NavLink
+                          key={to}
+                          to={to}
+                          onClick={() => setShowUserMenu(false)}
+                          className={({ isActive }) =>
+                            `block px-4 py-2 transition-colors ${
+                              isActive
+                                ? "bg-[#BFBCFC]/15 text-[#F8FAFC] font-medium"
+                                : "text-[#F8FAFC] hover:bg-[#BFBCFC]/10"
+                            }`
+                          }
+                        >
+                          {label}
+                        </NavLink>
+                      ))}
 
                       {user.isAdmin && (
-                        <Link
+                        <NavLink
                           to="/admin"
                           onClick={() => setShowUserMenu(false)}
-                          className="block px-4 py-2 text-[#44FFFF] hover:bg-[#44FFFF]/10 transition-colors font-medium"
+                          className={({ isActive }) =>
+                            `block px-4 py-2 transition-colors font-medium ${
+                              isActive
+                                ? "bg-[#44FFFF]/15 text-[#44FFFF]"
+                                : "text-[#44FFFF] hover:bg-[#44FFFF]/10"
+                            }`
+                          }
                         >
                           Admin Panel
-                        </Link>
+                        </NavLink>
                       )}
 
                       {/* LOGOUT BUTTON */}

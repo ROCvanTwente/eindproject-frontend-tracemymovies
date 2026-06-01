@@ -53,7 +53,7 @@ export async function getTrending(timeWindow = 'week', region = 'NL') {
         return getMockMovies();
     }
 }
-
+ 
 // Get popular movies
 export async function getPopular(region = 'NL', page = 1) {
     try {
@@ -64,7 +64,7 @@ export async function getPopular(region = 'NL', page = 1) {
         return getMockMovies();
     }
 }
-
+ 
 // Get top rated movies
 export async function getTopRated(region = 'NL', page = 1) {
     try {
@@ -75,7 +75,7 @@ export async function getTopRated(region = 'NL', page = 1) {
         return getMockMovies();
     }
 }
-
+ 
 // Get upcoming movies
 export async function getUpcoming(region = 'NL', page = 1) {
     try {
@@ -186,5 +186,146 @@ export async function getWatchProviders(movieId, region = 'NL') {
         flatrate: providers.flatrate || [],
         rent: providers.rent || [],
         buy: providers.buy || [],
+    };
+}
+ 
+// Mock data
+function getMockMovies() {
+    return [
+        {
+            id: 1,
+            title: 'The Shawshank Redemption',
+            original_title: 'The Shawshank Redemption',
+            overview: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.',
+            poster_path: '/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg',
+            backdrop_path: '/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg',
+            vote_average: 8.7,
+            vote_count: 25000,
+            release_date: '1994-09-23',
+            genre_ids: [18, 80],
+            popularity: 95.5,
+        },
+        {
+            id: 2,
+            title: 'The Godfather',
+            original_title: 'The Godfather',
+            overview: 'The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.',
+            poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
+            backdrop_path: '/tmU7GeKVybMWFButWEGl2M4GeiP.jpg',
+            vote_average: 8.7,
+            vote_count: 18500,
+            release_date: '1972-03-14',
+            genre_ids: [18, 80],
+            popularity: 92.3,
+        },
+        {
+            id: 3,
+            title: 'The Dark Knight',
+            original_title: 'The Dark Knight',
+            overview: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests.',
+            poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+            backdrop_path: '/hkBaDkMWbLaf8B1lsWsKX7Ew3Xq.jpg',
+            vote_average: 8.5,
+            vote_count: 30000,
+            release_date: '2008-07-16',
+            genre_ids: [28, 80, 18],
+            popularity: 98.7,
+        },
+        {
+            id: 4,
+            title: 'Inception',
+            original_title: 'Inception',
+            overview: 'A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea.',
+            poster_path: '/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg',
+            backdrop_path: '/s3TBrRGB1iav7gFOCNx3H31MoES.jpg',
+            vote_average: 8.4,
+            vote_count: 32000,
+            release_date: '2010-07-15',
+            genre_ids: [28, 878, 53],
+            popularity: 94.2,
+        },
+        {
+            id: 5,
+            title: 'The Matrix',
+            original_title: 'The Matrix',
+            overview: 'A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.',
+            poster_path: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
+            backdrop_path: '/icmmSD4vTTDKOq2vvdulafOGw93.jpg',
+            vote_average: 8.2,
+            vote_count: 24000,
+            release_date: '1999-03-30',
+            genre_ids: [28, 878],
+            popularity: 91.1,
+        },
+        {
+            id: 6,
+            title: 'Pulp Fiction',
+            original_title: 'Pulp Fiction',
+            overview: 'The lives of two mob hitmen, a boxer, a gangster and his wife intertwine in four tales of violence and redemption.',
+            poster_path: '/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
+            backdrop_path: '/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg',
+            vote_average: 8.5,
+            vote_count: 27000,
+            release_date: '1994-09-10',
+            genre_ids: [80, 53],
+            popularity: 88.4,
+        },
+        {
+            id: 7,
+            title: 'Forrest Gump',
+            original_title: 'Forrest Gump',
+            overview: 'The presidencies of Kennedy and Johnson, the Vietnam War, and other historical events unfold from the perspective of an Alabama man.',
+            poster_path: '/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg',
+            backdrop_path: '/7c9UVPPiTPltouxRVY6N9uUaHwS.jpg',
+            vote_average: 8.4,
+            vote_count: 26000,
+            release_date: '1994-06-23',
+            genre_ids: [18, 10749],
+            popularity: 87.6,
+        },
+        {
+            id: 8,
+            title: 'Goodfellas',
+            original_title: 'Goodfellas',
+            overview: 'The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners.',
+            poster_path: '/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg',
+            backdrop_path: '/sw7mordbZxgITU877yTpZCud90M.jpg',
+            vote_average: 8.5,
+            vote_count: 12000,
+            release_date: '1990-09-12',
+            genre_ids: [18, 80],
+            popularity: 85.3,
+        },
+    ];
+}
+function getMockMovieDetail() {
+    return {
+        id: 1,
+        title: 'Inception',
+        original_title: 'Inception',
+        tagline: 'Your mind is the scene of the crime',
+        overview: 'A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea.',
+        poster_path: '/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg',
+        backdrop_path: '/s3TBrRGB1iav7gFOCNx3H31MoES.jpg',
+        release_date: '2010-07-15',
+        runtime: 148,
+        vote_average: 8.4,
+        vote_count: 32000,
+        budget: 160000000,
+        revenue: 825532764,
+        status: 'Released',
+        genres: [{ id: 28, name: 'Action' }, { id: 878, name: 'Sci-Fi' }],
+        original_language: 'en',
+        production_countries: [{ name: 'United States' }, { name: 'United Kingdom' }],
+        credits: {
+            cast: [
+                { id: 1, name: 'Leonardo DiCaprio', character: 'Cobb', profile_path: '/wo2hJpn04vbtmh0B9utCFdsQhxM.jpg' },
+                { id: 2, name: 'Joseph Gordon-Levitt', character: 'Arthur', profile_path: '/z2FA8js799xqtfiFjBTicFYdfk.jpg' },
+            ],
+            crew: [
+                { id: 1, name: 'Christopher Nolan', job: 'Director' },
+                { id: 2, name: 'Christopher Nolan', job: 'Writer' },
+            ],
+        },
     };
 }
