@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
 import { Heart, Search, Film, SortAsc } from "lucide-react";
 import { Link } from "react-router";
@@ -10,6 +11,7 @@ const LikedMoviesPage = () => {
   const [search, setSearch] = useState("");
   const [sortAZ, setSortAZ] = useState(false);
   const auth = useAuth();
+  const { refreshKey } = useRefresh();
 
   const token = useMemo(
     () =>
@@ -49,7 +51,7 @@ const LikedMoviesPage = () => {
       }
     };
     if (token) fetchAllLikedMovies();
-  }, [token]);
+  }, [token, refreshKey]);
 
   const filtered = useMemo(() => {
     let result = likedMovies;
@@ -218,14 +220,14 @@ const LikedMoviesPage = () => {
 /* ── MOVIE CARD ── */
 const MovieCard = ({ movie, index }) => (
   <Link to={`/movie/${movie.movieId}`} className="group relative block">
-    <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border border-white/5 transition-all duration-300 group-hover:border-[#FF61D2]/35 group-hover:shadow-xl group-hover:shadow-[#FF61D2]/12 group-hover:scale-[1.04]">
+    <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border border-white/5 transition-all duration-300 group-hover:border-[#FF61D2]/35 group-hover:shadow-xl group-hover:shadow-[#FF61D2]/12">
 
       {/* Poster */}
       {movie.poster ? (
         <img
           src={movie.poster}
           alt={movie.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover"
           loading="lazy"
         />
       ) : (

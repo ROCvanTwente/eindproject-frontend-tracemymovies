@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { useRefresh } from "../context/RefreshContext";
 
 export function useMovieDetail(id, token) {
+    const { triggerRefresh } = useRefresh();
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -140,6 +142,7 @@ export function useMovieDetail(id, token) {
 
                 if (response.ok) {
                     setIsWatched(false);
+                    triggerRefresh();
                     toast.success("Verwijderd van bekeken films");
                 }
             } else {
@@ -157,6 +160,7 @@ export function useMovieDetail(id, token) {
 
                 if (response.ok) {
                     setIsWatched(true);
+                    triggerRefresh();
                     toast.success("Gemarkeerd als bekeken");
                 }
             }
@@ -191,6 +195,7 @@ export function useMovieDetail(id, token) {
 
             if (response.ok) {
                 setIsFavorite(nextLikeState);
+                triggerRefresh();
                 toast.success(
                     nextLikeState ? "Toegevoegd aan favorieten" : "Verwijderd uit favorieten"
                 );
