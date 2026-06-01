@@ -6,7 +6,7 @@ import {
     Play, X
 } from "lucide-react";
 import { MovieCarousel } from "../components/MovieCarousel";
-import { ReviewSection } from "../components/ReviewSection";
+import { ReviewSection } from "../components/review/ReviewSection";
 import { WatchLogModal } from "../components/WatchLogModal";
 import { ShareModal } from "../components/ShareModal";
 import { MovieOverview } from "../components/movie/MovieOverview";

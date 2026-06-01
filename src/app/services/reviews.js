@@ -166,6 +166,38 @@ export const addLikeReview = async (reviewId, token) => {
     }
 };
 
+export const removeLikeReview = async (reviewId, token) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/RemoveLike?reviewId=${reviewId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        });
+
+        let payload = null;
+        try {
+            payload = await response.json();
+        } catch (e) {
+            try {
+                payload = await response.text();
+            } catch (_) {
+                payload = null;
+            }
+        }
+
+        if (!response.ok) {
+            throw new Error("Kon like niet verwijderen");
+        }
+
+        return payload;
+    } catch (error) {
+        console.error("Fout bij verwijderen like:", error);
+        return null;
+    }
+};
+
 export const reportReview = async (reviewId, reason, token) => {
     try {
         const response = await fetch(`${API_BASE_URL}/ReportReview`, {

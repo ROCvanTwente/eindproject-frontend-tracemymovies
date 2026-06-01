@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Star, AlertCircle, Send, MoreVertical, Flag, Trash, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
-import { addReview, getReviewsVoorFilm, addLikeReview, deleteReview, reportReview, getReviewById } from "../../services/reviews";
+import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteReview, reportReview, getReviewById } from "../../services/reviews";
 import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
 import { ReviewModal } from "./ReviewModal";
@@ -119,7 +119,13 @@ export function ReviewSection({ movieId, movieTitle }) {
         };
     }, [movieId]);
 
-    const normalizedReviews = useMemo(() => reviews || [], [reviews]);
+    const normalizedReviews = useMemo(() => {
+        return [...(reviews || [])].sort((a, b) => {
+            const likesA = a.likes ?? a.likeCount ?? 0;
+            const likesB = b.likes ?? b.likeCount ?? 0;
+            return likesB - likesA;
+        });
+    }, [reviews]);
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -154,7 +160,38 @@ export function ReviewSection({ movieId, movieTitle }) {
 
         const currentlyLiked = hasUserLikedReview(review, reviewKey);
         if (currentlyLiked) {
-            toast.info("You have already liked this review.");
+            setLikedMap((prev) => ({ ...prev, [reviewKey]: false }));
+            setReviews((prev) => prev.map((r, index) => {
+                const key = getReviewKey(r, index);
+                if (key !== reviewKey) return r;
+                return { ...r, likes: Math.max(0, (r.likes ?? r.likeCount ?? 0) - 1) };
+            }));
+
+            const res = await removeLikeReview(review.id ?? review.reviewId ?? reviewKey, token);
+
+            if (!res) {
+                setLikedMap((prev) => ({ ...prev, [reviewKey]: true }));
+                setUserLikedReview(review, true);
+                setReviews((prev) => prev.map((r, index) => {
+                    const key = getReviewKey(r, index);
+                    if (key !== reviewKey) return r;
+                    return { ...r, likes: (r.likes ?? r.likeCount ?? 0) + 1 };
+                }));
+                toast.error("Kon like niet verwijderen.");
+                return;
+            }
+
+            const nextLikes = res?.currentLikes ?? res?.likes ?? res?.likeCount;
+            if (typeof nextLikes === "number") {
+                setReviews((prev) => prev.map((r, index) => {
+                    const key = getReviewKey(r, index);
+                    if (key !== reviewKey) return r;
+                    return { ...r, likes: nextLikes };
+                }));
+            }
+
+            setUserLikedReview(review, false);
+            try { await refreshReviews(); } catch { /* ignore refresh failures */ }
             return;
         }
 
