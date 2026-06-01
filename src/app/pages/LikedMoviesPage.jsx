@@ -144,7 +144,7 @@ const LikedMoviesPage = () => {
                   {likedMovies.length}
                 </p>
                 <p className="text-[#94A3B8] text-[10px] mt-0.5">
-                  {likedMovies.length === 1 ? "film" : "films"}
+                  {likedMovies.length === 1 ? "movie" : "movies"}
                 </p>
               </div>
             )}
