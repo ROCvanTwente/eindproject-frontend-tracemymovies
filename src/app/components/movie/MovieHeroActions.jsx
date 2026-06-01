@@ -39,7 +39,7 @@ export function MovieHeroActions({
         disabled={isSavingLike}
         className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg flex items-center gap-1.5 text-xs md:text-sm transition-all ${
           isFavorite
-            ? "bg-[#44FFFF] text-[#000]"
+            ? "bg-[#FF61D2] text-[#000]"
             : "bg-[#151921]/70 text-[#F8FAFC] border border-[#BFBCFC]/20"
         }`}
       >
