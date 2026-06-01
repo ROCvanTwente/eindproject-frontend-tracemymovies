@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://localhost:7245/api/Review";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const getReviewsVoorFilm = async (movieId) => {
     try {
