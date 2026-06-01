@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Star, AlertTriangle } from 'lucide-react';
-import { updateReview, deleteReview } from "../services/reviews";
-import { getToken } from "../services/auth";
+import { updateReview, deleteReview } from "../../services/reviews";
+import { getToken } from "../../services/auth";
 import { toast } from 'sonner';
 
 export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingReview }) {

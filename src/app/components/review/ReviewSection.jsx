@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Star, AlertCircle, Send, MoreVertical, Flag, Trash, Edit } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "../context/AuthContext";
-import { addReview, getReviewsVoorFilm, addLikeReview, deleteReview, reportReview, getReviewById } from "../services/reviews";
-import { getToken, getCurrentUserId } from "../services/auth";
+import { useAuth } from "../../context/AuthContext";
+import { addReview, getReviewsVoorFilm, addLikeReview, deleteReview, reportReview, getReviewById } from "../../services/reviews";
+import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
 import { ReviewModal } from "./ReviewModal";
 
