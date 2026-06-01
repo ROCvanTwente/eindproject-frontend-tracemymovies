@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Star, AlertCircle, Send, MoreVertical, Flag, Trash, Edit } from "lucide-react";
+import { Star, AlertCircle, Send, MoreVertical, Flag, Trash, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteReview, reportReview, getReviewById } from "../../services/reviews";
@@ -126,6 +126,22 @@ export function ReviewSection({ movieId, movieTitle }) {
             return likesB - likesA;
         });
     }, [reviews]);
+
+    const REVIEWS_PER_PAGE = 10;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.max(1, Math.ceil(normalizedReviews.length / REVIEWS_PER_PAGE));
+
+    const paginatedReviews = useMemo(() => {
+        const startIndex = (currentPage - 1) * REVIEWS_PER_PAGE;
+        return normalizedReviews.slice(startIndex, startIndex + REVIEWS_PER_PAGE);
+    }, [normalizedReviews, currentPage]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [totalPages, currentPage]);
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -451,7 +467,9 @@ export function ReviewSection({ movieId, movieTitle }) {
             ) : normalizedReviews.length === 0 ? (
                 <div className="text-[#94A3B8] text-sm">Nog geen reviews voor deze film.</div>
             ) : (
-                normalizedReviews.map((review, index) => {
+                <>
+                {paginatedReviews.map((review, pageIndex) => {
+                    const index = (currentPage - 1) * REVIEWS_PER_PAGE + pageIndex;
                     const author = review.user?.userName || review.userName || (review.userId ? `User #${review.userId}` : "Anonymous");
                     const content = review.review || review.content || review.reviewText || review.text || "";
                     const rating = review.rating ?? review.score ?? 0;
@@ -590,6 +608,27 @@ export function ReviewSection({ movieId, movieTitle }) {
                         </div>
                     );
                 })
+                }
+                <div className="flex justify-center items-center gap-4 mt-6">
+                    <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg bg-[#151921] border border-[#BFBCFC]/15 text-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1E293B] transition-colors flex items-center justify-center"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-[#94A3B8] text-sm font-medium">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg bg-[#151921] border border-[#BFBCFC]/15 text-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1E293B] transition-colors flex items-center justify-center"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
+                </>
             )}
         </div>
     );
