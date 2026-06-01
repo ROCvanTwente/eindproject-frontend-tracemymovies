@@ -191,3 +191,33 @@ export const reportReview = async (reviewId, reason, token) => {
         return null;
     }
 };
+
+export const updateReview = async (reviewId, reviewData, token) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/EditReview?id=${reviewId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(reviewData),
+        });
+
+        if (!response.ok) {
+            throw new Error("Could not update review");
+        }
+
+        try {
+            return await response.json();
+        } catch (e) {
+            try {
+                return await response.text();
+            } catch (_) {
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error("Error updating review:", error);
+        return null;
+    }
+};

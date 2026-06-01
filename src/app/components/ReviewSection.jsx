@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Star, AlertCircle, Send, MoreVertical, Flag, Trash } from "lucide-react";
+import { Star, AlertCircle, Send, MoreVertical, Flag, Trash, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { addReview, getReviewsVoorFilm, addLikeReview, deleteReview, reportReview, getReviewById } from "../services/reviews";
 import { getToken, getCurrentUserId } from "../services/auth";
+import { DeleteReviewModal } from "./DeleteReviewModal";
+import { ReviewModal } from "./ReviewModal";
 
 export function ReviewSection({ movieId, movieTitle }) {
     const auth = useAuth();
@@ -24,6 +26,35 @@ export function ReviewSection({ movieId, movieTitle }) {
 
     const MAX_REVIEW_LENGTH = 500;
 
+    const getLikeStorageKey = (reviewId) => {
+        if (currentUserId == null || reviewId == null) return null;
+        return `review-liked:${currentUserId}:${reviewId}`;
+    };
+
+    const hasUserLikedReview = (review, reviewKey) => {
+        const reviewId = review?.id ?? review?.reviewId ?? reviewKey;
+        const storageKey = getLikeStorageKey(reviewId);
+
+        if (storageKey && localStorage.getItem(storageKey) === "true") {
+            return true;
+        }
+
+        return !!likedMap[reviewKey];
+    };
+
+    const setUserLikedReview = (review, isLiked) => {
+        const reviewId = review?.id ?? review?.reviewId;
+        const storageKey = getLikeStorageKey(reviewId);
+
+        if (storageKey) {
+            if (isLiked) {
+                localStorage.setItem(storageKey, "true");
+            } else {
+                localStorage.removeItem(storageKey);
+            }
+        }
+    };
+
     const getReviewKey = (review, index = 0) => {
         if (review?.id != null) return `review-${review.id}`;
         if (review?.reviewId != null) return `review-${review.reviewId}`;
@@ -42,7 +73,10 @@ export function ReviewSection({ movieId, movieTitle }) {
 
         const seeded = {};
         loaded.forEach((r, index) => {
-            seeded[getReviewKey(r, index)] = !!(r.userLiked ?? r.likedByCurrentUser ?? r.isLiked ?? false);
+            const reviewKey = getReviewKey(r, index);
+            const reviewId = r?.id ?? r?.reviewId;
+            const storageKey = getLikeStorageKey(reviewId);
+            seeded[reviewKey] = !!(r.userLiked ?? r.likedByCurrentUser ?? r.isLiked ?? false) || (storageKey ? localStorage.getItem(storageKey) === "true" : false);
         });
         setLikedMap(seeded);
     };
@@ -64,7 +98,10 @@ export function ReviewSection({ movieId, movieTitle }) {
 
                     const seeded = {};
                     loaded.forEach((r, index) => {
-                        seeded[getReviewKey(r, index)] = !!(r.userLiked ?? r.likedByCurrentUser ?? r.isLiked ?? false);
+                        const reviewKey = getReviewKey(r, index);
+                        const reviewId = r?.id ?? r?.reviewId;
+                        const storageKey = getLikeStorageKey(reviewId);
+                        seeded[reviewKey] = !!(r.userLiked ?? r.likedByCurrentUser ?? r.isLiked ?? false) || (storageKey ? localStorage.getItem(storageKey) === "true" : false);
                     });
                     setLikedMap(seeded);
                 }
@@ -84,15 +121,40 @@ export function ReviewSection({ movieId, movieTitle }) {
 
     const normalizedReviews = useMemo(() => reviews || [], [reviews]);
 
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState(null);
+    
+
+    const openDeleteModal = (review, reviewKey) => {
+        setDeleteTarget({ review, reviewKey });
+        setDeleteModalOpen(true);
+        setOpenMenuKey(null);
+    };
+
+    const openEditModal = (review) => {
+        setEditTarget(review);
+        setEditModalOpen(true);
+        setOpenMenuKey(null);
+    };
+
+    const closeDeleteModal = () => {
+        setDeleteModalOpen(false);
+        setDeleteTarget(null);
+    };
+
+    
+
     const handleToggleLike = async (review, reviewKey) => {
-        if (!token) {
-            toast.error("Log in om een review te liken.");
+        if (!currentUserId || !token) {
+            toast.error("Log in to like a review.");
             return;
         }
 
-        const currentlyLiked = !!likedMap[reviewKey];
+        const currentlyLiked = hasUserLikedReview(review, reviewKey);
         if (currentlyLiked) {
-            toast.info("Je hebt dit al geliked.");
+            toast.info("You have already liked this review.");
             return;
         }
 
@@ -107,6 +169,7 @@ export function ReviewSection({ movieId, movieTitle }) {
 
         if (!res) {
             setLikedMap((prev) => ({ ...prev, [reviewKey]: false }));
+            setUserLikedReview(review, false);
             setReviews((prev) => prev.map((r, index) => {
                 const key = getReviewKey(r, index);
                 if (key !== reviewKey) return r;
@@ -115,6 +178,18 @@ export function ReviewSection({ movieId, movieTitle }) {
             toast.error("Kon like niet bijwerken.");
             return;
         }
+
+        const nextLikes = res?.currentLikes ?? res?.likes ?? res?.likeCount;
+        if (typeof nextLikes === "number") {
+            setReviews((prev) => prev.map((r, index) => {
+                const key = getReviewKey(r, index);
+                if (key !== reviewKey) return r;
+                return { ...r, likes: nextLikes };
+            }));
+        }
+
+        setUserLikedReview(review, true);
+        setLikedMap((prev) => ({ ...prev, [reviewKey]: true }));
 
         try {
             await refreshReviews();
@@ -153,7 +228,7 @@ export function ReviewSection({ movieId, movieTitle }) {
 
         const latestOwnerId = getReviewOwnerId(latest);
         if (!currentUserId || latestOwnerId == null || String(latestOwnerId) !== String(currentUserId)) {
-            toast.error(`Je kunt alleen je eigen review verwijderen. (owner: ${latestOwnerId ?? 'nvt'}, jouw id: ${currentUserId ?? 'nvt'})`);
+            toast.error("Je kunt alleen je eigen review verwijderen.");
             return false;
         }
 
@@ -172,6 +247,7 @@ export function ReviewSection({ movieId, movieTitle }) {
             delete next[reviewKey];
             return next;
         });
+        setUserLikedReview(review, false);
         setRevealedSpoilers((prev) => {
             const next = { ...prev };
             delete next[reviewKey];
@@ -315,20 +391,20 @@ export function ReviewSection({ movieId, movieTitle }) {
                                 onChange={(e) => setContainsSpoilers(e.target.checked)}
                                 className="w-4 h-4 rounded border-[#BFBCFC]/30 bg-[#0B0E14] checked:bg-[#FF61D2] focus:ring-2 focus:ring-[#FF61D2]/20"
                             />
-                            <label htmlFor="spoilers" className="text-[#94A3B8] text-sm flex items-center gap-2">
+                                <label htmlFor="spoilers" className="text-[#94A3B8] text-sm flex items-center gap-2">
                                 <AlertCircle className="w-4 h-4 text-[#FF61D2]" />
                                 This review contains spoilers
                             </label>
                         </div>
 
-                        <button
-                            onClick={handleSubmitReview}
-                            disabled={isSubmitting}
-                            className="w-full bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#BFBCFC]/40 flex items-center justify-center gap-2"
-                        >
-                            <Send className="w-4 h-4" />
-                            {isSubmitting ? "Submitting..." : "Submit Review"}
-                        </button>
+                            <button
+                                onClick={handleSubmitReview}
+                                disabled={isSubmitting}
+                                className="w-full bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#BFBCFC]/40 flex items-center justify-center gap-2"
+                            >
+                                <Send className="w-4 h-4" />
+                                {isSubmitting ? "Submitting..." : "Submit Review"}
+                            </button>
                     </div>
                 )}
             </div>
@@ -344,8 +420,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                     const rating = review.rating ?? review.score ?? 0;
                     const spoiler = review.spoiler ?? review.containsSpoilers ?? review.containSpoilers ?? review.containSpoiler ?? false;
                     const likes = review.likes ?? review.likeCount ?? 0;
-                    const reviewOwnerId = getReviewOwnerId(review);
-                    const canDeleteReview = currentUserId != null && reviewOwnerId != null && String(reviewOwnerId) === String(currentUserId);
+                    // ownership is verified when attempting delete; do not expose IDs in the UI
                     const reviewKey = getReviewKey(review, index);
 
                     const toggleReveal = (key) => {
@@ -388,22 +463,43 @@ export function ReviewSection({ movieId, movieTitle }) {
 
                                         {openMenuKey === reviewKey && (
                                             <div className="absolute right-0 top-9 z-20 w-56 rounded-2xl border border-[#BFBCFC]/15 bg-[#151921] shadow-2xl shadow-black/40 p-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={async () => { await handleDeleteReview(review, reviewKey); }}
-                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#FF61D2] hover:bg-[#1E2230] transition-colors"
-                                                >
-                                                    <Trash className="w-4 h-4 text-[#FF61D2]/90" />
-                                                    Delete
-                                                </button>
+                                                {(() => {
+                                                    const reviewOwnerId = getReviewOwnerId(review);
+                                                    const canDeleteReview = currentUserId != null && reviewOwnerId != null && String(reviewOwnerId) === String(currentUserId);
+                                                    return canDeleteReview ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openDeleteModal(review, reviewKey)}
+                                                            className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#FF61D2] hover:bg-[#1E2230] transition-colors"
+                                                        >
+                                                            <Trash className="w-4 h-4 text-[#FF61D2]/90" />
+                                                            Delete
+                                                        </button>
+                                                    ) : null;
+                                                })()}
+                                                {(() => {
+                                                    const reviewOwnerId = getReviewOwnerId(review);
+                                                    const canEditReview = currentUserId != null && reviewOwnerId != null && String(reviewOwnerId) === String(currentUserId);
+                                                    return canEditReview ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEditModal(review)}
+                                                            className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#BFBCFC] hover:bg-[#1E2230] transition-colors"
+                                                            aria-label="Bewerk review"
+                                                        >
+                                                            <Edit className="w-4 h-4 text-[#BFBCFC]" />
+                                                            Bewerken
+                                                        </button>
+                                                    ) : null;
+                                                })()}
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleReportReview(review, reviewKey)}
-                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#F8FAFC] hover:bg-[#1E2230] transition-colors"
+                                                    onClick={() => toast(`Komt binnenkort — ik wil dit later doen.`, { duration: 4000 })}
+                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#94A3B8] bg-[#0B0E14] cursor-default"
                                                 >
-                                                    <Flag className="w-4 h-4 text-[#F8FAFC]/80" />
-                                                    Report
+                                                    <Flag className="w-4 h-4 text-[#94A3B8]" />
+                                                    Report (Komt binnenkort)
                                                 </button>
                                             </div>
                                         )}
@@ -414,10 +510,32 @@ export function ReviewSection({ movieId, movieTitle }) {
 
                             {spoiler && (
                                 <div className="mb-2 inline-flex items-center gap-1 bg-[#FF61D2]/10 border border-[#FF61D2]/30 text-[#FF61D2] px-2 py-1 rounded text-xs font-medium">
-                                    <AlertCircle className="w-3 h-3" />
-                                    Contains Spoilers
+                                        <AlertCircle className="w-3 h-3" />
+                                        Contains Spoilers
                                 </div>
                             )}
+                            <DeleteReviewModal
+                                isOpen={deleteModalOpen}
+                                onClose={closeDeleteModal}
+                                reviewAuthor={deleteTarget?.review.user?.userName || deleteTarget?.review.userName || 'Anonymous'}
+                                reviewContent={deleteTarget?.review.review || deleteTarget?.review.content || deleteTarget?.review.reviewText || deleteTarget?.review.text || ''}
+                                reviewId={deleteTarget?.review.id ?? deleteTarget?.review.reviewId}
+                                onDeleted={async () => { await refreshReviews(); }}
+                            />
+
+                            <ReviewModal
+                                isOpen={editModalOpen}
+                                onClose={() => setEditModalOpen(false)}
+                                existingReview={editTarget}
+                                movieTitle={movieTitle}
+                                onSaved={async () => {
+                                    await refreshReviews();
+                                    setEditModalOpen(false);
+                                    toast.success("Review bijgewerkt.");
+                                }}
+                            />
+
+                            
 
                             {spoiler && !revealedSpoilers[reviewKey] ? (
                                 <div className="relative">
