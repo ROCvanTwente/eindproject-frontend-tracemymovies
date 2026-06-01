@@ -14,7 +14,6 @@
   display: block;
   margin: 0;
   padding: 0;
-  transition: height 0.3s ease;
 }
 
 .slick-track {
@@ -69,9 +68,14 @@
   opacity: 1;
 }
 
+/* Smooth scrolling */
+.slick-list {
+  transition: height 0.3s ease;
+}
+
 /* Focus states for accessibility */
 .slick-slide:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid #BFBCFC;
   outline-offset: 4px;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
 }

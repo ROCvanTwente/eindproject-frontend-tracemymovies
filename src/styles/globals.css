@@ -1,32 +1,17 @@
-/* Custom Interactive Scrollbars */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155; /* slate-700 */
-  border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #4f46e5; /* indigo-600 */
-}
-
-/* Consolidated Ambient Cinematic Glow Orbs */
-.ambient-glow-accent {
-  position: absolute;
-  pointer-events: none;
-  border-radius: 9999px;
-  background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
-  filter: blur(150px);
-}
-
-.ambient-glow-primary {
-  position: absolute;
-  pointer-events: none;
-  border-radius: 9999px;
-  background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
-  filter: blur(160px);
+/* Add this to your global CSS file */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155; /* slate-700 */
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #4f46e5; /* indigo-600 */
+  }
 }
