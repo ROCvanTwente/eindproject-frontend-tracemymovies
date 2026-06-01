@@ -27,9 +27,11 @@ export function UserProfilePage() {
   const navigate = useNavigate();
 
   const [favoriteMovies, setFavoriteMovies] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [likedMoviesCount, setLikedMoviesCount] = useState(0);
   const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -74,6 +76,8 @@ export function UserProfilePage() {
         setFavoriteMovies(movies.filter(Boolean));
       } catch (error) {
         console.error("Error fetching favorite movies:", error);
+      } finally {
+        setFavoritesLoading(false);
       }
     };
     fetchFavorites();
@@ -87,12 +91,12 @@ export function UserProfilePage() {
         const token = getToken();
         if (!token) return;
         const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMovies`,
-          { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+          `${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMoviesCount`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         if (!res.ok) return;
         const data = await res.json();
-        setLikedMoviesCount(Array.isArray(data) ? data.length : 0);
+        setLikedMoviesCount(data.count ?? 0);
       } catch (error) {
         console.error("Error fetching liked movies count:", error);
       }
@@ -146,6 +150,8 @@ export function UserProfilePage() {
         setRecentActivity(sorted);
       } catch (error) {
         console.error("Error fetching recent activity:", error);
+      } finally {
+        setActivityLoading(false);
       }
     };
     fetchRecentActivity();
@@ -295,7 +301,7 @@ export function UserProfilePage() {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {Array.from({ length: 4 }).map((_, i) => {
-                  const movie = favoriteMovies[i];
+                  const movie = favoritesLoading ? undefined : favoriteMovies[i];
                   return movie ? (
                     <div
                       key={movie.id}
@@ -316,6 +322,8 @@ export function UserProfilePage() {
                         </button>
                       )}
                     </div>
+                  ) : favoritesLoading ? (
+                    <div key={`skel-${i}`} className="w-full aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
                   ) : isOwnProfile ? (
                     <button
                       key={`empty-${i}`}
@@ -354,7 +362,13 @@ export function UserProfilePage() {
                 )}
               </div>
 
-              {recentActivity.length === 0 ? (
+              {activityLoading ? (
+                <div className="grid grid-cols-4 gap-3">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
+                  ))}
+                </div>
+              ) : recentActivity.length === 0 ? (
                 <p className="text-[#94A3B8] text-sm">Geen recente activiteit gevonden.</p>
               ) : (
                 <div className="grid grid-cols-4 gap-3">
