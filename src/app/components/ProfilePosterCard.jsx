@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Eye, Heart, Film } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
+import { toast } from "sonner";
 
 export function ProfilePosterCard({
   movieId,
@@ -29,7 +30,6 @@ export function ProfilePosterCard({
   const [isWatched, setIsWatched] = useState(isWatchedProp ?? false);
   const [isLiked, setIsLiked] = useState(isLikedProp ?? false);
   const [hasActivity, setHasActivity] = useState(hasActivityProp ?? false);
-  const [notif, setNotif] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Fetch status if not provided as props
@@ -51,11 +51,6 @@ export function ProfilePosterCard({
     if (token && movieId) fetchStatus();
   }, [movieId, token, isWatchedProp]);
 
-  const showNotif = () => {
-    setNotif(true);
-    setTimeout(() => setNotif(false), 3000);
-  };
-
   const handleEye = async (e) => {
     e.stopPropagation();
     if (saving) return;
@@ -63,8 +58,7 @@ export function ProfilePosterCard({
     setSaving(true);
     try {
       if (isWatched && hasActivity) {
-        // Has diary log entries — can't remove, show notification
-        showNotif();
+        toast.error(`'${title}' can't be removed because there is activity on it.`);
         return;
       } else if (isWatched && !hasActivity) {
         // Only quick-watched — allow removing
@@ -125,13 +119,6 @@ export function ProfilePosterCard({
       className="relative group cursor-pointer"
       onClick={(e) => { e.stopPropagation(); navigate(to ?? `/movie/${movieId}`); }}
     >
-      {/* Activity notification — orange banner */}
-      {notif && (
-        <div className="absolute top-0 left-0 right-0 z-20 bg-orange-500 text-white text-[10px] font-medium px-2 py-1.5 rounded-t-lg leading-tight">
-          '{title}' can't be removed because there is activity on it.
-        </div>
-      )}
-
       {/* Poster */}
       <div className={`aspect-[2/3] rounded-lg overflow-hidden bg-[#151921] border transition-all duration-200 ${
         isWatched ? "border-[#44FFFF]/50" : "border-white/5 group-hover:border-[#BFBCFC]/30"

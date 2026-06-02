@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
 import { SearchPage } from './pages/SearchPage';
+import { MoviesPage } from './pages/MoviesPage';
 import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MyListsPage } from './pages/MyListsPage';
 import { ListDetailPage } from './pages/ListDetailPage';
@@ -44,7 +45,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'movies',
-                element: _jsx(SearchPage, {}),
+                element: _jsx(MoviesPage, {}),
             },
             {
                 path: 'FriendPage',
