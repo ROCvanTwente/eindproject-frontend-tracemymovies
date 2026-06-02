@@ -78,26 +78,6 @@ export function LoginPage() {
                         </div>
                     )}
 
-                    {/* TEST ACCOUNT INFO */}
-<div className="bg-[#44FFFF]/10 border border-[#44FFFF]/20 rounded-xl p-4 mb-6">
-    <h3 className="text-[#44FFFF] font-semibold mb-3 text-sm md:text-base">
-        Development Test Account
-    </h3>
-
-    <div className="space-y-2 text-sm">
-
-        <p className="text-[#F8FAFC]">
-            <span className="text-[#94A3B8]">Email:</span>{' '}
-            Trace@dev.nl
-        </p>
-
-        <p className="text-[#F8FAFC]">
-            <span className="text-[#94A3B8]">Password:</span>{' '}
-            Trace123!
-        </p>
-    </div>
-</div>
-
                     {/* FORM */}
                     <form onSubmit={handleSubmit} className="space-y-6">
 
