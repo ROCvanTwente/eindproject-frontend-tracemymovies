@@ -11,7 +11,7 @@ import { useRefresh } from "../context/RefreshContext";
 const DAYS = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 const MONTHS = ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"];
 
-function DatePicker({ value, onChange }) {
+export function DatePicker({ value, onChange }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -126,7 +126,7 @@ function DatePicker({ value, onChange }) {
   );
 }
 
-export function WatchLogModal({ isOpen, onClose }) {
+export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsRewatch = false, preIsLiked = false, preRating = 0 }) {
   const auth = useAuth();
   const { triggerRefresh } = useRefresh();
 
@@ -157,18 +157,23 @@ export function WatchLogModal({ isOpen, onClose }) {
   const [reviewText, setReviewText] = useState("");
   const [containsSpoilers, setContainsSpoilers] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasWatched, setHasWatched] = useState(false);
+  const [hasWatched, setHasWatched] = useState(!!preSelectedMovie);
 
   useEffect(() => {
     if (isOpen) {
-      setStep("search");
       setSearchQuery("");
       setSearchResults([]);
-      setSelectedMovie(null);
+      if (preSelectedMovie) {
+        setSelectedMovie(preSelectedMovie);
+        setStep("log");
+      } else {
+        setStep("search");
+        setSelectedMovie(null);
+      }
       setWatchDate(new Date().toISOString().split("T")[0]);
-      setIsRewatch(false);
-      setIsLiked(false);
-      setRating(0);
+      setIsRewatch(preIsRewatch);
+      setIsLiked(preIsLiked);
+      setRating(preRating);
       setHoverRating(0);
       setReviewText("");
       setContainsSpoilers(false);
@@ -205,8 +210,8 @@ export function WatchLogModal({ isOpen, onClose }) {
 
   const handleSelectMovie = async (movie) => {
     setSelectedMovie(movie);
-    setIsRewatch(false);
-    setHasWatched(false);
+    setIsRewatch(preIsRewatch);
+    setHasWatched(!!preSelectedMovie);
     setStep("log");
 
     try {
@@ -468,7 +473,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                 <div className="bg-[#0B0E14] p-3.5 rounded-xl border border-[#BFBCFC]/10">
                   <p className="text-xs text-[#94A3B8] flex items-center gap-1.5 mb-2">
                     <MessageSquare className="w-3.5 h-3.5" />
-                    Recensie <span className="text-[#94A3B8]/50">(optioneel)</span>
+                    Review
                   </p>
                   <textarea
                     value={reviewText}

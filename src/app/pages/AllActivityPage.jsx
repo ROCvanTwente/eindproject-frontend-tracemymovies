@@ -72,7 +72,7 @@ export function AllActivityPage() {
   // Group by week, newest first — with rewatch detection
   const grouped = useMemo(() => {
     const sorted = [...activity].sort(
-      (a, b) => new Date(b.watchedDate) - new Date(a.watchedDate)
+      (a, b) => new Date(b.loggedDate) - new Date(a.loggedDate)
     );
 
     // Mark rewatches: process oldest→newest, first occurrence = original, rest = rewatch

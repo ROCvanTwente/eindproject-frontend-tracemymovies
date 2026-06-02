@@ -79,6 +79,14 @@ export const router = createBrowserRouter([
                 element: _jsx(UserProfilePage, {}),
             },
             {
+                path: 'user/:userId/watched',
+                element: _jsx(WatchedPage, {}),
+            },
+            {
+                path: 'user/:userId/liked',
+                element: _jsx(LikedMoviesPage, {}),
+            },
+            {
                 path: 'analytics',
                 element: _jsx(AnalyticsPage, {}),
             },
