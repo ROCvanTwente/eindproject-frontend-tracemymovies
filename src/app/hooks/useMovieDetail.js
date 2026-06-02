@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
+import { useRefresh } from "../context/RefreshContext";
 
 export function useMovieDetail(id, token) {
+    const { triggerRefresh } = useRefresh();
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -12,6 +14,7 @@ export function useMovieDetail(id, token) {
     const [isFavorite, setIsFavorite] = useState(false);
     const [isInWatchlist, setIsInWatchlist] = useState(false);
     const [isWatched, setIsWatched] = useState(false);
+    const [hasLogEntries, setHasLogEntries] = useState(false);
 
     const [showWatchLogModal, setShowWatchLogModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -49,6 +52,7 @@ export function useMovieDetail(id, token) {
                 setIsWatched(status.isWatched || false);
                 setIsFavorite(status.isFavorite || false);
                 setIsInWatchlist(status.isInWatchlist || false);
+                setHasLogEntries(status.hasLogEntries || false);
             }
         } catch (err) {
             console.error("Kon status niet ophalen", err);
@@ -129,6 +133,12 @@ export function useMovieDetail(id, token) {
             return;
         }
 
+        // Can't unwatch via this button if diary log entries exist
+        if (isWatched && hasLogEntries) {
+            toast.error(`'${movie?.title}' kan niet verwijderd worden, er is activiteit op.`);
+            return;
+        }
+
         setIsSavingWatch(true);
 
         try {
@@ -140,6 +150,7 @@ export function useMovieDetail(id, token) {
 
                 if (response.ok) {
                     setIsWatched(false);
+                    triggerRefresh();
                     toast.success("Verwijderd van bekeken films");
                 }
             } else {
@@ -149,14 +160,12 @@ export function useMovieDetail(id, token) {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${token}`
                     },
-                    body: JSON.stringify({
-                        MovieId: parseInt(id),
-                        AmountWatched: 1
-                    })
+                    body: JSON.stringify({ MovieId: parseInt(id) })
                 });
 
                 if (response.ok) {
                     setIsWatched(true);
+                    triggerRefresh();
                     toast.success("Gemarkeerd als bekeken");
                 }
             }
@@ -191,6 +200,7 @@ export function useMovieDetail(id, token) {
 
             if (response.ok) {
                 setIsFavorite(nextLikeState);
+                triggerRefresh();
                 toast.success(
                     nextLikeState ? "Toegevoegd aan favorieten" : "Verwijderd uit favorieten"
                 );
@@ -250,6 +260,7 @@ export function useMovieDetail(id, token) {
         isFavorite,
         isInWatchlist,
         isWatched,
+        hasLogEntries,
         showWatchLogModal,
         setShowWatchLogModal,
         showShareModal,

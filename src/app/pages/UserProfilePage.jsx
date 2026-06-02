@@ -15,8 +15,12 @@ import {
   MapPin,
   MessageCircle,
   UserPlus,
+  RotateCw,
+  AlignLeft,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useRefresh } from "../context/RefreshContext";
+import { ProfilePosterCard } from "../components/ProfilePosterCard";
 
 export function UserProfilePage() {
   const { id } = useParams();
@@ -24,7 +28,11 @@ export function UserProfilePage() {
   const navigate = useNavigate();
 
   const [favoriteMovies, setFavoriteMovies] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(true);
+  const [likedMoviesCount, setLikedMoviesCount] = useState(0);
+  const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -32,9 +40,34 @@ export function UserProfilePage() {
   const [duplicateError, setDuplicateError] = useState("");
 
   const isOwnProfile = !id;
+  const { refreshKey } = useRefresh();
+  const [publicProfile, setPublicProfile] = useState(null);
+  const [publicLoading, setPublicLoading] = useState(!isOwnProfile);
 
   const getToken = () =>
     localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
+
+  // OTHER USER PROFILE
+  useEffect(() => {
+    if (isOwnProfile) return;
+    const fetchPublicProfile = async () => {
+      try {
+        setPublicLoading(true);
+        const token = getToken();
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setPublicProfile(await res.json());
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setPublicLoading(false);
+      }
+    };
+    fetchPublicProfile();
+  }, [id, isOwnProfile]);
 
   // FAVORITES
   useEffect(() => {
@@ -68,10 +101,54 @@ export function UserProfilePage() {
         setFavoriteMovies(movies.filter(Boolean));
       } catch (error) {
         console.error("Error fetching favorite movies:", error);
+      } finally {
+        setFavoritesLoading(false);
       }
     };
     fetchFavorites();
-  }, [isOwnProfile]);
+  }, [isOwnProfile, refreshKey]);
+
+  // LIKED MOVIES COUNT
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchLikedCount = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMoviesCount`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setLikedMoviesCount(data.count ?? 0);
+      } catch (error) {
+        console.error("Error fetching liked movies count:", error);
+      }
+    };
+    fetchLikedCount();
+  }, [isOwnProfile, refreshKey]);
+
+  // WATCHED MOVIES COUNT (unique films)
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchWatchedCount = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Activity/WatchedCount`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setWatchedMoviesCount(data.count ?? 0);
+      } catch (error) {
+        console.error("Error fetching watched count:", error);
+      }
+    };
+    fetchWatchedCount();
+  }, [isOwnProfile, refreshKey]);
 
   // RECENT ACTIVITY
   useEffect(() => {
@@ -93,13 +170,17 @@ export function UserProfilePage() {
         if (!response.ok) return;
 
         const data = await response.json();
-        setRecentActivity(Array.isArray(data) ? data : [data]);
+        const sorted = (Array.isArray(data) ? data : [data])
+          .sort((a, b) => new Date(b.loggedDate) - new Date(a.loggedDate));
+        setRecentActivity(sorted);
       } catch (error) {
         console.error("Error fetching recent activity:", error);
+      } finally {
+        setActivityLoading(false);
       }
     };
     fetchRecentActivity();
-  }, [isOwnProfile]);
+  }, [isOwnProfile, refreshKey]);
 
   // SEARCH FAVORITES MODAL
   useEffect(() => {
@@ -125,7 +206,7 @@ export function UserProfilePage() {
   const addFavorite = async (movie) => {
     if (favoriteMovies.length >= 4) return;
     if (favoriteMovies.some((m) => m.id === movie.id)) {
-      setDuplicateError(`"${movie.title}" staat al in je favorieten.`);
+      setDuplicateError(`"${movie.title}" is already in your favourites.`);
       return;
     }
     setDuplicateError("");
@@ -160,8 +241,154 @@ export function UserProfilePage() {
     setSearchModalOpen(true);
   };
 
-  const displayName = user?.username || user?.email || "Gebruiker";
+  const displayName = user?.username || user?.email || "User";
   const avatarLetter = displayName.charAt(0).toUpperCase();
+
+  // ── OTHER USER'S PROFILE ──
+  if (!isOwnProfile) {
+    if (publicLoading) {
+      return (
+        <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20" />
+            <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
+          </div>
+        </div>
+      );
+    }
+    if (!publicProfile) {
+      return (
+        <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
+          <p className="text-[#94A3B8]">User not found.</p>
+        </div>
+      );
+    }
+    const pub = publicProfile;
+    const pubLetter = pub.username?.charAt(0).toUpperCase() || "?";
+    return (
+      <div className="min-h-screen py-6 md:py-8">
+        <div className="container mx-auto px-4 max-w-7xl">
+
+          {/* Profile Header */}
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+              <div className="relative flex-shrink-0">
+                {pub.profilePicture ? (
+                  <img src={pub.profilePicture} alt={pub.username} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg" />
+                ) : (
+                  <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                    <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{pubLetter}</span>
+                  </div>
+                )}
+                <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
+              </div>
+
+              <div className="flex-1">
+                <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">{pub.username}</h1>
+                <p className="text-[#BFBCFC] text-sm md:text-base mb-3">@{pub.username}</p>
+                <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    Member of TraceMyMovies
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center">
+                {[
+                  { label: "WATCHED", value: pub.watchedCount, to: `/user/${id}/watched` },
+                  { label: "LIKED", value: pub.likedCount, to: `/user/${id}/liked` },
+                  { label: "LISTS", value: "—" },
+                ].map(({ label, value, to }, i, arr) => (
+                  <div key={label} className="flex items-center">
+                    <div
+                      onClick={() => to && navigate(to)}
+                      className={`px-5 text-center transition-transform duration-100 ${to ? "cursor-pointer group active:scale-95" : ""}`}
+                    >
+                      <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#FF61D2]" : "text-[#F8FAFC]"}`}>{value}</p>
+                      <p className="text-[#94A3B8] text-xs uppercase tracking-widest">{label}</p>
+                    </div>
+                    {i < arr.length - 1 && <div className="w-px h-10 bg-[#BFBCFC]/15" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
+            <div className="lg:col-span-2 space-y-8">
+
+              {/* Favourite Films */}
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
+                  <Heart className="w-3.5 h-3.5" fill="currentColor" />
+                  Favourite Films
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => {
+                    const movie = pub.favorites[i];
+                    return movie ? (
+                      <ProfilePosterCard
+                        key={movie.id}
+                        movieId={movie.id}
+                        poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        title={movie.title}
+                      />
+                    ) : (
+                      <div key={`empty-${i}`} className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]" />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
+                    Recent Activity
+                  </h2>
+                  {pub.recentActivity.length > 4 && (
+                    <Link to={`/user/${id}/watched`} className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">
+                      All →
+                    </Link>
+                  )}
+                </div>
+                {pub.recentActivity.length === 0 ? (
+                  <p className="text-[#94A3B8] text-sm">No recent activity.</p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-3">
+                    {pub.recentActivity.slice(0, 4).map((activity, idx) => (
+                      <div key={idx} className="flex flex-col gap-1.5">
+                        <ProfilePosterCard
+                          movieId={activity.id}
+                          poster={activity.poster}
+                          title={activity.movieTitle}
+                          to={`/log/${activity.logId}`}
+                        />
+                        <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 px-0.5 flex-wrap">
+                          {activity.userRating > 0 && (
+                            <div className="grid grid-cols-5 gap-[2px]">
+                              {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                                <Star key={n} className={`w-2 h-2 ${n <= activity.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
+                              ))}
+                            </div>
+                          )}
+                          {activity.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
+                          {activity.hasReview && <AlignLeft className="w-3 h-3 text-[#94A3B8]" />}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-6 md:py-8">
@@ -192,12 +419,12 @@ export function UserProfilePage() {
                 {displayName}
               </h1>
               <p className="text-[#BFBCFC] text-sm md:text-base mb-3">
-                @{user?.username || "gebruiker"}
+                @{user?.username || "user"}
               </p>
               <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4" />
-                  Lid van TraceMyMovies
+                  Member of TraceMyMovies
                 </div>
               </div>
             </div>
@@ -205,8 +432,8 @@ export function UserProfilePage() {
             {/* Stats */}
             <div className="flex items-center">
               {[
-                { label: "WATCHED", value: recentActivity.length },
-                { label: "LIKED", value: favoriteMovies.length, onClick: () => navigate('/likedmoviespage') },
+                { label: "WATCHED", value: watchedMoviesCount, onClick: () => navigate('/watched') },
+                { label: "LIKED", value: likedMoviesCount, onClick: () => navigate('/likedmoviespage') },
                 { label: "LISTS", value: "—" },
               ].map(({ label, value, onClick }, i, arr) => (
                 <div key={label} className="flex items-center">
@@ -238,34 +465,32 @@ export function UserProfilePage() {
               onClick={() => navigate('/likedmoviespage')}
               className="cursor-pointer"
             >
-              <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2 hover:text-[#FF61D2] transition-colors duration-200">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
                 <Heart className="w-3.5 h-3.5" fill="currentColor" />
-                Liked Films
+                Favourite Films
               </h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {Array.from({ length: 4 }).map((_, i) => {
-                  const movie = favoriteMovies[i];
+                  const movie = favoritesLoading ? undefined : favoriteMovies[i];
                   return movie ? (
-                    <div
-                      key={movie.id}
-                      onClick={(e) => { e.stopPropagation(); navigate(`/movie/${movie.id}`); }}
-                      className="relative group cursor-pointer"
-                    >
-                      <img
-                        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                        alt={movie.title}
-                        className="w-full aspect-[2/3] object-cover rounded-lg transition-all duration-300 group-hover:opacity-80 group-hover:scale-[1.02]"
+                    <div key={movie.id} className="relative">
+                      <ProfilePosterCard
+                        movieId={movie.id}
+                        poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        title={movie.title}
                       />
                       {isOwnProfile && (
                         <button
                           onClick={(e) => { e.stopPropagation(); removeFavorite(movie.id); }}
-                          className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm"
+                          className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10"
                         >
                           <X className="w-3.5 h-3.5 text-white" />
                         </button>
                       )}
                     </div>
+                  ) : favoritesLoading ? (
+                    <div key={`skel-${i}`} className="w-full aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
                   ) : isOwnProfile ? (
                     <button
                       key={`empty-${i}`}
@@ -275,7 +500,7 @@ export function UserProfilePage() {
                       <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
                         <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
                       </div>
-                      <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Voeg toe</span>
+                      <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
                     </button>
                   ) : (
                     <div
@@ -289,35 +514,55 @@ export function UserProfilePage() {
 
             {/* Recent Activity */}
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
-                Recent Activity
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
+                  Recent Activity
+                </h2>
+                {recentActivity.length > 4 && (
+                  <Link
+                    to="/activity"
+                    className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest"
+                  >
+                    All →
+                  </Link>
+                )}
+              </div>
 
-              {recentActivity.length === 0 ? (
-                <p className="text-[#94A3B8] text-sm">Geen recente activiteit gevonden.</p>
+              {activityLoading ? (
+                <div className="grid grid-cols-4 gap-3">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
+                  ))}
+                </div>
+              ) : recentActivity.length === 0 ? (
+                <p className="text-[#94A3B8] text-sm">No recent activity found.</p>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {[...recentActivity].sort((a, b) => new Date(b.watchedDate) - new Date(a.watchedDate)).map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="bg-[#0B0E14] rounded-lg p-4 border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 transition-all"
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <h4 className="text-[#F8FAFC] font-medium text-sm truncate pr-2">{activity.movieTitle}</h4>
-                        <span className="text-[#44FFFF] font-data text-xs font-bold flex-shrink-0">
-                          ★ {Number(activity.tmdbRating).toFixed(1)}/10
-                        </span>
-                      </div>
-                      <p className="text-[#94A3B8] text-xs mb-1.5 line-clamp-2">{activity.overview}</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-[#94A3B8] text-xs">
-                          {new Date(activity.watchedDate).toLocaleDateString()}
-                        </p>
-                        <p className="text-[#44FFFF] text-xs font-data">
-                          Watched {activity.amountWatched}x
-                        </p>
-                      </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {recentActivity.slice(0, 4).map((activity, idx) => (
+                    <div key={idx} className="flex flex-col gap-1.5">
+                      <ProfilePosterCard
+                        movieId={activity.id}
+                        poster={activity.poster}
+                        title={activity.movieTitle}
+                        to={`/log/${activity.logId}`}
+                        isWatchedProp={true}
+                        isLikedProp={activity.isLiked}
+                        hasActivityProp={true}
+                      />
+                      {/* Icons + log link */}
+                      <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 flex-wrap px-0.5">
+                        {activity.userRating > 0 && (
+                          <div className="grid grid-cols-5 gap-0.5">
+                            {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                              <Star key={n} className={`w-2.5 h-2.5 ${n <= activity.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
+                            ))}
+                          </div>
+                        )}
+                        {activity.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
+                        {activity.isRewatch && <RotateCw className="w-3 h-3 text-[#44FFFF]" />}
+                        {activity.hasReview && <AlignLeft className="w-3 h-3 text-[#94A3B8]" />}
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -351,10 +596,10 @@ export function UserProfilePage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 pt-8">
             <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
               <h3 className="text-lg font-bold font-heading text-[#F8FAFC] mb-4">
-                Snelle links
+                Quick links
               </h3>
               <div className="space-y-2">
                 <Link
@@ -369,14 +614,14 @@ export function UserProfilePage() {
                   className="flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-1"
                 >
                   <List className="w-4 h-4" />
-                  Mijn Lijsten
+                  My Lists
                 </Link>
                 <Link
                   to="/likedmoviespage"
                   className="flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-1"
                 >
                   <Heart className="w-4 h-4" />
-                  Gelikte Films
+                  Liked Films
                 </Link>
               </div>
             </div>
@@ -385,12 +630,12 @@ export function UserProfilePage() {
             <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
               <h3 className="text-lg font-bold font-heading text-[#F8FAFC] mb-4 flex items-center gap-2">
                 <List className="w-5 h-5 text-[#44FFFF]" />
-                Recente Lijsten
+                Recent Lists
               </h3>
               <div className="space-y-2">
                 {[
                   { name: "Top 10 Sci-Fi", count: 10 },
-                  { name: "Favoriete Thrillers", count: 7 },
+                  { name: "Favourite Thrillers", count: 7 },
                   { name: "Must Watch 2024", count: 15 },
                 ].map((list) => (
                   <div
@@ -413,7 +658,7 @@ export function UserProfilePage() {
                 to="/my-lists"
                 className="mt-4 flex items-center gap-1.5 text-[#BFBCFC] text-xs hover:text-[#F8FAFC] transition-colors"
               >
-                Bekijk alle lijsten
+                View all lists
                 <span className="text-xs">→</span>
               </Link>
             </div>
@@ -426,7 +671,7 @@ export function UserProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-[#151921] border border-[#BFBCFC]/20 rounded-xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-[#BFBCFC]/10">
-              <h3 className="text-[#F8FAFC] font-bold font-heading">Film zoeken</h3>
+              <h3 className="text-[#F8FAFC] font-bold font-heading">Search for a film</h3>
               <button
                 onClick={() => setSearchModalOpen(false)}
                 className="w-7 h-7 rounded-full hover:bg-[#BFBCFC]/10 flex items-center justify-center"
@@ -440,7 +685,7 @@ export function UserProfilePage() {
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Zoek een film..."
+                  placeholder="Search for a film..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-[#0B0E14] border border-[#BFBCFC]/15 rounded-lg pl-9 pr-4 py-2.5 text-[#F8FAFC] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#BFBCFC]/40"
@@ -460,10 +705,10 @@ export function UserProfilePage() {
                   </div>
                 )}
                 {!searchLoading && searchQuery && searchResults.length === 0 && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">Geen films gevonden.</p>
+                  <p className="text-[#94A3B8] text-sm text-center py-6">No films found.</p>
                 )}
                 {!searchLoading && !searchQuery && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">Typ een filmtitel om te zoeken.</p>
+                  <p className="text-[#94A3B8] text-sm text-center py-6">Type a film title to search.</p>
                 )}
                 {searchResults.map((m) => (
                   <button

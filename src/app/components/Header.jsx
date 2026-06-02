@@ -512,9 +512,6 @@ export function Header() {
       <WatchLogModal
         isOpen={showWatchLogModal}
         onClose={() => setShowWatchLogModal(false)}
-        movieTitle=""
-        movieYear=""
-        moviePoster=""
       />
     </>
   );

@@ -21,7 +21,10 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
 import  FriendPage from './pages/FriendPage';  
 import  LikedMoviesPage  from './pages/LikedMoviesPage';
-  
+import { AllActivityPage } from './pages/AllActivityPage';
+import { ActivityDetailPage } from './pages/ActivityDetailPage';
+import { WatchedPage } from './pages/WatchedPage';
+
 export const router = createBrowserRouter([
     {
         path: '/',
@@ -76,6 +79,14 @@ export const router = createBrowserRouter([
                 element: _jsx(UserProfilePage, {}),
             },
             {
+                path: 'user/:userId/watched',
+                element: _jsx(WatchedPage, {}),
+            },
+            {
+                path: 'user/:userId/liked',
+                element: _jsx(LikedMoviesPage, {}),
+            },
+            {
                 path: 'analytics',
                 element: _jsx(AnalyticsPage, {}),
             },
@@ -102,6 +113,18 @@ export const router = createBrowserRouter([
             {
                 path: 'login',
                 element: _jsx(LoginPage, {}),
+            },
+            {
+                path: 'activity',
+                element: _jsx(AllActivityPage, {}),
+            },
+            {
+                path: 'log/:id',
+                element: _jsx(ActivityDetailPage, {}),
+            },
+            {
+                path: 'watched',
+                element: _jsx(WatchedPage, {}),
             },
             {
                 path: 'forgot-password',
