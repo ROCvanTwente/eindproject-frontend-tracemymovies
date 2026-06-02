@@ -1,5 +1,4 @@
-@import './tailwind.css';
 @import './fonts.css';
-@import './theme.css';
 @import './carousel.css';
-@import './globals.css';
+@import './theme.css';
+@import './tailwind.css';
