@@ -25,6 +25,7 @@ import  LikedMoviesPage  from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
     {
@@ -35,65 +36,18 @@ export const router = createBrowserRouter([
                 index: true,
                 element: _jsx(HomePage, {}),
             },
+            // ── PUBLIC ROUTES ──
             {
                 path: 'search',
                 element: _jsx(SearchPage, {}),
-            },
-            {
-                path: 'LikedMoviesPage',
-                element: _jsx(LikedMoviesPage, {}),
             },
             {
                 path: 'movies',
                 element: _jsx(MoviesPage, {}),
             },
             {
-                path: 'FriendPage',
-                element: _jsx(FriendPage, {}),
-            },
-            {
                 path: 'movie/:id',
                 element: _jsx(MovieDetailPage, {}),
-            },
-            {
-                path: 'my-lists',
-                element: _jsx(MyListsPage, {}),
-            },
-            {
-                path: 'list/:id',
-                element: _jsx(ListDetailPage, {}),
-            },
-            {
-                path: 'the-queue',
-                element: _jsx(TheQueuePage, {}),
-            },
-            {
-                path: 'my-profile',
-                element: _jsx(UserProfilePage, {}),
-            },
-            {
-                path: 'profile',
-                element: _jsx(ProfilePage, {}),
-            },
-            {
-                path: 'user/:id',
-                element: _jsx(UserProfilePage, {}),
-            },
-            {
-                path: 'user/:userId/watched',
-                element: _jsx(WatchedPage, {}),
-            },
-            {
-                path: 'user/:userId/liked',
-                element: _jsx(LikedMoviesPage, {}),
-            },
-            {
-                path: 'analytics',
-                element: _jsx(AnalyticsPage, {}),
-            },
-            {
-                path: 'messages',
-                element: _jsx(MessagesPage, {}),
             },
             {
                 path: 'weekly-favorites',
@@ -104,10 +58,6 @@ export const router = createBrowserRouter([
                 element: _jsx(GlobalMovieDNAPage, {}),
             },
             {
-                path: 'admin',
-                element: _jsx(AdminPage, {}),
-            },
-            {
                 path: 'register',
                 element: _jsx(RegisterPage, {}),
             },
@@ -116,20 +66,74 @@ export const router = createBrowserRouter([
                 element: _jsx(LoginPage, {}),
             },
             {
+                path: 'forgot-password',
+                element: _jsx(ForgotPasswordPage, {}),
+            },
+
+            // ── PROTECTED ROUTES ──
+            {
+                path: 'LikedMoviesPage',
+                element: _jsx(ProtectedRoute, { children: _jsx(LikedMoviesPage, {}) }),
+            },
+            {
+                path: 'FriendPage',
+                element: _jsx(ProtectedRoute, { children: _jsx(FriendPage, {}) }),
+            },
+            {
+                path: 'my-lists',
+                element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
+            },
+            {
+                path: 'list/:id',
+                element: _jsx(ProtectedRoute, { children: _jsx(ListDetailPage, {}) }),
+            },
+            {
+                path: 'the-queue',
+                element: _jsx(ProtectedRoute, { children: _jsx(TheQueuePage, {}) }),
+            },
+            {
+                path: 'my-profile',
+                element: _jsx(ProtectedRoute, { children: _jsx(UserProfilePage, {}) }),
+            },
+            {
+                path: 'profile',
+                element: _jsx(ProtectedRoute, { children: _jsx(ProfilePage, {}) }),
+            },
+            {
+                path: 'user/:id',
+                element: _jsx(ProtectedRoute, { children: _jsx(UserProfilePage, {}) }),
+            },
+            {
+                path: 'user/:userId/watched',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchedPage, {}) }),
+            },
+            {
+                path: 'user/:userId/liked',
+                element: _jsx(ProtectedRoute, { children: _jsx(LikedMoviesPage, {}) }),
+            },
+            {
+                path: 'analytics',
+                element: _jsx(ProtectedRoute, { children: _jsx(AnalyticsPage, {}) }),
+            },
+            {
+                path: 'messages',
+                element: _jsx(ProtectedRoute, { children: _jsx(MessagesPage, {}) }),
+            },
+            {
+                path: 'admin',
+                element: _jsx(ProtectedRoute, { children: _jsx(AdminPage, {}) }),
+            },
+            {
                 path: 'activity',
-                element: _jsx(AllActivityPage, {}),
+                element: _jsx(ProtectedRoute, { children: _jsx(AllActivityPage, {}) }),
             },
             {
                 path: 'log/:id',
-                element: _jsx(ActivityDetailPage, {}),
+                element: _jsx(ProtectedRoute, { children: _jsx(ActivityDetailPage, {}) }),
             },
             {
                 path: 'watched',
-                element: _jsx(WatchedPage, {}),
-            },
-            {
-                path: 'forgot-password',
-                element: _jsx(ForgotPasswordPage, {}),
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchedPage, {}) }),
             },
             {
                 path: '500',
