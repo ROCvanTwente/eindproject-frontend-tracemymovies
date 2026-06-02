@@ -128,7 +128,7 @@ export function ProfilePosterCard({
       {/* Activity notification — orange banner */}
       {notif && (
         <div className="absolute top-0 left-0 right-0 z-20 bg-orange-500 text-white text-[10px] font-medium px-2 py-1.5 rounded-t-lg leading-tight">
-          '{title}' kan niet verwijderd worden, er is activiteit op.
+          '{title}' can't be removed because there is activity on it.
         </div>
       )}
 
@@ -154,7 +154,7 @@ export function ProfilePosterCard({
                 ? "bg-[#44FFFF]/20 text-[#44FFFF] hover:bg-[#44FFFF]/30"
                 : "bg-black/50 text-[#94A3B8] hover:text-[#44FFFF] hover:bg-[#44FFFF]/20"
             }`}
-            title={isWatched ? (hasActivity ? "Heeft activiteit" : "Unwatch") : "Markeer als bekeken"}
+            title={isWatched ? (hasActivity ? "Has activity" : "Unwatch") : "Mark as watched"}
           >
             <Eye className="w-4 h-4" />
           </button>

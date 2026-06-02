@@ -101,15 +101,15 @@ export function ActivityDetailPage() {
     return (
       <div className="min-h-screen bg-[#0B0E14] flex flex-col items-center justify-center gap-4">
         <AlertCircle className="w-10 h-10 text-[#94A3B8]/40" />
-        <p className="text-[#94A3B8]">Log entry niet gevonden.</p>
+        <p className="text-[#94A3B8]">Log entry not found.</p>
         <Link to="/my-profile" className="text-[#BFBCFC] text-sm hover:underline">
-          Terug naar profiel
+          Back to profile
         </Link>
       </div>
     );
   }
 
-  const dateStr = new Date(data.watchedDate).toLocaleDateString("nl-NL", {
+  const dateStr = new Date(data.watchedDate).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -125,7 +125,7 @@ export function ActivityDetailPage() {
           className="inline-flex items-center gap-1.5 text-[#94A3B8] hover:text-[#F8FAFC] text-sm transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Terug
+          Back
         </button>
 
         <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -198,7 +198,7 @@ export function ActivityDetailPage() {
               <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl p-4 mb-4">
                 <p className="text-xs text-[#94A3B8] flex items-center gap-1.5 mb-3 uppercase tracking-wider font-medium">
                   <Star className="w-3.5 h-3.5" />
-                  Jouw score
+                  Your score
                 </p>
                 <div className="flex items-center gap-1 flex-wrap">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
@@ -224,7 +224,7 @@ export function ActivityDetailPage() {
               <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl p-4">
                 <p className="text-xs text-[#94A3B8] flex items-center gap-1.5 mb-3 uppercase tracking-wider font-medium">
                   <MessageSquare className="w-3.5 h-3.5" />
-                  Recensie
+                  Review
                   {data.containsSpoilers && (
                     <span className="ml-auto text-[#FF61D2] bg-[#FF61D2]/10 border border-[#FF61D2]/20 px-2 py-0.5 rounded-full text-[10px] font-bold normal-case tracking-normal">
                       ⚠ Spoilers
@@ -252,7 +252,7 @@ export function ActivityDetailPage() {
                         onClick={() => setSpoilerRevealed(false)}
                         className="mt-2 text-[#94A3B8]/50 hover:text-[#94A3B8] text-xs transition-colors"
                       >
-                        Verberg spoilers
+                        Hide spoilers
                       </button>
                     )}
                   </div>
@@ -263,7 +263,7 @@ export function ActivityDetailPage() {
             {/* Empty state */}
             {(data.rating == null || data.rating === 0) && !data.reviewText && (
               <div className="bg-[#151921]/80 border border-dashed border-[#BFBCFC]/15 rounded-2xl p-6 text-center">
-                <p className="text-[#94A3B8] text-sm">Geen score of recensie toegevoegd.</p>
+                <p className="text-[#94A3B8] text-sm">No rating or review added.</p>
               </div>
             )}
           </div>
@@ -275,7 +275,7 @@ export function ActivityDetailPage() {
               {/* Status icons */}
               <div className="flex md:flex-col gap-2 mb-2">
                 <button
-                  onClick={() => toast.error(`'${data.title}' kan niet verwijderd worden, er is activiteit op.`)}
+                  onClick={() => toast.error(`'${data.title}' can't be removed because there is activity on it.`)}
                   className="flex flex-col items-center gap-1 px-4 py-3 bg-[#151921]/80 border border-[#44FFFF]/30 rounded-xl flex-1 md:flex-none hover:bg-[#44FFFF]/5 transition-colors"
                 >
                   <Eye className="w-5 h-5 text-[#44FFFF] fill-[#44FFFF]/20" />

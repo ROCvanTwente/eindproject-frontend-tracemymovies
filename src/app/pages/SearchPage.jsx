@@ -11,7 +11,6 @@ const BROWSE_URL = `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/get20movies`;
 const FILTERS = [
     { id: 'all',        label: 'All' },
     { id: 'movie',      label: 'Films' },
-    { id: 'tv',         label: 'TV Shows' },
     { id: 'person',     label: 'Cast & Crew' },
     { id: 'company',    label: 'Studios' },
     { id: 'collection', label: 'Collections' },
@@ -22,7 +21,6 @@ const FILTERS = [
 
 const TYPE_COLOR = {
     movie:      'text-[#BFBCFC]',
-    tv:         'text-[#44FFFF]',
     person:     'text-[#FF61D2]',
     company:    'text-amber-400',
     collection: 'text-green-400',
@@ -247,7 +245,6 @@ export function SearchPage() {
             const data = await res.json();
             const combined = [
                 ...(data.movies      ?? []),
-                ...(data.tvShows     ?? []),
                 ...(data.people      ?? []),
                 ...(data.companies   ?? []),
                 ...(data.collections ?? []),

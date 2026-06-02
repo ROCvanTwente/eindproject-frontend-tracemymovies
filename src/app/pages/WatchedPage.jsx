@@ -280,7 +280,7 @@ const MovieCard = ({ movie, index }) => (
         <Link
           to={`/log/${movie.latestLogId}`}
           onClick={(e) => e.stopPropagation()}
-          title="Bekijk recensie"
+          title="View review"
         >
           <AlignLeft className="w-3 h-3 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors" />
         </Link>
@@ -299,10 +299,10 @@ const EmptyState = () => (
       <div className="absolute inset-0 rounded-full bg-[#BFBCFC]/6 blur-2xl -z-10" />
     </div>
     <h2 className="text-2xl md:text-3xl font-bold text-[#F8FAFC] mb-3">
-      Nog geen films bekeken
+      No films watched yet
     </h2>
     <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
-      Log films via de + Log knop in de header om ze hier te zien.
+      Log films using the + Log button in the header to see them here.
     </p>
     <Link
       to="/search"
