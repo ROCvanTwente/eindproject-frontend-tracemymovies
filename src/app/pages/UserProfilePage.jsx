@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
+import { ProfilePosterCard } from "../components/ProfilePosterCard";
 
 export function UserProfilePage() {
   const { id } = useParams();
@@ -40,9 +41,33 @@ export function UserProfilePage() {
 
   const isOwnProfile = !id;
   const { refreshKey } = useRefresh();
+  const [publicProfile, setPublicProfile] = useState(null);
+  const [publicLoading, setPublicLoading] = useState(!isOwnProfile);
 
   const getToken = () =>
     localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
+
+  // OTHER USER PROFILE
+  useEffect(() => {
+    if (isOwnProfile) return;
+    const fetchPublicProfile = async () => {
+      try {
+        setPublicLoading(true);
+        const token = getToken();
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setPublicProfile(await res.json());
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setPublicLoading(false);
+      }
+    };
+    fetchPublicProfile();
+  }, [id, isOwnProfile]);
 
   // FAVORITES
   useEffect(() => {
@@ -146,7 +171,7 @@ export function UserProfilePage() {
 
         const data = await response.json();
         const sorted = (Array.isArray(data) ? data : [data])
-          .sort((a, b) => new Date(b.watchedDate) - new Date(a.watchedDate));
+          .sort((a, b) => new Date(b.loggedDate) - new Date(a.loggedDate));
         setRecentActivity(sorted);
       } catch (error) {
         console.error("Error fetching recent activity:", error);
@@ -218,6 +243,152 @@ export function UserProfilePage() {
 
   const displayName = user?.username || user?.email || "Gebruiker";
   const avatarLetter = displayName.charAt(0).toUpperCase();
+
+  // ── OTHER USER'S PROFILE ──
+  if (!isOwnProfile) {
+    if (publicLoading) {
+      return (
+        <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20" />
+            <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
+          </div>
+        </div>
+      );
+    }
+    if (!publicProfile) {
+      return (
+        <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
+          <p className="text-[#94A3B8]">Gebruiker niet gevonden.</p>
+        </div>
+      );
+    }
+    const pub = publicProfile;
+    const pubLetter = pub.username?.charAt(0).toUpperCase() || "?";
+    return (
+      <div className="min-h-screen py-6 md:py-8">
+        <div className="container mx-auto px-4 max-w-7xl">
+
+          {/* Profile Header */}
+          <div className="mb-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+              <div className="relative flex-shrink-0">
+                {pub.profilePicture ? (
+                  <img src={pub.profilePicture} alt={pub.username} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg" />
+                ) : (
+                  <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                    <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{pubLetter}</span>
+                  </div>
+                )}
+                <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
+              </div>
+
+              <div className="flex-1">
+                <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">{pub.username}</h1>
+                <p className="text-[#BFBCFC] text-sm md:text-base mb-3">@{pub.username}</p>
+                <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    Lid van TraceMyMovies
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center">
+                {[
+                  { label: "WATCHED", value: pub.watchedCount, to: `/user/${id}/watched` },
+                  { label: "LIKED", value: pub.likedCount, to: `/user/${id}/liked` },
+                  { label: "LISTS", value: "—" },
+                ].map(({ label, value, to }, i, arr) => (
+                  <div key={label} className="flex items-center">
+                    <div
+                      onClick={() => to && navigate(to)}
+                      className={`px-5 text-center transition-transform duration-100 ${to ? "cursor-pointer group active:scale-95" : ""}`}
+                    >
+                      <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#FF61D2]" : "text-[#F8FAFC]"}`}>{value}</p>
+                      <p className="text-[#94A3B8] text-xs uppercase tracking-widest">{label}</p>
+                    </div>
+                    {i < arr.length - 1 && <div className="w-px h-10 bg-[#BFBCFC]/15" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
+            <div className="lg:col-span-2 space-y-8">
+
+              {/* Favourite Films */}
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
+                  <Heart className="w-3.5 h-3.5" fill="currentColor" />
+                  Favourite Films
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => {
+                    const movie = pub.favorites[i];
+                    return movie ? (
+                      <ProfilePosterCard
+                        key={movie.id}
+                        movieId={movie.id}
+                        poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        title={movie.title}
+                      />
+                    ) : (
+                      <div key={`empty-${i}`} className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]" />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
+                    Recent Activity
+                  </h2>
+                  {pub.recentActivity.length > 4 && (
+                    <Link to={`/user/${id}/watched`} className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">
+                      All →
+                    </Link>
+                  )}
+                </div>
+                {pub.recentActivity.length === 0 ? (
+                  <p className="text-[#94A3B8] text-sm">Geen recente activiteit.</p>
+                ) : (
+                  <div className="grid grid-cols-4 gap-3">
+                    {pub.recentActivity.slice(0, 4).map((activity, idx) => (
+                      <div key={idx} className="flex flex-col gap-1.5">
+                        <ProfilePosterCard
+                          movieId={activity.id}
+                          poster={activity.poster}
+                          title={activity.movieTitle}
+                          to={`/log/${activity.logId}`}
+                        />
+                        <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 px-0.5 flex-wrap">
+                          {activity.userRating > 0 && (
+                            <div className="grid grid-cols-5 gap-[2px]">
+                              {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                                <Star key={n} className={`w-2 h-2 ${n <= activity.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
+                              ))}
+                            </div>
+                          )}
+                          {activity.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
+                          {activity.hasReview && <AlignLeft className="w-3 h-3 text-[#94A3B8]" />}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-6 md:py-8">
@@ -294,7 +465,7 @@ export function UserProfilePage() {
               onClick={() => navigate('/likedmoviespage')}
               className="cursor-pointer"
             >
-              <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2 hover:text-[#FF61D2] transition-colors duration-200">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
                 <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
@@ -303,20 +474,16 @@ export function UserProfilePage() {
                 {Array.from({ length: 4 }).map((_, i) => {
                   const movie = favoritesLoading ? undefined : favoriteMovies[i];
                   return movie ? (
-                    <div
-                      key={movie.id}
-                      onClick={(e) => { e.stopPropagation(); navigate(`/movie/${movie.id}`); }}
-                      className="relative group cursor-pointer"
-                    >
-                      <img
-                        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                        alt={movie.title}
-                        className="w-full aspect-[2/3] object-cover rounded-lg transition-all duration-300 group-hover:opacity-80 group-hover:scale-[1.02]"
+                    <div key={movie.id} className="relative">
+                      <ProfilePosterCard
+                        movieId={movie.id}
+                        poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        title={movie.title}
                       />
                       {isOwnProfile && (
                         <button
                           onClick={(e) => { e.stopPropagation(); removeFavorite(movie.id); }}
-                          className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm"
+                          className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10"
                         >
                           <X className="w-3.5 h-3.5 text-white" />
                         </button>
@@ -372,60 +539,32 @@ export function UserProfilePage() {
                 <p className="text-[#94A3B8] text-sm">Geen recente activiteit gevonden.</p>
               ) : (
                 <div className="grid grid-cols-4 gap-3">
-                  {recentActivity
-                    .slice(0, 4)
-                    .map((activity, idx) => (
-                      <Link
-                        key={idx}
+                  {recentActivity.slice(0, 4).map((activity, idx) => (
+                    <div key={idx} className="flex flex-col gap-1.5">
+                      <ProfilePosterCard
+                        movieId={activity.id}
+                        poster={activity.poster}
+                        title={activity.movieTitle}
                         to={`/log/${activity.logId}`}
-                        className="block group"
-                      >
-                        {/* Poster */}
-                        <div className="aspect-[2/3] rounded-lg overflow-hidden bg-[#0B0E14] border border-white/5 group-hover:border-[#BFBCFC]/30 transition-all duration-200 group-hover:scale-[1.02] mb-2">
-                          {activity.poster ? (
-                            <img
-                              src={activity.poster}
-                              alt={activity.movieTitle}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Film className="w-6 h-6 text-[#94A3B8]/20" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Icons row */}
-                        <div className="flex items-center gap-1 flex-wrap px-0.5">
-                          {/* Stars — 5 boven 5 grid */}
-                          {activity.userRating > 0 && (
-                            <div className="grid grid-cols-5 gap-0.5">
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                                <Star
-                                  key={n}
-                                  className={`w-2.5 h-2.5 ${
-                                    n <= activity.userRating
-                                      ? "text-[#44FFFF] fill-[#44FFFF]"
-                                      : "text-[#94A3B8]/20"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          )}
-                          {activity.isLiked && (
-                            <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
-                          )}
-                          {activity.isRewatch && (
-                            <RotateCw className="w-3 h-3 text-[#44FFFF]" />
-                          )}
-                          {activity.hasReview && (
-                            <AlignLeft className="w-3 h-3 text-[#94A3B8]" />
-                          )}
-                        </div>
+                        isWatchedProp={true}
+                        isLikedProp={activity.isLiked}
+                        hasActivityProp={true}
+                      />
+                      {/* Icons + log link */}
+                      <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 flex-wrap px-0.5">
+                        {activity.userRating > 0 && (
+                          <div className="grid grid-cols-5 gap-0.5">
+                            {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                              <Star key={n} className={`w-2.5 h-2.5 ${n <= activity.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
+                            ))}
+                          </div>
+                        )}
+                        {activity.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
+                        {activity.isRewatch && <RotateCw className="w-3 h-3 text-[#44FFFF]" />}
+                        {activity.hasReview && <AlignLeft className="w-3 h-3 text-[#94A3B8]" />}
                       </Link>
-                    ))
-                  }
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

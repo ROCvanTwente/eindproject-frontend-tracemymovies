@@ -1,16 +1,19 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
-import { Eye, Search, Film, SortAsc, Heart, Star, AlignLeft } from "lucide-react";
+import { Eye, Search, Film, Heart, Star, AlignLeft } from "lucide-react";
 import { useRefresh } from "../context/RefreshContext";
+import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 
 export function WatchedPage() {
+  const { userId } = useParams();
+  const isPublic = !!userId;
   const auth = useAuth();
   const { refreshKey } = useRefresh();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sortAZ, setSortAZ] = useState(false);
+  const [sortValue, setSortValue] = useState(null);
 
   const token = useMemo(
     () =>
@@ -29,10 +32,10 @@ export function WatchedPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatched`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const url = isPublic
+          ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Watched`
+          : `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatched`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
         setMovies(await res.json());
       } catch (err) {
@@ -42,22 +45,19 @@ export function WatchedPage() {
       }
     };
     if (token) load();
-  }, [token, refreshKey]);
+  }, [token, refreshKey, userId]);
+
+  const { genre, setGenre, decade, setDecade, rating, setRating, filtered: filterResult, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset } = useMovieFilters(movies);
 
   const filtered = useMemo(() => {
-    let result = movies;
+    let result = filterResult;
     if (search.trim()) {
       result = result.filter((m) =>
         m.title?.toLowerCase().includes(search.toLowerCase())
       );
     }
-    if (sortAZ) {
-      result = [...result].sort((a, b) =>
-        (a.title || "").localeCompare(b.title || "")
-      );
-    }
-    return result;
-  }, [movies, search, sortAZ]);
+    return applySort(result, sortValue);
+  }, [filterResult, search, sortValue]);
 
   if (loading) {
     return (
@@ -162,20 +162,20 @@ export function WatchedPage() {
               />
             </div>
 
-            {/* Sort toggle */}
-            <button
-              onClick={() => setSortAZ((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all whitespace-nowrap ${
-                sortAZ
-                  ? "bg-[#BFBCFC]/12 border-[#BFBCFC]/25 text-[#BFBCFC]"
-                  : "bg-transparent border-[#BFBCFC]/12 text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#BFBCFC]/20"
-              }`}
-            >
-              <SortAsc className="w-3.5 h-3.5" />
-              {sortAZ ? "A → Z" : "Latest"}
-            </button>
+            <SortDropdown value={sortValue} onChange={setSortValue} />
 
-            {search && (
+            <MovieFilters
+              genre={genre} setGenre={setGenre}
+              decade={decade} setDecade={setDecade}
+              rating={rating} setRating={setRating}
+              availableGenres={availableGenres}
+              availableDecades={availableDecades}
+              ratingOptions={ratingOptions}
+              hasActiveFilters={hasActiveFilters}
+              reset={reset}
+            />
+
+            {(search || hasActiveFilters) && (
               <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
                 {filtered.length} result{filtered.length !== 1 ? "s" : ""}
               </p>
@@ -197,7 +197,7 @@ export function WatchedPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
             {filtered.map((movie, index) => (
               <MovieCard key={movie.movieId} movie={movie} index={index} />
             ))}

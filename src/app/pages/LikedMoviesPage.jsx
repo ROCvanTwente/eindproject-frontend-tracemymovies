@@ -1,15 +1,19 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
-import { Heart, Search, Film, SortAsc } from "lucide-react";
+import { Heart, Search, Film, Star, AlignLeft } from "lucide-react";
+import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 import { Link } from "react-router";
 
 const LikedMoviesPage = () => {
+  const { userId } = useParams();
+  const isPublic = !!userId;
   const [likedMovies, setLikedMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sortAZ, setSortAZ] = useState(false);
+  const [sortValue, setSortValue] = useState(null);
   const auth = useAuth();
   const { refreshKey } = useRefresh();
 
@@ -30,9 +34,10 @@ const LikedMoviesPage = () => {
     const fetchAllLikedMovies = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMovies`,
-          {
+        const url = isPublic
+          ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Liked`
+          : `${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMovies`;
+        const response = await fetch(url, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -51,22 +56,19 @@ const LikedMoviesPage = () => {
       }
     };
     if (token) fetchAllLikedMovies();
-  }, [token, refreshKey]);
+  }, [token, refreshKey, userId]);
+
+  const { genre, setGenre, decade, setDecade, rating, setRating, filtered: filterResult, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset } = useMovieFilters(likedMovies);
 
   const filtered = useMemo(() => {
-    let result = likedMovies;
+    let result = filterResult;
     if (search.trim()) {
       result = result.filter((m) =>
         m.title?.toLowerCase().includes(search.toLowerCase())
       );
     }
-    if (sortAZ) {
-      result = [...result].sort((a, b) =>
-        (a.title || "").localeCompare(b.title || "")
-      );
-    }
-    return result;
-  }, [likedMovies, search, sortAZ]);
+    return applySort(result, sortValue);
+  }, [filterResult, search, sortValue]);
 
   if (loading) {
     return (
@@ -171,20 +173,20 @@ const LikedMoviesPage = () => {
               />
             </div>
 
-            {/* Sort toggle */}
-            <button
-              onClick={() => setSortAZ((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all whitespace-nowrap ${
-                sortAZ
-                  ? "bg-[#BFBCFC]/12 border-[#BFBCFC]/25 text-[#BFBCFC]"
-                  : "bg-transparent border-[#BFBCFC]/12 text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#BFBCFC]/20"
-              }`}
-            >
-              <SortAsc className="w-3.5 h-3.5" />
-              {sortAZ ? "A → Z" : "Latest"}
-            </button>
+            <SortDropdown value={sortValue} onChange={setSortValue} />
 
-            {search && (
+            <MovieFilters
+              genre={genre} setGenre={setGenre}
+              decade={decade} setDecade={setDecade}
+              rating={rating} setRating={setRating}
+              availableGenres={availableGenres}
+              availableDecades={availableDecades}
+              ratingOptions={ratingOptions}
+              hasActiveFilters={hasActiveFilters}
+              reset={reset}
+            />
+
+            {(search || hasActiveFilters) && (
               <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
                 {filtered.length} result{filtered.length !== 1 ? "s" : ""}
               </p>
@@ -206,9 +208,9 @@ const LikedMoviesPage = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
             {filtered.map((movie, index) => (
-              <MovieCard key={movie._id} movie={movie} index={index} />
+              <MovieCard key={movie.movieId} movie={movie} index={index} />
             ))}
           </div>
         )}
@@ -219,7 +221,8 @@ const LikedMoviesPage = () => {
 
 /* ── MOVIE CARD ── */
 const MovieCard = ({ movie, index }) => (
-  <Link to={`/movie/${movie.movieId}`} className="group relative block">
+  <div className="flex flex-col gap-1.5">
+    <Link to={`/movie/${movie.movieId}`} className="group relative block">
     <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border border-white/5 transition-all duration-300 group-hover:border-[#FF61D2]/35 group-hover:shadow-xl group-hover:shadow-[#FF61D2]/12">
 
       {/* Poster */}
@@ -264,6 +267,28 @@ const MovieCard = ({ movie, index }) => (
       <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/5 group-hover:ring-[#FF61D2]/22 transition-all duration-300 pointer-events-none" />
     </div>
   </Link>
+
+    {/* Icons below poster */}
+    <div className="flex items-center gap-1 px-0.5 flex-wrap">
+      {movie.userRating > 0 && (
+        <div className="grid grid-cols-5 gap-[2px]">
+          {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+            <Star key={n} className={`w-2 h-2 ${n <= movie.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
+          ))}
+        </div>
+      )}
+      <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
+      {movie.hasReview && (
+        <Link
+          to={`/log/${movie.latestLogId}`}
+          onClick={(e) => e.stopPropagation()}
+          title="Bekijk recensie"
+        >
+          <AlignLeft className="w-3 h-3 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors" />
+        </Link>
+      )}
+    </div>
+  </div>
 );
 
 /* ── EMPTY STATE ── */
