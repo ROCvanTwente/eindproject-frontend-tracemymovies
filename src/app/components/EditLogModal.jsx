@@ -70,12 +70,12 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
         }
       );
       if (!res.ok) throw new Error();
-      toast.success("Log bijgewerkt!");
+      toast.success("Log updated!");
       triggerRefresh();
       onSaved?.();
       onClose();
     } catch {
-      toast.error("Bijwerken mislukt.");
+      toast.error("Update failed.");
     } finally {
       setIsSaving(false);
     }
@@ -90,12 +90,12 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
         { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error();
-      toast.success("Log verwijderd.");
+      toast.success("Log deleted.");
       triggerRefresh();
       onClose();
       navigate(-1);
     } catch {
-      toast.error("Verwijderen mislukt.");
+      toast.error("Delete failed.");
     } finally {
       setIsDeleting(false);
     }
@@ -110,7 +110,7 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[#BFBCFC]/10">
           <div>
             <h3 className="text-[#F8FAFC] font-bold text-base">{logData.title}</h3>
-            <p className="text-[#94A3B8] text-xs mt-0.5">Bewerk log</p>
+            <p className="text-[#94A3B8] text-xs mt-0.5">Edit log</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#BFBCFC]/10 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors">
             <X className="w-4 h-4" />
@@ -124,7 +124,7 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
             <div className="bg-[#0B0E14] p-3.5 rounded-xl border border-[#BFBCFC]/10 flex items-center justify-between">
               <span className="text-xs text-[#94A3B8] flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
-                Datum
+                Date
               </span>
               <DatePicker value={watchDate} onChange={setWatchDate} />
             </div>
@@ -167,12 +167,12 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
           <div className="bg-[#0B0E14] p-3.5 rounded-xl border border-[#BFBCFC]/10">
             <p className="text-xs text-[#94A3B8] flex items-center gap-1.5 mb-2">
               <MessageSquare className="w-3.5 h-3.5" />
-              Recensie
+              Review
             </p>
             <textarea
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
-              placeholder="Wat vond je ervan?"
+              placeholder="What did you think?"
               rows={3}
               className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/50 outline-none resize-none"
             />
@@ -181,7 +181,7 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
                 <button onClick={() => setContainsSpoilers(v => !v)} className={`w-4 h-4 rounded border flex items-center justify-center ${containsSpoilers ? "bg-[#FF61D2] border-[#FF61D2]" : "border-[#94A3B8]/40"}`}>
                   {containsSpoilers && <span className="text-white text-[8px] font-bold">✓</span>}
                 </button>
-                <span className="text-xs text-[#94A3B8]">Bevat spoilers</span>
+                <span className="text-xs text-[#94A3B8]">Contains spoilers</span>
               </div>
             )}
           </div>
@@ -192,7 +192,7 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
             disabled={isSaving}
             className="w-full bg-gradient-to-r from-[#BFBCFC] to-[#44FFFF] text-[#0B0E14] font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.99]"
           >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Opslaan</>}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Save</>}
           </button>
 
           <button
@@ -200,11 +200,11 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
             disabled={isDeleting}
             className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-all disabled:opacity-50 ${confirmDelete ? "bg-red-500 text-white" : "bg-[#0B0E14] border border-[#94A3B8]/20 text-[#94A3B8] hover:border-red-500/40 hover:text-red-400"}`}
           >
-            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4" />{confirmDelete ? "Zeker verwijderen?" : "Verwijder log"}</>}
+            {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4" />{confirmDelete ? "Are you sure?" : "Delete log"}</>}
           </button>
           {confirmDelete && (
             <button onClick={() => setConfirmDelete(false)} className="w-full text-[#94A3B8] text-xs hover:text-[#F8FAFC] transition-colors">
-              Annuleren
+              Cancel
             </button>
           )}
         </div>

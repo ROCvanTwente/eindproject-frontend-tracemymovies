@@ -206,7 +206,7 @@ export function UserProfilePage() {
   const addFavorite = async (movie) => {
     if (favoriteMovies.length >= 4) return;
     if (favoriteMovies.some((m) => m.id === movie.id)) {
-      setDuplicateError(`"${movie.title}" staat al in je favorieten.`);
+      setDuplicateError(`"${movie.title}" is already in your favourites.`);
       return;
     }
     setDuplicateError("");
@@ -241,7 +241,7 @@ export function UserProfilePage() {
     setSearchModalOpen(true);
   };
 
-  const displayName = user?.username || user?.email || "Gebruiker";
+  const displayName = user?.username || user?.email || "User";
   const avatarLetter = displayName.charAt(0).toUpperCase();
 
   // ── OTHER USER'S PROFILE ──
@@ -259,7 +259,7 @@ export function UserProfilePage() {
     if (!publicProfile) {
       return (
         <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
-          <p className="text-[#94A3B8]">Gebruiker niet gevonden.</p>
+          <p className="text-[#94A3B8]">User not found.</p>
         </div>
       );
     }
@@ -289,7 +289,7 @@ export function UserProfilePage() {
                 <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4" />
-                    Lid van TraceMyMovies
+                    Member of TraceMyMovies
                   </div>
                 </div>
               </div>
@@ -356,7 +356,7 @@ export function UserProfilePage() {
                   )}
                 </div>
                 {pub.recentActivity.length === 0 ? (
-                  <p className="text-[#94A3B8] text-sm">Geen recente activiteit.</p>
+                  <p className="text-[#94A3B8] text-sm">No recent activity.</p>
                 ) : (
                   <div className="grid grid-cols-4 gap-3">
                     {pub.recentActivity.slice(0, 4).map((activity, idx) => (
@@ -419,12 +419,12 @@ export function UserProfilePage() {
                 {displayName}
               </h1>
               <p className="text-[#BFBCFC] text-sm md:text-base mb-3">
-                @{user?.username || "gebruiker"}
+                @{user?.username || "user"}
               </p>
               <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4" />
-                  Lid van TraceMyMovies
+                  Member of TraceMyMovies
                 </div>
               </div>
             </div>
@@ -500,7 +500,7 @@ export function UserProfilePage() {
                       <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
                         <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
                       </div>
-                      <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Voeg toe</span>
+                      <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
                     </button>
                   ) : (
                     <div
@@ -536,7 +536,7 @@ export function UserProfilePage() {
                   ))}
                 </div>
               ) : recentActivity.length === 0 ? (
-                <p className="text-[#94A3B8] text-sm">Geen recente activiteit gevonden.</p>
+                <p className="text-[#94A3B8] text-sm">No recent activity found.</p>
               ) : (
                 <div className="grid grid-cols-4 gap-3">
                   {recentActivity.slice(0, 4).map((activity, idx) => (
@@ -596,10 +596,10 @@ export function UserProfilePage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 pt-8">
             <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
               <h3 className="text-lg font-bold font-heading text-[#F8FAFC] mb-4">
-                Snelle links
+                Quick links
               </h3>
               <div className="space-y-2">
                 <Link
@@ -614,14 +614,14 @@ export function UserProfilePage() {
                   className="flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-1"
                 >
                   <List className="w-4 h-4" />
-                  Mijn Lijsten
+                  My Lists
                 </Link>
                 <Link
                   to="/likedmoviespage"
                   className="flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-1"
                 >
                   <Heart className="w-4 h-4" />
-                  Gelikte Films
+                  Liked Films
                 </Link>
               </div>
             </div>
@@ -630,12 +630,12 @@ export function UserProfilePage() {
             <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
               <h3 className="text-lg font-bold font-heading text-[#F8FAFC] mb-4 flex items-center gap-2">
                 <List className="w-5 h-5 text-[#44FFFF]" />
-                Recente Lijsten
+                Recent Lists
               </h3>
               <div className="space-y-2">
                 {[
                   { name: "Top 10 Sci-Fi", count: 10 },
-                  { name: "Favoriete Thrillers", count: 7 },
+                  { name: "Favourite Thrillers", count: 7 },
                   { name: "Must Watch 2024", count: 15 },
                 ].map((list) => (
                   <div
@@ -658,7 +658,7 @@ export function UserProfilePage() {
                 to="/my-lists"
                 className="mt-4 flex items-center gap-1.5 text-[#BFBCFC] text-xs hover:text-[#F8FAFC] transition-colors"
               >
-                Bekijk alle lijsten
+                View all lists
                 <span className="text-xs">→</span>
               </Link>
             </div>
@@ -671,7 +671,7 @@ export function UserProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-[#151921] border border-[#BFBCFC]/20 rounded-xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-[#BFBCFC]/10">
-              <h3 className="text-[#F8FAFC] font-bold font-heading">Film zoeken</h3>
+              <h3 className="text-[#F8FAFC] font-bold font-heading">Search for a film</h3>
               <button
                 onClick={() => setSearchModalOpen(false)}
                 className="w-7 h-7 rounded-full hover:bg-[#BFBCFC]/10 flex items-center justify-center"
@@ -685,7 +685,7 @@ export function UserProfilePage() {
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Zoek een film..."
+                  placeholder="Search for a film..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-[#0B0E14] border border-[#BFBCFC]/15 rounded-lg pl-9 pr-4 py-2.5 text-[#F8FAFC] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#BFBCFC]/40"
@@ -705,10 +705,10 @@ export function UserProfilePage() {
                   </div>
                 )}
                 {!searchLoading && searchQuery && searchResults.length === 0 && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">Geen films gevonden.</p>
+                  <p className="text-[#94A3B8] text-sm text-center py-6">No films found.</p>
                 )}
                 {!searchLoading && !searchQuery && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">Typ een filmtitel om te zoeken.</p>
+                  <p className="text-[#94A3B8] text-sm text-center py-6">Type a film title to search.</p>
                 )}
                 {searchResults.map((m) => (
                   <button

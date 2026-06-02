@@ -45,12 +45,12 @@ const LikedMoviesPage = () => {
             },
           }
         );
-        if (!response.ok) throw new Error("Kon gelikete films niet ophalen");
+        if (!response.ok) throw new Error("Could not fetch liked films");
         const data = await response.json();
         setLikedMovies(data);
       } catch (error) {
         console.error(error);
-        toast.error("Fout bij het laden van je likes");
+        toast.error("Error loading your likes");
       } finally {
         setLoading(false);
       }
@@ -282,7 +282,7 @@ const MovieCard = ({ movie, index }) => (
         <Link
           to={`/log/${movie.latestLogId}`}
           onClick={(e) => e.stopPropagation()}
-          title="Bekijk recensie"
+          title="View review"
         >
           <AlignLeft className="w-3 h-3 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors" />
         </Link>
