@@ -10,12 +10,19 @@ export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingRevi
     const initialSpoiler = existingReview ? (existingReview?.containsSpoilers ?? existingReview?.spoiler ?? existingReview?.containSpoilers ?? false) : false;
     const [spoiler, setSpoiler] = useState(initialSpoiler);
 
+    const MAX_REVIEW_LENGTH = 500;
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!existingReview) {
             onClose();
+            return;
+        }
+
+        if (content.trim().length > MAX_REVIEW_LENGTH) {
+            toast.error(`Maximaal ${MAX_REVIEW_LENGTH} tekens toegestaan.`);
             return;
         }
 
@@ -83,8 +90,8 @@ export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingRevi
 
                     <div>
                         <label className="block text-[#F8FAFC] mb-2 font-medium">Your Review</label>
-                        <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={8} placeholder="Share your thoughts about this movie..." className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none" required />
-                        <p className="text-[#94A3B8] text-sm mt-2">{content.length} characters</p>
+                        <textarea value={content} onChange={(e) => setContent(e.target.value)} maxLength={MAX_REVIEW_LENGTH} rows={8} placeholder="Share your thoughts about this movie..." className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none" required />
+                        <p className="text-[#94A3B8] text-sm mt-2">{content.length} / {MAX_REVIEW_LENGTH} characters</p>
                     </div>
 
                     <div className="flex items-center gap-3 p-4 bg-[#FF61D2]/10 border border-[#FF61D2]/20 rounded-xl">
