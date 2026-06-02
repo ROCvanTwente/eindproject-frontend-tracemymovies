@@ -21,6 +21,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
 import  FriendPage from './pages/FriendPage';  
 import  LikedMoviesPage  from './pages/LikedMoviesPage';
+import Chat from './pages/Chat';
   
 export const router = createBrowserRouter([
     {
@@ -112,13 +113,13 @@ export const router = createBrowserRouter([
                 element: _jsx(ServerErrorPage, {}),
             },
             {
+                path: 'chat',
+                element: _jsx(Chat, {})
+            },
+            {
                 path: '*',
                 element: _jsx(NotFoundPage, {}),
             },
         ],
     },
 ]);
-
-
-
-
