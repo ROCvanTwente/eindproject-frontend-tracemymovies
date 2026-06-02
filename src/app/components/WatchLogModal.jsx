@@ -8,10 +8,10 @@ import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 
-const DAYS = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
-const MONTHS = ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"];
+const DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function DatePicker({ value, onChange }) {
+export function DatePicker({ value, onChange }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -126,7 +126,7 @@ function DatePicker({ value, onChange }) {
   );
 }
 
-export function WatchLogModal({ isOpen, onClose }) {
+export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsRewatch = false, preIsLiked = false, preRating = 0 }) {
   const auth = useAuth();
   const { triggerRefresh } = useRefresh();
 
@@ -157,18 +157,23 @@ export function WatchLogModal({ isOpen, onClose }) {
   const [reviewText, setReviewText] = useState("");
   const [containsSpoilers, setContainsSpoilers] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasWatched, setHasWatched] = useState(false);
+  const [hasWatched, setHasWatched] = useState(!!preSelectedMovie);
 
   useEffect(() => {
     if (isOpen) {
-      setStep("search");
       setSearchQuery("");
       setSearchResults([]);
-      setSelectedMovie(null);
+      if (preSelectedMovie) {
+        setSelectedMovie(preSelectedMovie);
+        setStep("log");
+      } else {
+        setStep("search");
+        setSelectedMovie(null);
+      }
       setWatchDate(new Date().toISOString().split("T")[0]);
-      setIsRewatch(false);
-      setIsLiked(false);
-      setRating(0);
+      setIsRewatch(preIsRewatch);
+      setIsLiked(preIsLiked);
+      setRating(preRating);
       setHoverRating(0);
       setReviewText("");
       setContainsSpoilers(false);
@@ -205,8 +210,8 @@ export function WatchLogModal({ isOpen, onClose }) {
 
   const handleSelectMovie = async (movie) => {
     setSelectedMovie(movie);
-    setIsRewatch(false);
-    setHasWatched(false);
+    setIsRewatch(preIsRewatch);
+    setHasWatched(!!preSelectedMovie);
     setStep("log");
 
     try {
@@ -246,11 +251,11 @@ export function WatchLogModal({ isOpen, onClose }) {
       });
 
       if (!res.ok) throw new Error();
-      toast.success(`"${selectedMovie.title}" gelogd!`);
+      toast.success(`"${selectedMovie.title}" logged!`);
       triggerRefresh();
       onClose();
     } catch {
-      toast.error("Opslaan mislukt. Probeer opnieuw.");
+      toast.error("Save failed. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -273,7 +278,7 @@ export function WatchLogModal({ isOpen, onClose }) {
           <div className="bg-[#151921] border border-[#BFBCFC]/20 rounded-xl w-full shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#BFBCFC]/10">
-              <h3 className="text-[#F8FAFC] font-bold">Film zoeken om te loggen</h3>
+              <h3 className="text-[#F8FAFC] font-bold">Search for a film to log</h3>
               <button
                 onClick={onClose}
                 className="w-7 h-7 rounded-full hover:bg-[#BFBCFC]/10 flex items-center justify-center"
@@ -289,7 +294,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Zoek een film..."
+                  placeholder="Search for a film to log..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-[#0B0E14] border border-[#BFBCFC]/15 rounded-lg pl-9 pr-4 py-2.5 text-[#F8FAFC] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#BFBCFC]/40"
@@ -304,10 +309,10 @@ export function WatchLogModal({ isOpen, onClose }) {
                   </div>
                 )}
                 {!searchLoading && !searchQuery && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">Typ een filmtitel om te zoeken.</p>
+                  <p className="text-[#94A3B8] text-sm text-center py-6">Type a film title to search.</p>
                 )}
                 {!searchLoading && searchQuery && searchResults.length === 0 && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">Geen films gevonden.</p>
+                  <p className="text-[#94A3B8] text-sm text-center py-6">No films found.</p>
                 )}
                 {searchResults.map((m) => (
                   <button
@@ -364,7 +369,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                 className="absolute top-4 left-4 flex items-center gap-1 text-xs text-white bg-black/50 hover:bg-black/80 px-3 py-1.5 rounded-lg transition-colors"
               >
                 <ChevronRight className="w-3.5 h-3.5 rotate-180" />
-                Terug
+                Back
               </button>
               <button
                 onClick={onClose}
@@ -399,7 +404,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                 {/* Date + Rewatch + Like */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-[#0B0E14] p-3.5 rounded-xl border border-[#BFBCFC]/10 flex items-center justify-between">
-                    <span className="text-xs text-[#94A3B8] mr-2">Datum</span>
+                    <span className="text-xs text-[#94A3B8] mr-2">Date</span>
                     <DatePicker value={watchDate} onChange={setWatchDate} />
                   </div>
 
@@ -407,7 +412,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                     <span className="text-xs text-[#94A3B8] flex items-center gap-1.5">
                       <RotateCw className="w-3.5 h-3.5" />
                       Rewatch
-                      {!hasWatched && <span className="text-[10px] text-[#94A3B8]/50 ml-1">(nog niet bekeken)</span>}
+                      {!hasWatched && <span className="text-[10px] text-[#94A3B8]/50 ml-1">(not yet watched)</span>}
                     </span>
                     <button
                       onClick={() => hasWatched && setIsRewatch((v) => !v)}
@@ -430,7 +435,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                 >
                   <span className={`text-xs flex items-center gap-1.5 transition-colors ${isLiked ? "text-[#FF61D2]" : "text-[#94A3B8]"}`}>
                     <Heart className={`w-3.5 h-3.5 transition-all ${isLiked ? "fill-[#FF61D2]" : ""}`} />
-                    Like deze film
+                    Like this film
                   </span>
                   <div className={`w-9 h-5 rounded-full transition-colors relative ${isLiked ? "bg-[#FF61D2]" : "bg-[#94A3B8]/30"}`}>
                     <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${isLiked ? "left-5" : "left-1"}`} />
@@ -468,12 +473,12 @@ export function WatchLogModal({ isOpen, onClose }) {
                 <div className="bg-[#0B0E14] p-3.5 rounded-xl border border-[#BFBCFC]/10">
                   <p className="text-xs text-[#94A3B8] flex items-center gap-1.5 mb-2">
                     <MessageSquare className="w-3.5 h-3.5" />
-                    Recensie <span className="text-[#94A3B8]/50">(optioneel)</span>
+                    Review
                   </p>
                   <textarea
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
-                    placeholder="Wat vond je ervan?"
+                    placeholder="What did you think?"
                     rows={3}
                     className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/50 outline-none resize-none"
                   />
@@ -485,7 +490,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                       >
                         {containsSpoilers && <span className="text-white text-[8px] font-bold">✓</span>}
                       </button>
-                      <span className="text-xs text-[#94A3B8]">Bevat spoilers</span>
+                      <span className="text-xs text-[#94A3B8]">Contains spoilers</span>
                     </div>
                   )}
                 </div>
@@ -501,7 +506,7 @@ export function WatchLogModal({ isOpen, onClose }) {
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      Log opslaan
+                      Save log
                     </>
                   )}
                 </button>

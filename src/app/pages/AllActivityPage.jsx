@@ -19,14 +19,14 @@ function getWeekLabel(weekStart) {
   const lastWeek = new Date(thisWeek);
   lastWeek.setDate(lastWeek.getDate() - 7);
 
-  if (weekStart.getTime() === thisWeek.getTime()) return "Deze week";
-  if (weekStart.getTime() === lastWeek.getTime()) return "Vorige week";
+  if (weekStart.getTime() === thisWeek.getTime()) return "This week";
+  if (weekStart.getTime() === lastWeek.getTime()) return "Last week";
 
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
 
   const fmtDay = (d) =>
-    d.toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+    d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
   return `${fmtDay(weekStart)} – ${fmtDay(weekEnd)}`;
 }
@@ -72,7 +72,7 @@ export function AllActivityPage() {
   // Group by week, newest first — with rewatch detection
   const grouped = useMemo(() => {
     const sorted = [...activity].sort(
-      (a, b) => new Date(b.watchedDate) - new Date(a.watchedDate)
+      (a, b) => new Date(b.loggedDate) - new Date(a.loggedDate)
     );
 
     // Mark rewatches: process oldest→newest, first occurrence = original, rest = rewatch
@@ -130,7 +130,7 @@ export function AllActivityPage() {
             className="inline-flex items-center gap-1.5 text-[#94A3B8] hover:text-[#F8FAFC] text-sm mb-5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Terug naar profiel
+            Back to profile
           </Link>
 
           <div className="flex items-center gap-4 md:gap-6">
@@ -171,16 +171,16 @@ export function AllActivityPage() {
             <div className="w-24 h-24 bg-[#44FFFF]/8 rounded-full flex items-center justify-center border border-[#44FFFF]/15 mb-6">
               <Eye className="w-10 h-10 text-[#44FFFF]/30" />
             </div>
-            <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">Nog geen activiteit</h2>
+            <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">No activity yet</h2>
             <p className="text-[#94A3B8] text-sm max-w-xs">
-              Ga films kijken en markeer ze als bekeken om je activiteit hier te zien.
+              Log films to see your activity here.
             </p>
             <Link
               to="/search"
               className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-[#44FFFF] to-[#BFBCFC] text-[#0B0E14] font-bold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
             >
               <Film className="w-4 h-4" />
-              Ontdek films
+              Discover Movies
             </Link>
           </div>
         ) : (
@@ -206,7 +206,7 @@ export function AllActivityPage() {
                 {/* Films in this week */}
                 <div className="flex flex-col gap-3">
                   {items.map((item, index) => {
-                    const dateStr = new Date(item.watchedDate).toLocaleDateString("nl-NL", {
+                    const dateStr = new Date(item.watchedDate).toLocaleDateString("en-GB", {
                       weekday: "short",
                       day: "numeric",
                       month: "short",
