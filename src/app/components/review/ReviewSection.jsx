@@ -470,11 +470,17 @@ export function ReviewSection({ movieId, movieTitle }) {
                 <>
                 {paginatedReviews.map((review, pageIndex) => {
                     const index = (currentPage - 1) * REVIEWS_PER_PAGE + pageIndex;
-                    const author = review.user?.userName || review.userName || (review.userId ? `User #${review.userId}` : "Anonymous");
-                    const content = review.review || review.content || review.reviewText || review.text || "";
-                    const rating = review.rating ?? review.score ?? 0;
-                    const spoiler = review.spoiler ?? review.containsSpoilers ?? review.containSpoilers ?? review.containSpoiler ?? false;
-                    const likes = review.likes ?? review.likeCount ?? 0;
+                    const author = review.user?.userName || (review.userId ? `User #${review.userId}` : "Anonymous");
+                    const content = review.review || "";
+                    const rating = review.rating ?? 0;
+                    const spoiler = review.containsSpoilers ?? false;
+                    const likes = review.likes ?? 0;
+                    const dateValue =  review.date_created;
+                    const dateString = dateValue ? new Date(dateValue).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    }) : "No date";
                     // ownership is verified when attempting delete; do not expose IDs in the UI
                     const reviewKey = getReviewKey(review, index);
 
@@ -490,8 +496,12 @@ export function ReviewSection({ movieId, movieTitle }) {
                                         <span className="text-[#BFBCFC] font-bold">{author.charAt(0)}</span>
                                     </div>
                                     <div>
-                                        <p className="text-[#F8FAFC] font-medium break-words break-all">{author}</p>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[#F8FAFC] font-medium">{author}</p>
+                                            <span className="text-[#94A3B8] text-xs">•</span>
+                                            <span className="text-[#94A3B8] text-xs">{dateString}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 mt-0.5">
                                             <Star className="w-4 h-4 text-[#44FFFF]" fill="currentColor" />
                                             <span className="text-[#44FFFF] font-data text-sm">{rating}/10</span>
                                         </div>
