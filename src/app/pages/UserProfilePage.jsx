@@ -474,7 +474,7 @@ export function UserProfilePage() {
                 {Array.from({ length: 4 }).map((_, i) => {
                   const movie = favoritesLoading ? undefined : favoriteMovies[i];
                   return movie ? (
-                    <div key={movie.id} className="relative">
+                    <div key={movie.id} className="relative group">
                       <ProfilePosterCard
                         movieId={movie.id}
                         poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
@@ -596,70 +596,50 @@ export function UserProfilePage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6 pt-8">
-            <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
-              <h3 className="text-lg font-bold font-heading text-[#F8FAFC] mb-4">
-                Quick links
-              </h3>
-              <div className="space-y-2">
-                <Link
-                  to="/analytics"
-                  className="flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-1"
-                >
-                  <Star className="w-4 h-4" />
+          <div className="space-y-8 pt-8">
+
+            {/* Quick links */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+              </div>
+              <div className="space-y-0.5">
+                <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
+                  <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
                   Movie DNA & Analytics
                 </Link>
-                <Link
-                  to="/my-lists"
-                  className="flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-1"
-                >
-                  <List className="w-4 h-4" />
+                <Link to="/my-lists" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
+                  <List className="w-3.5 h-3.5 group-hover:text-[#BFBCFC] transition-colors" />
                   My Lists
                 </Link>
-                <Link
-                  to="/likedmoviespage"
-                  className="flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-1"
-                >
-                  <Heart className="w-4 h-4" />
+                <Link to="/likedmoviespage" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
+                  <Heart className="w-3.5 h-3.5 group-hover:text-[#FF61D2] transition-colors" />
                   Liked Films
                 </Link>
               </div>
             </div>
 
-            {/* Recente Lijsten */}
-            <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
-              <h3 className="text-lg font-bold font-heading text-[#F8FAFC] mb-4 flex items-center gap-2">
-                <List className="w-5 h-5 text-[#44FFFF]" />
-                Recent Lists
-              </h3>
-              <div className="space-y-2">
+            {/* Recent Lists */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <div className="flex-1 h-px bg-gradient-to-r from-[#44FFFF]/30 to-transparent" />
+              </div>
+              <div className="space-y-1">
                 {[
                   { name: "Top 10 Sci-Fi", count: 10 },
                   { name: "Favourite Thrillers", count: 7 },
                   { name: "Must Watch 2024", count: 15 },
                 ].map((list) => (
-                  <div
-                    key={list.name}
-                    className="flex items-center justify-between p-3 bg-[#0B0E14] rounded-lg border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/25 transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 bg-[#BFBCFC]/10 rounded-md flex items-center justify-center flex-shrink-0">
-                        <List className="w-3.5 h-3.5 text-[#BFBCFC]" />
-                      </div>
-                      <span className="text-[#F8FAFC] text-sm font-medium group-hover:text-[#BFBCFC] transition-colors">
-                        {list.name}
-                      </span>
-                    </div>
-                    <span className="text-[#94A3B8] text-xs">{list.count} films</span>
+                  <div key={list.name} className="flex items-center justify-between cursor-pointer group py-1.5">
+                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors">{list.name}</span>
+                    <span className="text-[#94A3B8]/40 text-xs tabular-nums">{list.count}</span>
                   </div>
                 ))}
               </div>
-              <Link
-                to="/my-lists"
-                className="mt-4 flex items-center gap-1.5 text-[#BFBCFC] text-xs hover:text-[#F8FAFC] transition-colors"
-              >
-                View all lists
-                <span className="text-xs">→</span>
+              <Link to="/my-lists" className="mt-3 inline-flex items-center gap-1 text-[#44FFFF]/50 text-xs hover:text-[#44FFFF] transition-colors">
+                View all →
               </Link>
             </div>
           </div>
