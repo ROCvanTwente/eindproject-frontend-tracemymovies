@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from "../context/AuthContext";
 import { useSignalR } from "../context/SignalRContext";
 import { Check, X as XIcon, UserPlus, UserMinus, Search, Users, Clock, Mail, UserCheck } from "lucide-react";
@@ -12,9 +14,19 @@ const AVATAR_GRADIENTS = [
   ['from-[#34D399]', 'to-[#059669]'],
 ];
  
-const Avatar = ({ name, size = "md" }) => {
+const Avatar = ({ name, src, size = "md" }) => {
   const [from, to] = AVATAR_GRADIENTS[(name?.charCodeAt(0) ?? 0) % AVATAR_GRADIENTS.length];
   const cls = size === "sm" ? "w-8 h-8 text-xs" : size === "lg" ? "w-12 h-12 text-base" : "w-10 h-10 text-sm";
+  const imgSrc = src
+    ? (src.startsWith('data:') || src.startsWith('http') ? src : `data:image/jpeg;base64,${src}`)
+    : null;
+  if (imgSrc) {
+    return (
+      <div className={`${cls} rounded-full overflow-hidden flex-shrink-0`}>
+        <img src={imgSrc} alt={name} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   return (
     <div className={`${cls} bg-gradient-to-br ${from} ${to} rounded-full flex items-center justify-center flex-shrink-0`}>
       <span className="text-[#0B0E14] font-bold">{name ? name.charAt(0).toUpperCase() : '?'}</span>
@@ -33,12 +45,26 @@ const timeAgo = (dateStr) => {
   return `${Math.floor(diff / 86400)}d ago`;
 };
 
+const CACHE_KEY = 'friendpage_cache';
+
+const loadCache = () => {
+  try { return JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null'); } catch { return null; }
+};
+
+const saveCache = (friends, incoming, outgoing) => {
+  sessionStorage.setItem(CACHE_KEY, JSON.stringify({ friends, incoming, outgoing }));
+};
+
 const FriendPage = () => {
+  const cached = useMemo(() => loadCache(), []);
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
-  const [friendRequests, setFriendRequests] = useState([]);
-  const [outgoingRequests, setOutgoingRequests] = useState([]);
-  const [friends, setFriends] = useState([]);
+  const [friendRequests, setFriendRequests] = useState(cached?.incoming || []);
+  const [outgoingRequests, setOutgoingRequests] = useState(cached?.outgoing || []);
+  const [friends, setFriends] = useState(cached?.friends || []);
+  const navigate = useNavigate();
+  const [recentlyOnline, setRecentlyOnline] = useState(new Set());
+  const prevOnlineRef = useRef({});
   const auth = useAuth();
   const { isUserOnline, getUserLastSeen } = useSignalR();
   const [, setTick] = useState(0);
@@ -71,15 +97,23 @@ const FriendPage = () => {
         fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetFriendDashboard`, { headers }),
         fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetMyFriends`, { headers })
       ]);
+      let incoming = friendRequests;
+      let outgoing = outgoingRequests;
+      let friendData = friends;
+
       if (dashRes.ok) {
         const data = await dashRes.json();
-        setFriendRequests(data.incoming || []);
-        setOutgoingRequests(data.outgoing || []);
+        incoming = data.incoming || [];
+        outgoing = data.outgoing || [];
       }
       if (friendRes.ok) {
-        const friendData = await friendRes.json();
-        setFriends(friendData);
+        friendData = await friendRes.json();
       }
+
+      setFriendRequests(incoming);
+      setOutgoingRequests(outgoing);
+      setFriends(friendData);
+      saveCache(friendData, incoming, outgoing);
     } catch (e) { console.error("Error fetching data:", e); }
   };
  
@@ -96,6 +130,11 @@ const FriendPage = () => {
   useEffect(() => {
     const handler = (e) => {
       const { userId, isOnline, lastSeen } = e.detail;
+      if (isOnline && !prevOnlineRef.current[userId]) {
+        setRecentlyOnline(prev => new Set([...prev, userId]));
+        setTimeout(() => setRecentlyOnline(prev => { const n = new Set(prev); n.delete(userId); return n; }), 3000);
+      }
+      prevOnlineRef.current[userId] = isOnline;
       setFriends((prev) => prev.map((f) =>
         f.userId === userId
           ? { ...f, isOnline, lastSeen: lastSeen ?? f.lastSeen }
@@ -183,7 +222,7 @@ const FriendPage = () => {
  
   return (
     <div className="min-h-screen bg-[#0B0E14] text-[#F8FAFC]">
- 
+
       {/* HERO HEADER */}
       <div className="relative overflow-hidden border-b border-[#BFBCFC]/10">
         <div className="absolute inset-0 bg-gradient-to-br from-[#BFBCFC]/5 via-transparent to-[#44FFFF]/5 pointer-events-none" />
@@ -213,12 +252,12 @@ const FriendPage = () => {
           </div>
         </div>
       </div>
- 
+
       <div className="max-w-6xl mx-auto px-6 md:px-12 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
- 
+
         {/* LEFT COLUMN */}
         <div className="lg:col-span-1 space-y-5">
- 
+
           {/* INCOMING REQUESTS */}
           <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-3xl overflow-hidden">
             <div className="px-5 py-4 border-b border-[#BFBCFC]/10 flex items-center justify-between">
@@ -235,11 +274,15 @@ const FriendPage = () => {
               )}
             </div>
             <div className="p-3 space-y-2">
+              <AnimatePresence initial={false}>
               {friendRequests.length > 0 ? friendRequests.map((r) => (
-                <div key={r.userId} className="flex items-center gap-3 p-3 bg-[#0B0E14]/50 rounded-2xl">
-                  <Avatar name={r.userName} size="sm" />
+                <motion.div key={r.userId}
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => navigate('/user/' + r.userId)} className="flex items-center gap-3 p-3 bg-[#0B0E14]/50 rounded-2xl cursor-pointer hover:bg-white/5 transition-colors">
+                  <Avatar name={r.userName} src={r.profileImageBase64} size="sm" />
                   <span className="font-medium text-sm flex-1 text-[#F8FAFC] truncate">{r.userName}</span>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => handleRespondToRequest(r.userId, 'accept')}
                       className="w-8 h-8 bg-green-500/10 text-green-400 rounded-xl hover:bg-green-500/25 flex items-center justify-center transition-colors"
@@ -255,8 +298,10 @@ const FriendPage = () => {
                       <XIcon size={14} />
                     </button>
                   </div>
-                </div>
-              )) : (
+                </motion.div>
+              )) : null}
+              </AnimatePresence>
+              {friendRequests.length === 0 && (
                 <div className="py-8 text-center">
                   <div className="w-10 h-10 bg-[#FF61D2]/5 rounded-2xl flex items-center justify-center mx-auto mb-3">
                     <Mail size={18} className="text-[#94A3B8]/40" />
@@ -266,7 +311,7 @@ const FriendPage = () => {
               )}
             </div>
           </div>
- 
+
           {/* SENT REQUESTS */}
           <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-3xl overflow-hidden">
             <div className="px-5 py-4 border-b border-[#BFBCFC]/10 flex items-center gap-2.5">
@@ -276,22 +321,28 @@ const FriendPage = () => {
               <h2 className="font-semibold text-[#F8FAFC]">Sent</h2>
             </div>
             <div className="p-3 space-y-2">
-              {outgoingRequests.length > 0 ? outgoingRequests.map((r) => (
-                <div key={r.userId} className="flex items-center gap-3 p-3 bg-[#0B0E14]/50 rounded-2xl group">
-                  <Avatar name={r.userName} size="sm" />
-                  <span className="flex-1 text-sm text-[#94A3B8] truncate">{r.userName}</span>
-                  <button
-                    onClick={() => toast.error('Are you sure?', {
-                      description: `Cancel request to ${r.userName}?`,
-                      action: { label: 'Cancel', onClick: () => handleCancelRequest(r.userId) },
-                    })}
-                    className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                    title="Cancel request"
-                  >
-                    <XIcon size={14} />
-                  </button>
-                </div>
-              )) : (
+              <AnimatePresence initial={false}>
+                {outgoingRequests.map((r) => (
+                  <motion.div key={r.userId}
+                    initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+                    transition={{ duration: 0.2 }}
+                    onClick={() => navigate('/user/' + r.userId)} className="flex items-center gap-3 p-3 bg-[#0B0E14]/50 rounded-2xl group cursor-pointer hover:bg-white/5 transition-colors">
+                    <Avatar name={r.userName} src={r.profileImageBase64} size="sm" />
+                    <span className="flex-1 text-sm text-[#94A3B8] truncate">{r.userName}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toast.error('Are you sure?', {
+                        description: `Cancel request to ${r.userName}?`,
+                        action: { label: 'Cancel', onClick: () => handleCancelRequest(r.userId) },
+                      }); }}
+                      className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      title="Cancel request"
+                    >
+                      <XIcon size={14} />
+                    </button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {outgoingRequests.length === 0 && (
                 <div className="py-8 text-center">
                   <div className="w-10 h-10 bg-[#BFBCFC]/5 rounded-2xl flex items-center justify-center mx-auto mb-3">
                     <Clock size={18} className="text-[#94A3B8]/40" />
@@ -301,7 +352,7 @@ const FriendPage = () => {
               )}
             </div>
           </div>
- 
+
           {/* FRIENDS LIST */}
           <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-3xl overflow-hidden">
             <div className="px-5 py-4 border-b border-[#BFBCFC]/10 flex items-center justify-between">
@@ -316,30 +367,39 @@ const FriendPage = () => {
               )}
             </div>
             <div className="p-3 space-y-1">
-              {friends.length > 0 ? friends.map((f) => (
-                <div key={f.userId} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-2xl transition-all group">
-                  <div className="relative">
-                    <Avatar name={f.userName} size="sm" />
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#151921] ${isUserOnline(f.userId, f.isOnline) ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-[#F8FAFC] truncate">{f.userName}</p>
-                    <p className={`text-xs ${isUserOnline(f.userId, f.isOnline) ? 'text-[#44FFFF]' : 'text-[#94A3B8]'}`}>
-                      {isUserOnline(f.userId, f.isOnline) ? 'Online' : `Last seen ${timeAgo(getUserLastSeen(f.userId, f.lastSeen))}`}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => toast.error('Remove friend?', {
-                      description: `Do you really want to remove ${f.userName} from your friends list?`,
-                      action: { label: 'Remove', onClick: () => handleRemoveFriend(f.userId) },
-                    })}
-                    className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                    title="Remove friend"
-                  >
-                    <UserMinus size={14} />
-                  </button>
-                </div>
-              )) : (
+              <AnimatePresence initial={false}>
+                {friends.map((f) => (
+                  <motion.div key={f.userId}
+                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
+                    transition={{ duration: 0.2 }}
+                    onClick={() => navigate('/user/' + f.userId)} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-2xl transition-all group cursor-pointer">
+                    <div className="relative">
+                      <Avatar name={f.userName} src={f.profileImageBase64} size="sm" />
+                      {isUserOnline(f.userId, f.isOnline) && recentlyOnline.has(f.userId) && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#44FFFF] animate-ping" />
+                      )}
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#151921] ${isUserOnline(f.userId, f.isOnline) ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-[#F8FAFC] truncate">{f.userName}</p>
+                      <p className={`text-xs ${isUserOnline(f.userId, f.isOnline) ? 'text-[#44FFFF]' : 'text-[#94A3B8]'}`}>
+                        {isUserOnline(f.userId, f.isOnline) ? 'Online' : `Last seen ${timeAgo(getUserLastSeen(f.userId, f.lastSeen))}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toast.error('Remove friend?', {
+                        description: `Do you really want to remove ${f.userName} from your friends list?`,
+                        action: { label: 'Remove', onClick: () => handleRemoveFriend(f.userId) },
+                      }); }}
+                      className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      title="Remove friend"
+                    >
+                      <UserMinus size={14} />
+                    </button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {friends.length === 0 && (
                 <div className="py-8 text-center">
                   <div className="w-10 h-10 bg-[#44FFFF]/5 rounded-2xl flex items-center justify-center mx-auto mb-3">
                     <Users size={18} className="text-[#44FFFF]/40" />
@@ -351,10 +411,10 @@ const FriendPage = () => {
             </div>
           </div>
         </div>
- 
+
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-2 space-y-6">
- 
+
           {/* SEARCH */}
           <div>
             <h2 className="text-xl font-bold text-[#F8FAFC] mb-1">Find People</h2>
@@ -370,7 +430,7 @@ const FriendPage = () => {
               />
             </div>
           </div>
- 
+
           {/* SEARCH RESULTS */}
           {searchTerm.length > 0 && (
             <div className="space-y-3">
@@ -385,8 +445,8 @@ const FriendPage = () => {
               ) : suggestions.map((user) => {
                 const status = getRelationshipStatus(user.id);
                 return (
-                  <div key={user.id} className="flex items-center gap-4 p-5 bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl hover:border-[#BFBCFC]/25 transition-all">
-                    <Avatar name={user.userName} size="lg" />
+                  <div key={user.id} onClick={() => navigate('/user/' + user.id)} className="flex items-center gap-4 p-5 bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl hover:border-[#BFBCFC]/25 transition-all cursor-pointer">
+                    <Avatar name={user.userName} src={user.profileImageBase64} size="lg" />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[#F8FAFC]">{user.userName}</p>
                       {status === 'friend' && <p className="text-green-400 text-xs mt-0.5 flex items-center gap-1"><UserCheck size={11} /> Already friends</p>}
@@ -402,7 +462,7 @@ const FriendPage = () => {
                       <span className="bg-[#BFBCFC]/10 text-[#BFBCFC] px-4 py-2 rounded-xl text-sm font-medium">Pending</span>
                     )}
                     {status === 'incoming' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleRespondToRequest(user.id, 'accept')}
                           className="px-4 py-2 bg-green-500/10 text-green-400 rounded-xl hover:bg-green-500/25 text-sm font-semibold transition-colors flex items-center gap-1.5"
@@ -419,7 +479,7 @@ const FriendPage = () => {
                     )}
                     {!status && (
                       <button
-                        onClick={() => handleSendRequest(user.id)}
+                        onClick={(e) => { e.stopPropagation(); handleSendRequest(user.id); }}
                         className="flex items-center gap-2 bg-[#BFBCFC]/10 hover:bg-[#BFBCFC] hover:text-[#0B0E14] text-[#BFBCFC] px-5 py-2.5 rounded-xl font-semibold transition-all text-sm"
                       >
                         <UserPlus size={16} /> Add
@@ -430,16 +490,23 @@ const FriendPage = () => {
               })}
             </div>
           )}
- 
+
           {/* FRIENDS GRID (shown when not searching) */}
           {searchTerm.length === 0 && friends.length > 0 && (
             <div>
               <p className="text-[#94A3B8] text-xs font-bold uppercase tracking-widest mb-4">All Friends</p>
+              <AnimatePresence initial={false}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {friends.map((f) => (
-                  <div key={f.userId} className="flex items-center gap-4 p-4 bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl hover:border-[#BFBCFC]/20 transition-all group">
+                {friends.map((f, i) => (
+                  <motion.div key={f.userId}
+                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+                    transition={{ duration: 0.2, delay: i * 0.03 }}
+                    onClick={() => navigate('/user/' + f.userId)} className="flex items-center gap-4 p-4 bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl hover:border-[#BFBCFC]/20 transition-all group cursor-pointer">
                     <div className="relative">
-                      <Avatar name={f.userName} size="md" />
+                      <Avatar name={f.userName} src={f.profileImageBase64} size="md" />
+                      {isUserOnline(f.userId, f.isOnline) && recentlyOnline.has(f.userId) && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#44FFFF] animate-ping" />
+                      )}
                       <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#151921] ${isUserOnline(f.userId, f.isOnline) ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -449,20 +516,21 @@ const FriendPage = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => toast.error('Remove friend?', {
+                      onClick={(e) => { e.stopPropagation(); toast.error('Remove friend?', {
                         description: `Do you really want to remove ${f.userName} from your friends list?`,
                         action: { label: 'Remove', onClick: () => handleRemoveFriend(f.userId) },
-                      })}
+                      }); }}
                       className="w-8 h-8 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                     >
                       <UserMinus size={15} />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
+              </AnimatePresence>
             </div>
           )}
- 
+
           {/* EMPTY STATE (no friends, not searching) */}
           {searchTerm.length === 0 && friends.length === 0 && (
             <div className="py-20 text-center bg-[#151921] border border-[#BFBCFC]/10 rounded-3xl">

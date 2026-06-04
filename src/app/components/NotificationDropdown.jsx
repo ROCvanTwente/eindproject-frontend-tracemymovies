@@ -1,12 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { Bell, UserPlus, CheckCircle, Film, MessageSquare, Check } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function NotificationDropdown() {
     const [showNotifications, setShowNotifications] = useState(false);
-    const { notifications, loading, refreshNotifications, markAsRead } = useNotifications(); 
+    const { notifications, loading, refreshNotifications, markAsRead } = useNotifications();
     const dropdownRef = useRef(null);
+    const navigate = useNavigate();
+
+    const getNavPath = (type) => {
+        const t = type?.toLowerCase();
+        if (t === 'friendrequest' || t === 'friendaccepted' || t === 'frienddeclined' || t === 'friendremoved') return '/FriendPage';
+        return null;
+    };
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -61,7 +69,7 @@ export function NotificationDropdown() {
                             ) : notifications.length === 0 ? (
                                 <div className="p-8 text-center text-[#94A3B8]">No notifications</div>
                             ) : (
-                                notifications.slice(0, 10).map((n) => (
+                                [...notifications].sort((a, b) => b.id - a.id).slice(0, 4).map((n) => (
                                     <motion.div 
                                         key={n.id}
                                         initial={{ opacity: 1 }}
@@ -77,15 +85,18 @@ export function NotificationDropdown() {
                                         }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="px-4 py-3 border-b border-[#BFBCFC]/5 hover:bg-[#BFBCFC]/5 transition-colors flex items-start gap-3">
+                                        <div
+                                            onClick={() => { const p = getNavPath(n.type); if (p) { setShowNotifications(false); navigate(p); } }}
+                                            className={`px-4 py-3 border-b border-[#BFBCFC]/5 hover:bg-[#BFBCFC]/5 transition-colors flex items-start gap-3 ${getNavPath(n.type) ? 'cursor-pointer' : ''}`}
+                                        >
                                             <div className="flex-shrink-0 mt-1">{getIcon(n.type)}</div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[#F8FAFC] font-medium text-sm">{n.title}</p>
                                                 <p className="text-[#94A3B8] text-xs truncate">{n.message}</p>
                                                 <p className="text-[#94A3B8] text-[10px] mt-1">{n.time}</p>
                                             </div>
-                                            <button 
-                                                onClick={() => markAsRead(n.id)}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}
                                                 className="group flex-shrink-0 p-2 rounded-full hover:bg-[#44FFFF]/20 transition-all"
                                             >
                                                 <Check className="w-4 h-4 text-[#94A3B8] group-hover:text-[#44FFFF] transition-colors" />

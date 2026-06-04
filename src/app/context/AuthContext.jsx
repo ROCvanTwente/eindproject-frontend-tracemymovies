@@ -5,14 +5,15 @@ import {
     logout as logoutService,
     validateToken,
     setStoredUser,
+    getStoredUser,
     getToken
 } from "../services/auth";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState(() => getStoredUser());
+    const [isLoading, setIsLoading] = useState(() => !getStoredUser());
 
     useEffect(() => {
         initAuth();
