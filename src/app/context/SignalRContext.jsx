@@ -65,19 +65,14 @@ export function SignalRProvider({ children }) {
     connection.onclose(() => setIsConnected(false));
     connection.onreconnected(() => setIsConnected(true));
 
-    let cancelled = false;
     connectionRef.current = connection;
 
     connection.start()
-      .then(() => { if (!cancelled) setIsConnected(true); })
-      .catch((err) => { if (!cancelled) console.error("SignalR connection failed:", err); });
+      .then(() => setIsConnected(true))
+      .catch((err) => console.error("SignalR connection failed:", err));
 
     return () => {
-      cancelled = true;
-      // Only stop if fully connected — never interrupt a starting connection
-      if (connection.state === signalR.HubConnectionState.Connected) {
-        connection.stop();
-      }
+      connection.stop();
       connectionRef.current = null;
       setIsConnected(false);
     };
