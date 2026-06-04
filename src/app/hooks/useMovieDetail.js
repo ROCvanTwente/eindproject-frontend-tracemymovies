@@ -55,7 +55,7 @@ export function useMovieDetail(id, token) {
                 setHasLogEntries(status.hasLogEntries || false);
             }
         } catch (err) {
-            console.error("Kon status niet ophalen", err);
+            console.error("Could not fetch status", err);
         }
     }, [id, token]);
 
@@ -65,12 +65,12 @@ export function useMovieDetail(id, token) {
 
         try {
             const res = await fetch(`${API_URL}?id=${id}`);
-            if (!res.ok) throw new Error("Fout bij laden");
+            if (!res.ok) throw new Error("Error loading");
             const data = await res.json();
             setMovie(data);
         } catch (error) {
             setError(true);
-            toast.error("Fout bij het laden van de filmgegevens");
+            toast.error("Error loading movie details");
         } finally {
             setLoading(false);
         }
@@ -82,7 +82,7 @@ export function useMovieDetail(id, token) {
 
         try {
             const response = await fetch(RECOMMENDATIONS_URL);
-            if (!response.ok) throw new Error("Recommendations ophalen mislukt");
+            if (!response.ok) throw new Error("Fetching recommendations failed");
             const data = await response.json();
             setRecommendations(data || []);
         } catch (err) {
@@ -118,7 +118,7 @@ export function useMovieDetail(id, token) {
             setShowTrailerModal(true);
             setTimeout(() => setIsAnimateIn(true), 10);
         } else {
-            toast.info("Geen trailer beschikbaar");
+            toast.info("No trailer available");
         }
     };
 
@@ -129,13 +129,13 @@ export function useMovieDetail(id, token) {
 
     const handleToggleWatch = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn om films toe te voegen aan je lijst.");
+            toast.error("You must be logged in to add movies to your list.");
             return;
         }
 
         // Can't unwatch via this button if diary log entries exist
         if (isWatched && hasLogEntries) {
-            toast.error(`'${movie?.title}' kan niet verwijderd worden, er is activiteit op.`);
+            toast.error(`'${movie?.title}' cannot be removed, there is activity on it.`);
             return;
         }
 
@@ -151,7 +151,7 @@ export function useMovieDetail(id, token) {
                 if (response.ok) {
                     setIsWatched(false);
                     triggerRefresh();
-                    toast.success("Verwijderd van bekeken films");
+                    toast.success("Removed from watched movies");
                 }
             } else {
                 const response = await fetch(SAVE_WATCH_URL, {
@@ -166,11 +166,11 @@ export function useMovieDetail(id, token) {
                 if (response.ok) {
                     setIsWatched(true);
                     triggerRefresh();
-                    toast.success("Gemarkeerd als bekeken");
+                    toast.success("Marked as watched");
                 }
             }
         } catch (err) {
-            toast.error("Er is iets misgegaan.");
+            toast.error("Something went wrong.");
         } finally {
             setIsSavingWatch(false);
         }
@@ -178,7 +178,7 @@ export function useMovieDetail(id, token) {
 
     const handleToggleLike = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn.");
+            toast.error("You must be logged in.");
             return;
         }
 
@@ -202,13 +202,13 @@ export function useMovieDetail(id, token) {
                 setIsFavorite(nextLikeState);
                 triggerRefresh();
                 toast.success(
-                    nextLikeState ? "Toegevoegd aan favorieten" : "Verwijderd uit favorieten"
+                    nextLikeState ? "Added to favorites" : "Removed from favorites"
                 );
             } else {
-                toast.error("Er is iets misgegaan.");
+                toast.error("Something went wrong.");
             }
         } catch (err) {
-            toast.error("Er is een netwerkfout opgetreden.");
+            toast.error("A network error occurred.");
         } finally {
             setIsSavingLike(false);
         }
@@ -216,7 +216,7 @@ export function useMovieDetail(id, token) {
 
     const handleToggleWatchlist = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn.");
+            toast.error("You must be logged in.");
             return;
         }
 
@@ -239,13 +239,13 @@ export function useMovieDetail(id, token) {
             if (response.ok) {
                 setIsInWatchlist(nextWatchlistState);
                 toast.success(
-                    nextWatchlistState ? "Toegevoegd aan watchlist" : "Verwijderd uit watchlist"
+                    nextWatchlistState ? "Added to watchlist" : "Removed from watchlist"
                 );
             } else {
-                toast.error("Er is iets misgegaan.");
+                toast.error("Something went wrong.");
             }
         } catch (err) {
-            toast.error("Er is een netwerkfout opgetreden.");
+            toast.error("A network error occurred.");
         } finally {
             setIsSavingWatchlist(false);
         }

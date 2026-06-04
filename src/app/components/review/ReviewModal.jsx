@@ -22,7 +22,7 @@ export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingRevi
         }
 
         if (content.trim().length > MAX_REVIEW_LENGTH) {
-            toast.error(`Maximaal ${MAX_REVIEW_LENGTH} tekens toegestaan.`);
+            toast.error(`Maximum ${MAX_REVIEW_LENGTH} characters allowed.`);
             return;
         }
 

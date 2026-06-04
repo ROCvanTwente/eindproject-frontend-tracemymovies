@@ -95,9 +95,9 @@ export function ProfilePage() {
             if (response.ok) {
                 updateUser({ profilePicture: imageUrl });
                 setSavedData(prev => ({ ...prev, profilePicture: imageUrl }));
-                toast.success('Profielfoto opgeslagen!');
+                toast.success('Profile picture saved!');
             } else {
-                toast.error('Profielfoto opslaan mislukt');
+                toast.error('Failed to save profile picture');
             }
         };
         reader.readAsDataURL(file);
@@ -111,7 +111,7 @@ export function ProfilePage() {
             formData.email !== savedData.email;
 
         if (!hasChanges) {
-            toast.warning("Je wijzigingen zijn al opgeslagen.");
+            toast.warning("Your changes are already saved.");
             return;
         }
 
@@ -124,7 +124,7 @@ export function ProfilePage() {
 
     const handleReAuthConfirm = async () => {
         if (!reAuthPassword) {
-            setReAuthError('Voer je wachtwoord in');
+            setReAuthError('Enter your password');
             return;
         }
 
@@ -161,10 +161,10 @@ export function ProfilePage() {
                     setFormData((prev) => ({ ...prev, username: updatedUser.userName, email: updatedUser.email }));
                     setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
                     closeReAuth();
-                    toast.success('Profiel bijgewerkt!');
+                    toast.success('Profile updated!');
                 } else {
                     const err = await response.json().catch(() => null);
-                    setReAuthError(err?.message || 'Bijwerken mislukt. Controleer je wachtwoord.');
+                    setReAuthError(err?.message || 'Update failed. Check your password.');
                 }
             } else if (reAuthModal.purpose === 'delete') {
                 const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/delete`, {
@@ -180,10 +180,10 @@ export function ProfilePage() {
                     closeReAuth();
                     logout();
                     navigate('/');
-                    toast.success('Account verwijderd');
+                    toast.success('Account deleted');
                 } else {
                     const err = await response.json().catch(() => null);
-                    setReAuthError(err?.message || 'Onjuist wachtwoord');
+                    setReAuthError(err?.message || 'Incorrect password');
                 }
             }
         } finally {
@@ -228,18 +228,18 @@ export function ProfilePage() {
 
     const modalConfig = reAuthModal.purpose === 'update'
         ? {
-            title: 'Bevestig wijzigingen',
-            description: 'Voer je huidige wachtwoord in om je profielwijzigingen op te slaan.',
-            confirmLabel: 'Opslaan',
+            title: 'Confirm changes',
+            description: 'Enter your current password to save your profile changes.',
+            confirmLabel: 'Save',
             confirmClass: 'bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14]',
             iconClass: 'text-[#BFBCFC]',
             iconBg: 'bg-[#BFBCFC]/10',
             Icon: Lock,
         }
         : {
-            title: 'Account verwijderen',
-            description: 'Dit kan niet ongedaan worden gemaakt. Voer je wachtwoord in om je account permanent te verwijderen.',
-            confirmLabel: 'Verwijderen',
+            title: 'Delete account',
+            description: 'This cannot be undone. Enter your password to permanently delete your account.',
+            confirmLabel: 'Delete',
             confirmClass: 'bg-[#FF61D2] hover:bg-[#FF4DC7] text-white',
             iconClass: 'text-[#FF61D2]',
             iconBg: 'bg-[#FF61D2]/10',
@@ -459,14 +459,14 @@ export function ProfilePage() {
                             <div className="mb-3">
                                 <label className="block text-[#F8FAFC] text-sm font-medium mb-1.5">
                                     <Lock className="w-3.5 h-3.5 inline mr-1.5" />
-                                    Huidig wachtwoord
+                                    Current password
                                 </label>
                                 <input
                                     type="password"
                                     value={reAuthPassword}
                                     onChange={(e) => { setReAuthPassword(e.target.value); setReAuthError(''); }}
                                     onKeyDown={(e) => e.key === 'Enter' && !reAuthLoading && handleReAuthConfirm()}
-                                    placeholder="Voer je wachtwoord in"
+                                    placeholder="Enter your password"
                                     autoFocus
                                     className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2.5 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                 />
@@ -487,7 +487,7 @@ export function ProfilePage() {
                                     disabled={reAuthLoading}
                                     className="flex-1 bg-[#0B0E14] border border-[#BFBCFC]/15 text-[#94A3B8] hover:text-[#F8FAFC] py-2.5 rounded-lg font-medium transition-all text-sm disabled:opacity-50"
                                 >
-                                    Annuleren
+                                    Cancel
                                 </button>
                                 <button
                                     onClick={handleReAuthConfirm}

@@ -6,6 +6,7 @@ import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteR
 import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
 import { ReviewModal } from "./ReviewModal";
+import { ExpandableReviewText } from "./ExpandableReviewText";
 
 export function ReviewSection({ movieId, movieTitle }) {
     const auth = useAuth();
@@ -193,7 +194,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                     if (key !== reviewKey) return r;
                     return { ...r, likes: (r.likes ?? r.likeCount ?? 0) + 1 };
                 }));
-                toast.error("Kon like niet verwijderen.");
+                toast.error("Could not remove like.");
                 return;
             }
 
@@ -228,7 +229,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                 if (key !== reviewKey) return r;
                 return { ...r, likes: (r.likes ?? r.likeCount ?? 0) - 1 };
             }));
-            toast.error("Kon like niet bijwerken.");
+            toast.error("Could not update like.");
             return;
         }
 
@@ -254,7 +255,7 @@ export function ReviewSection({ movieId, movieTitle }) {
     const handleDeleteReview = async (review, reviewKey) => {
         const reviewId = review.id ?? review.reviewId;
         if (!reviewId) {
-            toast.error("Kon review-id niet vinden.");
+            toast.error("Could not find review id.");
             return false;
         }
 
@@ -275,22 +276,22 @@ export function ReviewSection({ movieId, movieTitle }) {
         }
 
         if (!latest) {
-            toast.error("Kon review niet verifiëren. Probeer opnieuw of herlaad de pagina.");
+            toast.error("Could not verify review. Try again or reload the page.");
             return false;
         }
 
         const latestOwnerId = getReviewOwnerId(latest);
         if (!currentUserId || latestOwnerId == null || String(latestOwnerId) !== String(currentUserId)) {
-            toast.error("Je kunt alleen je eigen review verwijderen.");
+            toast.error("You can only delete your own review.");
             return false;
         }
 
-        const confirmed = window.confirm("Weet je zeker dat je deze review wilt verwijderen?");
+        const confirmed = window.confirm("Are you sure you want to delete this review?");
         if (!confirmed) return false;
 
         const removed = await deleteReview(reviewId, token);
         if (!removed) {
-            toast.error("Kon review niet verwijderen.");
+            toast.error("Could not delete review.");
             return false;
         }
 
@@ -306,7 +307,7 @@ export function ReviewSection({ movieId, movieTitle }) {
             delete next[reviewKey];
             return next;
         });
-        toast.success("Review verwijderd.");
+        toast.success("Review deleted.");
         // close any open menu for this review
         setOpenMenuKey((prev) => (prev === reviewKey ? null : prev));
         return true;
@@ -315,47 +316,47 @@ export function ReviewSection({ movieId, movieTitle }) {
     const handleReportReview = async (review, reviewKey) => {
         const reviewId = review.id ?? review.reviewId;
         if (!reviewId) {
-            toast.error("Kon review-id niet vinden.");
+            toast.error("Could not find review id.");
             return;
         }
 
-        const reason = window.prompt("Waarom wil je deze review rapporteren?");
+        const reason = window.prompt("Why do you want to report this review?");
         if (reason === null) return;
 
         const trimmedReason = reason.trim();
         if (!trimmedReason) {
-            toast.error("Geef een reden op.");
+            toast.error("Please provide a reason.");
             return;
         }
 
         const result = await reportReview(reviewId, trimmedReason, token);
         if (!result) {
-            toast.error("Kon review niet rapporteren.");
+            toast.error("Could not report review.");
             return;
         }
 
         setOpenMenuKey((prev) => (prev === reviewKey ? null : prev));
-        toast.success("Review gerapporteerd.");
+        toast.success("Review reported.");
     };
 
     const handleSubmitReview = async () => {
         if (reviewRating === 0) {
-            toast.error("Selecteer een score.");
+            toast.error("Select a score.");
             return;
         }
 
         if (!reviewText.trim()) {
-            toast.error("Schrijf eerst een review.");
+            toast.error("Write a review first.");
             return;
         }
 
         if (reviewText.trim().length > MAX_REVIEW_LENGTH) {
-            toast.error(`Maximaal ${MAX_REVIEW_LENGTH} tekens toegestaan.`);
+            toast.error(`Maximum ${MAX_REVIEW_LENGTH} characters allowed.`);
             return;
         }
 
         if (!token) {
-            toast.error("Je sessie mist een geldige inlogtoken. Log opnieuw in.");
+            toast.error("Your session is missing a valid login token. Please log in again.");
             return;
         }
 
@@ -369,11 +370,11 @@ export function ReviewSection({ movieId, movieTitle }) {
             }, token);
 
             if (!createdReview) {
-                toast.error("Kon review niet plaatsen. Controleer of de API draait op https://localhost:7112 en of je bent ingelogd.");
+                toast.error("Could not post review. Check if the API is running on https://localhost:7112 and if you are logged in.");
                 return;
             }
 
-            toast.success("Review opgeslagen.");
+            toast.success("Review saved.");
             setReviewText("");
             setReviewRating(0);
             setContainsSpoilers(false);
@@ -394,7 +395,7 @@ export function ReviewSection({ movieId, movieTitle }) {
 
                 {!isAuthenticated ? (
                     <div className="rounded-xl border border-[#BFBCFC]/15 bg-[#0B0E14] p-4 text-sm text-[#94A3B8]">
-                        Log in om een review te plaatsen.
+                        Log in to post a review.
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -432,7 +433,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                                 className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none placeholder:text-[#94A3B8]"
                             />
                             <div className="text-right text-sm text-[#94A3B8] mt-1">
-                                {reviewText.length} / {MAX_REVIEW_LENGTH} tekens
+                                {reviewText.length} / {MAX_REVIEW_LENGTH} characters
                             </div>
                         </div>
 
@@ -463,9 +464,9 @@ export function ReviewSection({ movieId, movieTitle }) {
             </div>
 
             {isLoadingReviews ? (
-                <div className="text-[#94A3B8] text-sm">Reviews laden...</div>
+                <div className="text-[#94A3B8] text-sm">Loading reviews...</div>
             ) : normalizedReviews.length === 0 ? (
-                <div className="text-[#94A3B8] text-sm">Nog geen reviews voor deze film.</div>
+                <div className="text-[#94A3B8] text-sm">No reviews for this movie yet.</div>
             ) : (
                 <>
                 {paginatedReviews.map((review, pageIndex) => {
@@ -550,21 +551,21 @@ export function ReviewSection({ movieId, movieTitle }) {
                                                             type="button"
                                                             onClick={() => openEditModal(review)}
                                                             className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#BFBCFC] hover:bg-[#1E2230] transition-colors"
-                                                            aria-label="Bewerk review"
+                                                            aria-label="Edit review"
                                                         >
                                                             <Edit className="w-4 h-4 text-[#BFBCFC]" />
-                                                            Bewerken
+                                                            Edit
                                                         </button>
                                                     ) : null;
                                                 })()}
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => toast(`Komt binnenkort — ik wil dit later doen.`, { duration: 4000 })}
+                                                    onClick={() => toast(`Coming soon — I want to do this later.`, { duration: 4000 })}
                                                     className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#94A3B8] bg-[#0B0E14] cursor-default"
                                                 >
                                                     <Flag className="w-4 h-4 text-[#94A3B8]" />
-                                                    Report (Komt binnenkort)
+                                                    Report (Coming soon)
                                                 </button>
                                             </div>
                                         )}
@@ -596,7 +597,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                                 onSaved={async () => {
                                     await refreshReviews();
                                     setEditModalOpen(false);
-                                    toast.success("Review bijgewerkt.");
+                                    toast.success("Review updated.");
                                 }}
                             />
 
@@ -604,7 +605,9 @@ export function ReviewSection({ movieId, movieTitle }) {
 
                             {spoiler && !revealedSpoilers[reviewKey] ? (
                                 <div className="relative">
-                                    <p className="text-[#94A3B8] leading-relaxed text-sm md:text-base break-words break-all blur-sm select-none">{content}</p>
+                                    <div className="blur-sm select-none">
+                                        <ExpandableReviewText text={content} maxLength={300} />
+                                    </div>
                                     <button
                                         onClick={() => toggleReveal(reviewKey)}
                                         className="absolute inset-0 flex items-center justify-center text-[#FF61D2] bg-black/30 hover:bg-black/40 rounded-xl font-medium"
@@ -613,7 +616,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                                     </button>
                                 </div>
                             ) : (
-                                <p className="text-[#94A3B8] leading-relaxed text-sm md:text-base break-words break-all">{content}</p>
+                                <ExpandableReviewText text={content} maxLength={300} />
                             )}
                         </div>
                     );
