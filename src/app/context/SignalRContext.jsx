@@ -37,7 +37,8 @@ export function SignalRProvider({ children }) {
       state === signalR.HubConnectionState.Reconnecting
     ) return;
 
-    const hubUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") + "/hubs/online";
+    const hubUrl = import.meta.env.VITE_HUB_URL ||
+      import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") + "/hubs/online";
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, { accessTokenFactory: () => token })
