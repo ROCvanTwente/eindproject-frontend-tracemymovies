@@ -21,7 +21,6 @@ export function SignalRProvider({ children }) {
 
   useEffect(() => {
     if (!token || !user) {
-      // Disconnect if logged out
       if (connectionRef.current) {
         connectionRef.current.stop();
         connectionRef.current = null;
@@ -30,54 +29,55 @@ export function SignalRProvider({ children }) {
       return;
     }
 
-    // Already connected
-    if (connectionRef.current?.state === signalR.HubConnectionState.Connected) return;
+    // Already connected or connecting — don't start again
+    const state = connectionRef.current?.state;
+    if (
+      state === signalR.HubConnectionState.Connected ||
+      state === signalR.HubConnectionState.Connecting ||
+      state === signalR.HubConnectionState.Reconnecting
+    ) return;
 
     const hubUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") + "/hubs/online";
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(hubUrl, {
-        accessTokenFactory: () => token,
-      })
+      .withUrl(hubUrl, { accessTokenFactory: () => token })
       .withAutomaticReconnect([0, 2000, 5000, 10000])
       .configureLogging(signalR.LogLevel.Warning)
       .build();
 
-    // Online status event
     connection.on("UserStatusChanged", ({ userId, isOnline, lastSeen }) => {
       setOnlineUsers((prev) => ({ ...prev, [userId]: isOnline }));
       if (!isOnline && lastSeen)
         setLastSeenUsers((prev) => ({ ...prev, [userId]: lastSeen }));
-      // Dispatch so FriendPage can update its local state directly
       window.dispatchEvent(new CustomEvent("signalr:userstatuschanged", {
         detail: { userId, isOnline, lastSeen }
       }));
     });
 
-    // Friend list changed event
     connection.on("FriendListChanged", () => {
       window.dispatchEvent(new CustomEvent("signalr:friendlistchanged"));
     });
 
-    // Live notification event
     connection.on("ReceiveNotification", (notification) => {
-      // Dispatch a custom event so NotificationContext can pick it up
-      window.dispatchEvent(
-        new CustomEvent("signalr:notification", { detail: notification })
-      );
+      window.dispatchEvent(new CustomEvent("signalr:notification", { detail: notification }));
     });
 
     connection.onclose(() => setIsConnected(false));
     connection.onreconnected(() => setIsConnected(true));
 
-    connection.start()
-      .then(() => setIsConnected(true))
-      .catch((err) => console.error("SignalR connection failed:", err));
-
+    let cancelled = false;
     connectionRef.current = connection;
 
+    connection.start()
+      .then(() => { if (!cancelled) setIsConnected(true); })
+      .catch((err) => { if (!cancelled) console.error("SignalR connection failed:", err); });
+
     return () => {
-      connection.stop();
+      cancelled = true;
+      // Only stop if fully connected — never interrupt a starting connection
+      if (connection.state === signalR.HubConnectionState.Connected) {
+        connection.stop();
+      }
       connectionRef.current = null;
       setIsConnected(false);
     };
