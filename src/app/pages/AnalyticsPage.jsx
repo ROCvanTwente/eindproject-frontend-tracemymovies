@@ -1,174 +1,25 @@
-import { useNavigate } from "react-router";
-
-import {
-  Film,
-  Star,
-  TrendingUp,
-  Sparkles,
-  Clock,
-} from "lucide-react";
-
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useEffect, useState } from "react";
 import { AnalyticsHeader } from "../components/analytics/AnalyticsHeader";
-import { StatsGrid } from "../components/analytics/StatsGrid";
-import { RecentActivity } from "../components/analytics/RecentActivity";
-import { FavoriteFilms } from "../components/analytics/FavoriteFilms";
-import { SearchMovieModal } from "../components/analytics/SearchMovieModal";
-import { BottomInsights } from "../components/analytics/BottomInsights";
+import { BiometricHud } from "../components/analytics/BiometricHud";
+import { DirectorSynergy } from "../components/analytics/DirectorSynergy";
 import { YearlyChart } from "../components/analytics/YearlyChart";
+import { MoodRadar as TasteProfile } from "../components/analytics/MoodRadar";
+import { MovieTimeline } from "../components/analytics/MovieTimeline";
+import { PlatformStats } from "../components/analytics/PlatformStats";
 
 export function AnalyticsPage() {
-  const navigate = useNavigate();
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const yearlyData = [
-    { year: "2020", movies: 45 },
-    { year: "2021", movies: 62 },
-    { year: "2022", movies: 58 },
-    { year: "2023", movies: 71 },
-    { year: "2024", movies: 38 },
-  ];
-
-  const genreData = [
-    { genre: "Sci-Fi", count: 78, color: "#BFBCFC" },
-    { genre: "Action", count: 65, color: "#BFBCFC" },
-    { genre: "Drama", count: 52, color: "#BFBCFC" },
-    { genre: "Thriller", count: 41, color: "#BFBCFC" },
-    { genre: "Comedy", count: 38, color: "#BFBCFC" },
-  ];
-
-  const [favoriteMovies, setFavoriteMovies] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [duplicateError, setDuplicateError] = useState("");
-
-  const getToken = () =>
-    localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
-
-  const removeFavorite = async (movieId) => {
-    const token = getToken();
-    if (!token) return;
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites/${movieId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setFavoriteMovies((prev) => prev.filter((m) => m.id !== movieId));
-  };
-
-  const openSearch = () => {
-    setSearchQuery("");
-    setSearchResults([]);
-    setDuplicateError("");
-    setSearchModalOpen(true);
-  };
+  const getToken = () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
 
   useEffect(() => {
-    if (!searchModalOpen) return;
-    const q = searchQuery.trim();
-
-    const timer = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search?query=${encodeURIComponent(q)}`
-        );
-        if (!res.ok) {
-          setSearchResults([]);
-          return;
-        }
-        const data = await res.json();
-        setSearchResults(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.error(e);
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchModalOpen]);
-
-  const addFavorite = async (movie) => {
-    if (favoriteMovies.length >= 4) return;
-    if (favoriteMovies.some((m) => m.id === movie.id)) {
-      setDuplicateError(`"${movie.title}" staat al in je favorieten.`);
-      return;
-    }
-    setDuplicateError("");
-    setSearchModalOpen(false);
-
-    setFavoriteMovies((prev) => [...prev, movie]);
-
-    try {
-      const token = getToken();
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/Favorites/${movie.id}`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (!res.ok) {
-        setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-        console.error("Favoriet toevoegen mislukt:", await res.text());
-      }
-    } catch (e) {
-      setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-      console.error("Favoriet toevoegen mislukt:", e);
-    }
-  };
-
-  useEffect(() => {
-    const fetchFavorites = async () => {
+    const fetchWatchlistShort = async () => {
       try {
         const token = getToken();
         if (!token) return;
-
-        const idsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!idsRes.ok) return;
-
-        const ids = await idsRes.json();
-        const top4 = ids.slice(0, 4);
-
-        const movies = await Promise.all(
-          top4.map((id) =>
-            fetch(
-              `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/GetMovieDetails?id=${id}`
-            ).then((r) => (r.ok ? r.json() : null))
-          )
-        );
-        setFavoriteMovies(movies.filter(Boolean));
-      } catch (error) {
-        console.error("Error fetching favorite movies:", error);
-      }
-    };
-    fetchFavorites();
-  }, []);
-
-  useEffect(() => {
-    const fetchRecentActivity = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/UserActivity/Recent`,
+        const analyticsRes = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/UserActivity/Analytics`,
           {
             method: "GET",
             headers: {
@@ -177,207 +28,61 @@ export function AnalyticsPage() {
             },
           }
         );
-        if (!response.ok) throw new Error("Failed to fetch recent activity");
-
-        const data = await response.json();
-        setRecentActivity(Array.isArray(data) ? data : [data]);
+        if (analyticsRes.ok) {
+          const aData = await analyticsRes.json();
+          setAnalyticsData(aData);
+        }
       } catch (error) {
-        console.error("Error fetching recent activity:", error);
+        console.error("Error fetching watchlist short:", error);
       }
     };
-    fetchRecentActivity();
+    fetchAllData();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0B0E14]">
+        <div className="relative w-20 h-20 flex items-center justify-center">
+          <div className="absolute inset-0 border-2 border-[#BFBCFC]/10 rounded-full scale-110"></div>
+          <div className="absolute inset-0 border-4 border-transparent border-t-[#44FFFF] border-b-[#BFBCFC] rounded-full animate-spin"></div>
+          <span className="text-[10px] uppercase font-bold tracking-widest text-[#44FFFF] animate-pulse">DNA</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen py-6 md:py-8">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="min-h-screen bg-[#0B0E14] text-[#F8FAFC] relative overflow-hidden selection:bg-[#44FFFF]/20 selection:text-[#44FFFF]">
+      <div className="absolute top-[-10%] left-[-5%] w-[60vw] h-[60vw] rounded-full bg-[#44FFFF]/3 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[60vw] h-[60vw] rounded-full bg-[#FF61D2]/3 blur-3xl pointer-events-none" />
+      
+      <div className="container mx-auto px-6 max-w-7xl relative z-10 py-12 space-y-12 animate-fade-in">
         <AnalyticsHeader />
-        <StatsGrid />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 md:mb-8 items-start">
-          <RecentActivity recentActivity={recentActivity} />
-          
-          <FavoriteFilms
-            favoriteMovies={favoriteMovies}
-            onOpenSearch={openSearch}
-            onRemoveFavorite={removeFavorite}
-            onNavigate={navigate}
-          />
-        </div>
+        <section>
+          <BiometricHud stats={analyticsData?.stats} />
+        </section>
 
-
-        {/* Bottom Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 mb-6 md:mb-8">
-
-          {/* Favorite Genre */}
-          <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-lg md:rounded-xl p-3 md:p-4">
-            <h2 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-4">
-              Favorite Genre
-            </h2>
-
-            <div className="space-y-3">
-              {genreData.map((item) => (
-                <div key={item.genre}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[#F8FAFC] text-sm">
-                      {item.genre}
-                    </span>
-
-                    <span className="text-[#44FFFF] text-sm font-bold">
-                      {item.count}
-                    </span>
-                  </div>
-
-                  <div className="h-2 bg-[#0B0E14] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(item.count / 78) * 100}%`,
-                        backgroundColor: item.color,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+        <div className="space-y-12 pt-4">
+          {/* TIER 1: Connected directly to Live API Feed Properties */}
+          <section className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 items-stretch">
+            <div className="lg:col-span-3 min-h-[420px] w-full flex items-center justify-center">
+              <TasteProfile rawData={analyticsData?.tasteProfile} />
             </div>
-          </div>
-
-          {/* Favorite Actor */}
-          <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-lg md:rounded-xl p-3 md:p-4">
-            <h2 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-4">
-              Favorite Actor
-            </h2>
-
-            <div className="space-y-2">
-              {[
-                { name: "Leonardo DiCaprio", movies: 12 },
-                { name: "Tom Hanks", movies: 10 },
-                { name: "Christian Bale", movies: 9 },
-                { name: "Scarlett Johansson", movies: 8 },
-              ].map((actor, index) => (
-                <div
-                  key={actor.name}
-                  className="flex items-center gap-3 bg-[#0B0E14]/50 rounded-lg p-2.5"
-                >
-                  <div className="w-9 h-9 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center text-[#0B0E14] font-bold">
-                    {index + 1}
-                  </div>
-
-                  <div>
-                    <p className="text-[#F8FAFC] text-sm">
-                      {actor.name}
-                    </p>
-
-                    <p className="text-[#44FFFF] text-xs">
-                      {actor.movies} movies
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="lg:col-span-2">
+              <DirectorSynergy rawPairings={analyticsData?.directorSynergy} />
             </div>
-          </div>
+          </section>
 
-          {/* Favorite Director */}
-          <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-lg md:rounded-xl p-3 md:p-4">
-            <h2 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-4">
-              Favorite Director
-            </h2>
-
-            <div className="space-y-2">
-              {[
-                { name: "Christopher Nolan", movies: 8 },
-                { name: "Quentin Tarantino", movies: 7 },
-                { name: "Martin Scorsese", movies: 6 },
-                { name: "Steven Spielberg", movies: 5 },
-              ].map((director, index) => (
-                <div
-                  key={director.name}
-                  className="flex items-center gap-3 bg-[#0B0E14]/50 rounded-lg p-2.5"
-                >
-                  <div className="w-9 h-9 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center text-[#0B0E14] font-bold">
-                    {index + 1}
-                  </div>
-
-                  <div>
-                    <p className="text-[#F8FAFC] text-sm">
-                      {director.name}
-                    </p>
-
-                    <p className="text-[#44FFFF] text-xs">
-                      {director.movies} movies
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
+            <MovieTimeline />
+            <PlatformStats />
+          </section>
         </div>
-
-        {/* Movies Watched Per Year */}
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-lg md:rounded-xl p-3 md:p-4">
-
-            <h2 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-4">
-              Movies Watched Per Year
-            </h2>
-
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={yearlyData}>
-                <defs>
-                  <linearGradient
-                    id="yearlyBarGradient"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="0%" stopColor="#BFBCFC" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#44FFFF" stopOpacity={0.6} />
-                  </linearGradient>
-                </defs>
-
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#151921"
-                  opacity={0.3}
-                />
-
-                <XAxis dataKey="year" stroke="#94A3B8" />
-
-                <YAxis stroke="#94A3B8" />
-
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#151921",
-                    border: "1px solid rgba(191, 188, 252, 0.3)",
-                    borderRadius: "12px",
-                    color: "#F8FAFC",
-                  }}
-                />
-
-                <Bar
-                  dataKey="movies"
-                  fill="url(#yearlyBarGradient)"
-                  radius={[12, 12, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <SearchMovieModal
-          isOpen={searchModalOpen}
-          onClose={() => setSearchModalOpen(false)}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          duplicateError={duplicateError}
-          searchLoading={searchLoading}
-          searchResults={searchResults}
-          onAddFavorite={addFavorite}
-        />
-
-        <BottomInsights genreData={genreData} />
-        <YearlyChart yearlyData={yearlyData} />
+        
+        <section className="bg-[#151921]/20 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
+          <YearlyChart yearlyData={analyticsData?.yearlyData || []} />
+        </section>
       </div>
     </div>
   );

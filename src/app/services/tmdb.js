@@ -1,10 +1,10 @@
 // TMDB API Service
-const TMDB_API_KEY = 'YOUR_API_KEY_HERE'; // Replace with your actual API key from https://www.themoviedb.org/settings/api
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_BASE_URL = import.meta.env.VITE_TMDB_BASE_URL;
+const TMDB_IMAGE_BASE = import.meta.env.VITE_TMDB_IMAGE_BASE;
 // Check if API key is configured
 const isApiKeyConfigured = TMDB_API_KEY && TMDB_API_KEY !== 'YOUR_API_KEY_HERE';
-const DOTNET_BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
+const DOTNET_BACKEND_URL = import.meta.env.VITE_API_BASE_URL + '/TMDBMovie';
 // Export for banner component
 export const isUsingMockData = !isApiKeyConfigured;
 // Fetch from TMDB API
@@ -53,7 +53,7 @@ export async function getTrending(timeWindow = 'week', region = 'NL') {
         return getMockMovies();
     }
 }
-
+ 
 // Get popular movies
 export async function getPopular(region = 'NL', page = 1) {
     try {
@@ -64,7 +64,7 @@ export async function getPopular(region = 'NL', page = 1) {
         return getMockMovies();
     }
 }
-
+ 
 // Get top rated movies
 export async function getTopRated(region = 'NL', page = 1) {
     try {
@@ -75,7 +75,7 @@ export async function getTopRated(region = 'NL', page = 1) {
         return getMockMovies();
     }
 }
-
+ 
 // Get upcoming movies
 export async function getUpcoming(region = 'NL', page = 1) {
     try {
@@ -188,6 +188,7 @@ export async function getWatchProviders(movieId, region = 'NL') {
         buy: providers.buy || [],
     };
 }
+ 
 // Mock data
 function getMockMovies() {
     return [
