@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from "../context/AuthContext";
+import { useSignalR } from "../context/SignalRContext";
 import { Check, X as XIcon, UserPlus, UserMinus, Search, Users, Clock, Mail, UserCheck } from "lucide-react";
 import { toast } from 'sonner';
  
@@ -21,6 +22,17 @@ const Avatar = ({ name, size = "md" }) => {
   );
 };
  
+const timeAgo = (dateStr) => {
+  if (!dateStr) return "a while ago";
+  // Ensure UTC parsing — backend sends UTC without 'Z'
+  const utc = dateStr.endsWith("Z") || dateStr.includes("+") ? dateStr : dateStr + "Z";
+  const diff = Math.floor((Date.now() - new Date(utc).getTime()) / 1000);
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+};
+
 const FriendPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
@@ -28,6 +40,12 @@ const FriendPage = () => {
   const [outgoingRequests, setOutgoingRequests] = useState([]);
   const [friends, setFriends] = useState([]);
   const auth = useAuth();
+  const { isUserOnline, getUserLastSeen } = useSignalR();
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
  
   const token = useMemo(() => {
     return (
@@ -66,6 +84,27 @@ const FriendPage = () => {
   };
  
   useEffect(() => { fetchData(); }, [token]);
+
+  // Live friend list updates via SignalR
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener("signalr:friendlistchanged", handler);
+    return () => window.removeEventListener("signalr:friendlistchanged", handler);
+  }, [token]);
+
+  // Live status + lastSeen update
+  useEffect(() => {
+    const handler = (e) => {
+      const { userId, isOnline, lastSeen } = e.detail;
+      setFriends((prev) => prev.map((f) =>
+        f.userId === userId
+          ? { ...f, isOnline, lastSeen: lastSeen ?? f.lastSeen }
+          : f
+      ));
+    };
+    window.addEventListener("signalr:userstatuschanged", handler);
+    return () => window.removeEventListener("signalr:userstatuschanged", handler);
+  }, []);
  
   const handleRespondToRequest = async (senderId, action) => {
     const endpoint = action === 'accept' ? 'AcceptFriendRequest' : 'DeclineFriendRequest';
@@ -140,7 +179,7 @@ const FriendPage = () => {
     return () => clearTimeout(delay);
   }, [searchTerm, token]);
  
-  const onlineFriends = friends.filter(f => f.isOnline);
+  const onlineFriends = friends.filter(f => isUserOnline(f.userId, f.isOnline));
  
   return (
     <div className="min-h-screen bg-[#0B0E14] text-[#F8FAFC]">
@@ -281,12 +320,12 @@ const FriendPage = () => {
                 <div key={f.userId} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-2xl transition-all group">
                   <div className="relative">
                     <Avatar name={f.userName} size="sm" />
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#151921] ${f.isOnline ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
+                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#151921] ${isUserOnline(f.userId, f.isOnline) ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-[#F8FAFC] truncate">{f.userName}</p>
-                    <p className={`text-xs ${f.isOnline ? 'text-[#44FFFF]' : 'text-[#94A3B8]'}`}>
-                      {f.isOnline ? 'Online' : 'Offline'}
+                    <p className={`text-xs ${isUserOnline(f.userId, f.isOnline) ? 'text-[#44FFFF]' : 'text-[#94A3B8]'}`}>
+                      {isUserOnline(f.userId, f.isOnline) ? 'Online' : `Last seen ${timeAgo(getUserLastSeen(f.userId, f.lastSeen))}`}
                     </p>
                   </div>
                   <button
@@ -401,12 +440,12 @@ const FriendPage = () => {
                   <div key={f.userId} className="flex items-center gap-4 p-4 bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl hover:border-[#BFBCFC]/20 transition-all group">
                     <div className="relative">
                       <Avatar name={f.userName} size="md" />
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#151921] ${f.isOnline ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#151921] ${isUserOnline(f.userId, f.isOnline) ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[#F8FAFC] truncate">{f.userName}</p>
-                      <p className={`text-xs ${f.isOnline ? 'text-[#44FFFF]' : 'text-[#94A3B8]'}`}>
-                        {f.isOnline ? '● Online' : '○ Offline'}
+                      <p className={`text-xs ${isUserOnline(f.userId, f.isOnline) ? 'text-[#44FFFF]' : 'text-[#94A3B8]'}`}>
+                        {isUserOnline(f.userId, f.isOnline) ? '● Online' : `○ ${timeAgo(getUserLastSeen(f.userId, f.lastSeen))}`}
                       </p>
                     </div>
                     <button

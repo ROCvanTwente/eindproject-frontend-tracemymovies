@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
+import { useSignalR } from "../context/SignalRContext";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
 
 export function UserProfilePage() {
@@ -41,6 +42,7 @@ export function UserProfilePage() {
 
   const isOwnProfile = !id;
   const { refreshKey } = useRefresh();
+  const { isUserOnline } = useSignalR();
   const [publicProfile, setPublicProfile] = useState(null);
   const [publicLoading, setPublicLoading] = useState(!isOwnProfile);
 
@@ -280,18 +282,22 @@ export function UserProfilePage() {
                     <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{pubLetter}</span>
                   </div>
                 )}
-                <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
+                {isUserOnline(pub?.userId ?? user?.id, pub?.isOnline ?? user?.isOnline) && (
+                  <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
+                )}
               </div>
 
               <div className="flex-1">
                 <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">{pub.username}</h1>
-                <p className="text-[#BFBCFC] text-sm md:text-base mb-3">@{pub.username}</p>
-                <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" />
-                    Member of TraceMyMovies
+                {pub.bio && (
+                  <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{pub.bio}</p>
+                )}
+                {pub.location && (
+                  <div className="flex items-center gap-1.5 text-[#94A3B8] text-sm">
+                    <MapPin className="w-4 h-4" />
+                    {pub.location}
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Stats */}
@@ -418,15 +424,15 @@ export function UserProfilePage() {
               <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">
                 {displayName}
               </h1>
-              <p className="text-[#BFBCFC] text-sm md:text-base mb-3">
-                @{user?.username || "user"}
-              </p>
-              <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" />
-                  Member of TraceMyMovies
+              {user?.bio && (
+                <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{user.bio}</p>
+              )}
+              {user?.location && (
+                <div className="flex items-center gap-1.5 text-[#94A3B8] text-sm">
+                  <MapPin className="w-4 h-4" />
+                  {user.location}
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Stats */}

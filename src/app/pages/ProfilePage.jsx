@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, Mail, Lock, Upload, Trash2, X, AlertCircle, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, Upload, Trash2, X, AlertCircle, Loader2, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -15,6 +15,8 @@ export function ProfilePage() {
     const [formData, setFormData] = useState({
         username: user?.username || '',
         email: user?.email || '',
+        location: user?.location || '',
+        bio: user?.bio || '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
@@ -24,12 +26,52 @@ export function ProfilePage() {
         username: user?.username || '',
         email: user?.email || '',
         profilePicture: user?.profilePicture,
+        location: user?.location || '',
+        bio: user?.bio || '',
     });
 
     const [reAuthModal, setReAuthModal] = useState({ open: false, purpose: null });
     const [reAuthPassword, setReAuthPassword] = useState('');
     const [reAuthError, setReAuthError] = useState('');
     const [reAuthLoading, setReAuthLoading] = useState(false);
+
+    const [locationSuggestions, setLocationSuggestions] = useState([]);
+    const [locationLoading, setLocationLoading] = useState(false);
+    const locationRef = useRef(null);
+
+    // Close suggestions on outside click
+    useEffect(() => {
+        const handler = (e) => {
+            if (locationRef.current && !locationRef.current.contains(e.target))
+                setLocationSuggestions([]);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    // Debounced location search via Nominatim
+    useEffect(() => {
+        const q = formData.location?.trim();
+        if (!q || q.length < 2) { setLocationSuggestions([]); return; }
+        const timer = setTimeout(async () => {
+            setLocationLoading(true);
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
+                    { headers: { 'Accept-Language': 'en' } }
+                );
+                const data = await res.json();
+                setLocationSuggestions(data.map(item => {
+                    const a = item.address;
+                    const city = a.city || a.town || a.village || a.municipality || a.county || '';
+                    const country = a.country || '';
+                    return city && country ? `${city}, ${country}` : item.display_name.split(',').slice(0, 2).join(',').trim();
+                }).filter((v, i, arr) => arr.indexOf(v) === i));
+            } catch { setLocationSuggestions([]); }
+            finally { setLocationLoading(false); }
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [formData.location]);
 
     const syncedRef = useRef(false);
     useEffect(() => {
@@ -39,11 +81,15 @@ export function ProfilePage() {
             ...prev,
             username: user.username || '',
             email: user.email || '',
+            location: user.location || '',
+            bio: user.bio || '',
         }));
         setSavedData({
             username: user.username || '',
             email: user.email || '',
             profilePicture: user.profilePicture,
+            location: user.location || '',
+            bio: user.bio || '',
         });
         setProfilePicture(user.profilePicture);
     }, [user]);
@@ -88,6 +134,8 @@ export function ProfilePage() {
                 body: JSON.stringify({
                     username: formData.username || user?.username,
                     email: formData.email || user?.email,
+                    location: formData.location || null,
+                    bio: formData.bio || null,
                     profileImageBase64: imageUrl.split(",")[1]
                 })
             });
@@ -103,18 +151,53 @@ export function ProfilePage() {
         reader.readAsDataURL(file);
     };
 
-    const handleUpdateProfile = (e) => {
+    const handleUpdateProfile = async (e) => {
         e.preventDefault();
 
-        const hasChanges =
+        const usernameOrEmailChanged =
             formData.username !== savedData.username ||
             formData.email !== savedData.email;
 
-        if (!hasChanges) {
-            toast.warning("Je wijzigingen zijn al opgeslagen.");
+        const locationOrBioChanged =
+            (formData.location || '') !== (savedData.location || '') ||
+            (formData.bio || '') !== (savedData.bio || '');
+
+        if (!usernameOrEmailChanged && !locationOrBioChanged) {
+            toast.warning("No changes to save.");
             return;
         }
 
+        // Location/bio can be saved without password
+        if (locationOrBioChanged && !usernameOrEmailChanged) {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/profile`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({
+                        username: formData.username || user?.username,
+                        email: formData.email || user?.email,
+                        location: formData.location || null,
+                        bio: formData.bio || null,
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    updateUser({ location: formData.location, bio: formData.bio });
+                    setSavedData(prev => ({ ...prev, location: formData.location, bio: formData.bio }));
+                    toast.success('Profile updated!');
+                } else {
+                    toast.error('Update failed.');
+                }
+            } catch {
+                toast.error('Update failed.');
+            }
+            return;
+        }
+
+        // Username/email changes require password
         openReAuth('update');
     };
 
@@ -144,6 +227,8 @@ export function ProfilePage() {
                         username: formData.username,
                         email: formData.email,
                         currentPassword: reAuthPassword,
+                        location: formData.location || null,
+                        bio: formData.bio || null,
                         profileImageBase64: pictureChanged
                             ? (profilePicture?.includes(",") ? profilePicture.split(",")[1] : profilePicture ?? null)
                             : null
@@ -153,14 +238,17 @@ export function ProfilePage() {
                 if (response.ok) {
                     const data = await response.json();
                     const updatedUser = data.user;
+                    const newPicture = profilePicture ?? user?.profilePicture;
                     updateUser({
                         username: updatedUser.userName,
                         email: updatedUser.email,
-                        profilePicture: profilePicture ?? user?.profilePicture
+                        profilePicture: newPicture
                     });
                     setFormData((prev) => ({ ...prev, username: updatedUser.userName, email: updatedUser.email }));
-                    setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
-                    closeReAuth();
+                    setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: newPicture });
+                    setReAuthModal({ open: false, purpose: null });
+                    setReAuthPassword('');
+                    setReAuthError('');
                     toast.success('Profiel bijgewerkt!');
                 } else {
                     const err = await response.json().catch(() => null);
@@ -334,6 +422,65 @@ export function ProfilePage() {
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                     />
+                                </div>
+
+                                <div className="relative" ref={locationRef}>
+                                    <label className="block text-[#F8FAFC] mb-1.5 font-medium text-sm">
+                                        <MapPin className="w-3.5 h-3.5 inline mr-1.5" />
+                                        Location
+                                    </label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8] pointer-events-none" />
+                                        <input
+                                            type="text"
+                                            value={formData.location}
+                                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                            maxLength={100}
+                                            placeholder="Search your city..."
+                                            className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-9 pr-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm placeholder-[#94A3B8]/50"
+                                        />
+                                        {locationLoading && (
+                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8] animate-spin" />
+                                        )}
+                                    </div>
+
+                                    {locationSuggestions.length > 0 && (
+                                        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#151921] border border-[#BFBCFC]/20 rounded-xl shadow-2xl overflow-hidden">
+                                            {locationSuggestions.map((s, i) => (
+                                                <button
+                                                    key={i}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData({ ...formData, location: s });
+                                                        setLocationSuggestions([]);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-[#BFBCFC]/8 transition-colors border-b border-[#BFBCFC]/8 last:border-none"
+                                                >
+                                                    <MapPin className="w-3.5 h-3.5 text-[#BFBCFC] flex-shrink-0" />
+                                                    <span className="text-[#F8FAFC]">{s}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-[#F8FAFC] mb-1.5 font-medium text-sm">
+                                        Bio
+                                    </label>
+                                    <textarea
+                                        value={formData.bio}
+                                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                        maxLength={500}
+                                        rows={3}
+                                        placeholder="Tell something about yourself..."
+                                        className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm placeholder-[#94A3B8]/50 resize-none"
+                                    />
+                                    {formData.bio.length > 400 && (
+                                        <p className={`text-[10px] text-right mt-0.5 ${formData.bio.length >= 500 ? "text-red-400" : "text-[#94A3B8]/50"}`}>
+                                            {formData.bio.length}/500
+                                        </p>
+                                    )}
                                 </div>
 
                                 <button
