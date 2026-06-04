@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Star, AlertCircle, MoreVertical, Trash, Edit, Flag } from "lucide-react";
+import { Star, AlertCircle, MoreVertical, Trash, Edit, Flag, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ExpandableReviewText } from "./ExpandableReviewText";
 
 export function ReviewItem({
-    review, reviewKey, isLiked, canEdit, canDelete,
+    review, reviewKey, movieTitle, isLiked, canEdit, canDelete,
     isMenuOpen, onToggleMenu,
     onToggleLike, onEdit, onDelete, onReport
 }) {
@@ -94,27 +94,35 @@ export function ReviewItem({
                 </div>
             </div>
 
-            {spoiler && (
-                <div className="mb-2 inline-flex items-center gap-1 bg-[#FF61D2]/10 border border-[#FF61D2]/30 text-[#FF61D2] px-2 py-1 rounded text-xs font-medium">
-                    <AlertCircle className="w-3 h-3" />
-                    Contains Spoilers
-                </div>
-            )}
-
             {spoiler && !isSpoilerRevealed ? (
-                <div className="relative">
-                    <div className="blur-sm select-none">
-                        <ExpandableReviewText text={content} maxLength={300} />
+                <div className="my-4">
+                    <div className="bg-[#FF61D2]/5 border-2 border-[#FF61D2]/20 rounded-xl p-6 text-center">
+                        <div className="flex items-center justify-center gap-2 mb-3">
+                            <AlertCircle className="w-6 h-6 text-[#FF61D2]" />
+                            <h4 className="text-[#FF61D2] font-bold text-lg">Spoiler Warning</h4>
+                        </div>
+                        <p className="text-[#94A3B8] mb-4 text-sm">
+                            This review contains spoilers for {movieTitle || "this movie"}
+                        </p>
+                        <button
+                            onClick={() => setIsSpoilerRevealed(true)}
+                            className="px-6 py-2.5 bg-[#FF61D2]/10 hover:bg-[#FF61D2]/20 text-[#FF61D2] rounded-lg font-medium transition-all border border-[#FF61D2]/30 flex items-center gap-2 mx-auto"
+                        >
+                            <Eye className="w-4 h-4" />
+                            Reveal Spoilers
+                        </button>
                     </div>
-                    <button
-                        onClick={() => setIsSpoilerRevealed(true)}
-                        className="absolute inset-0 flex items-center justify-center text-[#FF61D2] bg-black/30 hover:bg-black/40 rounded-xl font-medium"
-                    >
-                        Contains Spoilers — Click to reveal
-                    </button>
                 </div>
             ) : (
-                <ExpandableReviewText text={content} maxLength={300} />
+                <>
+                    {spoiler && (
+                        <div className="mb-3 inline-flex items-center gap-1 bg-[#FF61D2]/10 border border-[#FF61D2]/30 text-[#FF61D2] px-3 py-1.5 rounded-lg text-xs font-medium">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            Contains Spoilers
+                        </div>
+                    )}
+                    <ExpandableReviewText text={content} maxLength={300} />
+                </>
             )}
         </div>
     );

@@ -8,7 +8,7 @@ export function ReviewForm({ movieTitle, isAuthenticated, isSubmitting, onSubmit
     const [containsSpoilers, setContainsSpoilers] = useState(false);
     const [hoverRating, setHoverRating] = useState(0);
 
-    const MAX_REVIEW_LENGTH = 500;
+    const MAX_REVIEW_LENGTH = 5000;
 
     const handleSubmit = () => {
         if (reviewRating === 0) {

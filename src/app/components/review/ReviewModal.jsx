@@ -10,7 +10,7 @@ export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingRevi
     const initialSpoiler = existingReview ? (existingReview?.containsSpoilers ?? existingReview?.spoiler ?? existingReview?.containSpoilers ?? false) : false;
     const [spoiler, setSpoiler] = useState(initialSpoiler);
 
-    const MAX_REVIEW_LENGTH = 500;
+    const MAX_REVIEW_LENGTH = 5000;
 
     if (!isOpen) return null;
 

@@ -8,6 +8,7 @@ import { ReviewModal } from "./ReviewModal";
 import { ReviewForm } from "./ReviewForm";
 import { ReviewItem } from "./ReviewItem";
 import { ReviewPagination } from "./ReviewPagination";
+import { ReportModal } from "./ReportModal";
 
 export function ReviewSection({ movieId, movieTitle }) {
     const auth = useAuth();
@@ -142,6 +143,8 @@ export function ReviewSection({ movieId, movieTitle }) {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportTarget, setReportTarget] = useState(null);
     
 
     const openDeleteModal = (review, reviewKey) => {
@@ -302,30 +305,33 @@ export function ReviewSection({ movieId, movieTitle }) {
         return true;
     };
 
-    const handleReportReview = async (review, reviewKey) => {
+    const handleReportReview = (review, reviewKey) => {
         const reviewId = review.id ?? review.reviewId;
         if (!reviewId) {
             toast.error("Could not find review id.");
             return;
         }
 
-        const reason = window.prompt("Why do you want to report this review?");
-        if (reason === null) return;
+        setReportTarget({ review, reviewKey });
+        setReportModalOpen(true);
+        setOpenMenuKey(null);
+    };
 
-        const trimmedReason = reason.trim();
-        if (!trimmedReason) {
-            toast.error("Please provide a reason.");
-            return;
-        }
+    const submitReport = async (reason) => {
+        if (!reportTarget) return;
+        
+        const { review } = reportTarget;
+        const reviewId = review.id ?? review.reviewId;
 
-        const result = await reportReview(reviewId, trimmedReason, token);
+        const result = await reportReview(reviewId, reason, token);
         if (!result) {
             toast.error("Could not report review.");
             return;
         }
 
-        setOpenMenuKey((prev) => (prev === reviewKey ? null : prev));
-        toast.success("Review reported.");
+        toast.success("Report submitted. Thank you for helping keep our community safe.");
+        setReportModalOpen(false);
+        setReportTarget(null);
     };
 
     const handleSubmitReview = async (reviewRating, reviewText, containsSpoilers, resetForm) => {
@@ -385,6 +391,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                             key={reviewKey}
                             review={review}
                             reviewKey={reviewKey}
+                            movieTitle={movieTitle}
                             isLiked={likedMap[reviewKey]}
                             canEdit={isOwner}
                             canDelete={isOwner}
@@ -424,6 +431,18 @@ export function ReviewSection({ movieId, movieTitle }) {
                         setEditModalOpen(false);
                         toast.success("Review updated.");
                     }}
+                />
+
+                <ReportModal
+                    isOpen={reportModalOpen}
+                    onClose={() => {
+                        setReportModalOpen(false);
+                        setReportTarget(null);
+                    }}
+                    reviewAuthor={reportTarget?.review.user?.userName || reportTarget?.review.userName || 'Anonymous'}
+                    reviewContent={reportTarget?.review.review || reportTarget?.review.content || reportTarget?.review.reviewText || reportTarget?.review.text || ''}
+                    reviewId={reportTarget?.review.id ?? reportTarget?.review.reviewId}
+                    onReport={submitReport}
                 />
                 </>
             )}
