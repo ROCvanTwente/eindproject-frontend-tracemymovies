@@ -168,7 +168,11 @@ export async function validateToken() {
             email: profile.email,
             profilePicture: profile.profileImageBase64
                 ? `data:image/jpeg;base64,${profile.profileImageBase64}`
-                : null
+                : null,
+            location: profile.location ?? null,
+            bio: profile.bio ?? null,
+            isOnline: profile.isOnline ?? false,
+            lastSeen: profile.lastSeen ?? null,
         };
     } catch {
         return getStoredUser();

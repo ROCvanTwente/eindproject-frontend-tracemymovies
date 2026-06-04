@@ -78,6 +78,21 @@ export function NotificationProvider({ children }) {
         }
     }, [token, fetchNotifications]);
 
+    // Listen for live notifications via SignalR custom event
+    useEffect(() => {
+        const handleSignalRNotification = (event) => {
+            const notification = event.detail;
+            if (!notification) return;
+            setNotifications((prev) => {
+                // Avoid duplicates
+                if (prev.some((n) => n.id === notification.id)) return prev;
+                return [notification, ...prev];
+            });
+        };
+        window.addEventListener("signalr:notification", handleSignalRNotification);
+        return () => window.removeEventListener("signalr:notification", handleSignalRNotification);
+    }, []);
+
     return (
         <NotificationContext.Provider value={{
             notifications,
