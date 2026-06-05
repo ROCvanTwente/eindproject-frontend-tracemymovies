@@ -17,6 +17,7 @@ import {
   UserPlus,
   RotateCw,
   AlignLeft,
+  Pencil,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
@@ -39,6 +40,7 @@ export function UserProfilePage() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateError, setDuplicateError] = useState("");
+  const [friends, setFriends] = useState([]);
 
   const isOwnProfile = !id;
   const { refreshKey } = useRefresh();
@@ -182,6 +184,23 @@ export function UserProfilePage() {
       }
     };
     fetchRecentActivity();
+  }, [isOwnProfile, refreshKey]);
+
+  // FRIENDS
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchFriends = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetMyFriends`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        setFriends(await res.json());
+      } catch {}
+    };
+    fetchFriends();
   }, [isOwnProfile, refreshKey]);
 
   // SEARCH FAVORITES MODAL
@@ -390,6 +409,41 @@ export function UserProfilePage() {
                 )}
               </div>
             </div>
+
+            {/* Sidebar */}
+            <div className="space-y-8 pt-8">
+
+              {/* Quick links */}
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+                </div>
+                <div className="space-y-0.5">
+                  <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
+                    <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
+                    Movie DNA & Analytics
+                  </Link>
+                  <Link to={`/user/${id}/watched`} className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
+                    <Eye className="w-3.5 h-3.5 group-hover:text-[#BFBCFC] transition-colors" />
+                    Watched Films
+                  </Link>
+                  <Link to={`/user/${id}/liked`} className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
+                    <Heart className="w-3.5 h-3.5 group-hover:text-[#FF61D2] transition-colors" />
+                    Liked Films
+                  </Link>
+                </div>
+              </div>
+
+              {/* Lists — placeholder */}
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Lists</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#44FFFF]/30 to-transparent" />
+                </div>
+                <p className="text-[#94A3B8]/50 text-xs italic">No lists yet.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -420,17 +474,34 @@ export function UserProfilePage() {
               <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
             </div>
 
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">
-                {displayName}
-              </h1>
+            <div className="flex-1 min-w-0">
+
+              {/* Name + Edit button inline */}
+              <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">
+                  {displayName}
+                </h1>
+                <Link
+                  to="/profile"
+                  className="ml-4 flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap"
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit Profile
+                </Link>
+              </div>
+
+              {/* Bio */}
               {user?.bio && (
-                <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{user.bio}</p>
+                <p className="text-[#94A3B8] text-sm leading-relaxed mb-2 max-w-sm">
+                  {user.bio}
+                </p>
               )}
+
+              {/* Location */}
               {user?.location && (
-                <div className="flex items-center gap-1.5 text-[#94A3B8] text-sm">
-                  <MapPin className="w-4 h-4" />
-                  {user.location}
+                <div className="flex items-center gap-1.5 text-[#94A3B8] text-xs">
+                  <MapPin className="w-3.5 h-3.5 text-[#BFBCFC]/50" />
+                  <span className="uppercase tracking-wide">{user.location}</span>
                 </div>
               )}
             </div>
@@ -576,29 +647,43 @@ export function UserProfilePage() {
             </div>
 
             {/* Friends */}
-            <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-1 pb-3 border-b border-[#BFBCFC]/10">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-[#BFBCFC]">
-                  Following
-                </h2>
-                <span className="text-[#94A3B8] text-sm font-data">4</span>
+            {friends.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Friends</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+                  <span className="text-[#94A3B8]/50 text-xs">{friends.length}</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {friends.map((f) => (
+                    <Link
+                      key={f.userId}
+                      to={`/user/${f.userId}`}
+                      title={f.userName}
+                      className="group relative flex-shrink-0"
+                    >
+                      {f.profileImageBase64 ? (
+                        <img
+                          src={`data:image/jpeg;base64,${f.profileImageBase64}`}
+                          alt={f.userName}
+                          className="w-11 h-11 rounded-full object-cover border-2 border-[#BFBCFC]/20 group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] flex items-center justify-center border-2 border-transparent group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md">
+                          <span className="text-[#0B0E14] font-bold text-sm">
+                            {f.userName?.charAt(0).toUpperCase() ?? "?"}
+                          </span>
+                        </div>
+                      )}
+                      {/* Online dot */}
+                      {isUserOnline(f.userId, f.isOnline) && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#0B0E14]" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-3 pt-3">
-                {[
-                  { letter: "A", color: "from-[#BFBCFC] to-[#44FFFF]" },
-                  { letter: "J", color: "from-[#FF61D2] to-[#BFBCFC]" },
-                  { letter: "M", color: "from-[#44FFFF] to-[#BFBCFC]" },
-                  { letter: "S", color: "from-[#44FFFF] to-[#FF61D2]" },
-                ].map(({ letter, color }) => (
-                  <div
-                    key={letter}
-                    className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 flex-shrink-0 shadow-md`}
-                  >
-                    <span className="text-[#0B0E14] font-bold text-sm">{letter}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Sidebar */}
