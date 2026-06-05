@@ -120,6 +120,12 @@ export function ProfilePage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        if (file.size > 100 * 1024) {
+            toast.error('Afbeelding is te groot. Maximum is 100KB.');
+            e.target.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onloadend = async () => {
             const imageUrl = reader.result;
