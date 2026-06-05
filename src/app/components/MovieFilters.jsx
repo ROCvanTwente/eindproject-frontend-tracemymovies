@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 const currentDecade = Math.floor(new Date().getFullYear() / 10) * 10;
 const ALL_DECADES = [];
@@ -183,16 +183,21 @@ export function applySort(movies, sortValue) {
 export function useMovieFilters(movies) {
   const [genre, setGenre] = useState(null);
   const [decade, setDecade] = useState(null);
+  const [year, setYear] = useState(null);
   const [rating, setRating] = useState(null);
 
   const availableGenres = GENRES;
   const availableDecades = ALL_DECADES;
-
   const ratingOptions = ["1-2", "3-4", "5-6", "7-8", "9-10"];
+
+  // When decade changes, reset specific year
+  const handleSetDecade = (d) => { setDecade(d); setYear(null); };
 
   const filtered = movies.filter((m) => {
     if (genre && !(m.genres ?? []).includes(genre)) return false;
-    if (decade) {
+    if (year) {
+      if (Number(m.year) !== year) return false;
+    } else if (decade) {
       const decadeStart = parseInt(decade);
       const yr = Number(m.year);
       if (!yr || yr < decadeStart || yr >= decadeStart + 10) return false;
@@ -209,14 +214,73 @@ export function useMovieFilters(movies) {
     return true;
   });
 
-  const hasActiveFilters = genre !== null || decade !== null || rating !== null;
+  const hasActiveFilters = genre !== null || decade !== null || year !== null || rating !== null;
+  const reset = () => { setGenre(null); setDecade(null); setYear(null); setRating(null); };
 
-  const reset = () => { setGenre(null); setDecade(null); setRating(null); };
-
-  return { genre, setGenre, decade, setDecade, rating, setRating, filtered, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset };
+  return { genre, setGenre, decade, setDecade: handleSetDecade, year, setYear, rating, setRating, filtered, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset };
 }
 
-export function MovieFilters({ genre, setGenre, decade, setDecade, rating, setRating, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset }) {
+function YearRow({ decade, year, setYear, setDecade }) {
+  const decadeStart = parseInt(decade);
+  const years = Array.from({ length: 10 }, (_, i) => decadeStart + i)
+    .filter((y) => y <= new Date().getFullYear());
+
+  const prevDecade = decadeStart - 10;
+  const nextDecade = decadeStart + 10;
+  const canPrev = prevDecade >= 1870;
+  const canNext = nextDecade <= Math.floor(new Date().getFullYear() / 10) * 10;
+
+  return (
+    <div className="flex items-center gap-1 mt-2 bg-[#151921]/60 border border-[#BFBCFC]/10 rounded-xl px-2 py-1.5 w-fit">
+      <button
+        onClick={() => canPrev && setDecade(`${prevDecade}s`)}
+        disabled={!canPrev}
+        className={`p-1 rounded-md transition-colors ${canPrev ? "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/10" : "text-[#94A3B8]/20 cursor-not-allowed"}`}
+      >
+        <ChevronLeft className="w-3.5 h-3.5" />
+      </button>
+
+      {/* Decade label */}
+      <button
+        onClick={() => setYear(null)}
+        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all mr-1 ${
+          year === null ? "bg-[#BFBCFC] text-[#0B0E14]" : "text-[#94A3B8] hover:text-[#F8FAFC]"
+        }`}
+      >
+        {decade}
+      </button>
+
+      {/* Individual years */}
+      {years.map((y) => (
+        <button
+          key={y}
+          onClick={() => setYear(year === y ? null : y)}
+          className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+            year === y
+              ? "bg-[#44FFFF]/20 text-[#44FFFF] border border-[#44FFFF]/40"
+              : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/8"
+          }`}
+        >
+          {y}
+        </button>
+      ))}
+
+      <button
+        onClick={() => canNext && setDecade(`${nextDecade}s`)}
+        disabled={!canNext}
+        className={`p-1 rounded-md transition-colors ml-1 ${canNext ? "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/10" : "text-[#94A3B8]/20 cursor-not-allowed"}`}
+      >
+        <ChevronRight className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
+export function MovieFilters({ genre, setGenre, decade, setDecade, year, setYear, rating, setRating, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset, hideYearRow, yearRowOnly }) {
+  if (yearRowOnly) {
+    return decade ? <YearRow decade={decade} year={year} setYear={setYear} setDecade={setDecade} /> : null;
+  }
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <FilterDropdown
