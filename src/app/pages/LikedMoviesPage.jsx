@@ -58,7 +58,7 @@ const LikedMoviesPage = () => {
     if (token) fetchAllLikedMovies();
   }, [token, refreshKey, userId]);
 
-  const { genre, setGenre, decade, setDecade, rating, setRating, filtered: filterResult, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset } = useMovieFilters(likedMovies);
+  const { genre, setGenre, decade, setDecade, year, setYear, rating, setRating, filtered: filterResult, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset } = useMovieFilters(likedMovies);
 
   const filtered = useMemo(() => {
     let result = filterResult;
@@ -159,37 +159,56 @@ const LikedMoviesPage = () => {
       {/* ── STICKY TOOLBAR ── */}
       {likedMovies.length > 0 && (
         <div className="sticky top-16 z-30 bg-[#0B0E14]/92 backdrop-blur-xl border-b border-[#BFBCFC]/8">
-          <div className="container mx-auto px-4 max-w-7xl py-3 flex items-center gap-3">
+          <div className="container mx-auto px-4 max-w-7xl pt-3 pb-2 flex flex-col gap-2">
 
-            {/* Search */}
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
-              <input
-                type="text"
-                placeholder="Search your likes..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#FF61D2]/35 transition-all"
+            {/* Row 1: search + sort + filters */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+                <input
+                  type="text"
+                  placeholder="Search your likes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#FF61D2]/35 transition-all"
+                />
+              </div>
+              <SortDropdown value={sortValue} onChange={setSortValue} />
+              <MovieFilters
+                genre={genre} setGenre={setGenre}
+                decade={decade} setDecade={setDecade}
+                year={year} setYear={setYear}
+                rating={rating} setRating={setRating}
+                availableGenres={availableGenres}
+                availableDecades={availableDecades}
+                ratingOptions={ratingOptions}
+                hasActiveFilters={hasActiveFilters}
+                reset={reset}
+                hideYearRow
               />
+              {(search || hasActiveFilters) && (
+                <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
+                  {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                </p>
+              )}
             </div>
 
-            <SortDropdown value={sortValue} onChange={setSortValue} />
-
-            <MovieFilters
-              genre={genre} setGenre={setGenre}
-              decade={decade} setDecade={setDecade}
-              rating={rating} setRating={setRating}
-              availableGenres={availableGenres}
-              availableDecades={availableDecades}
-              ratingOptions={ratingOptions}
-              hasActiveFilters={hasActiveFilters}
-              reset={reset}
-            />
-
-            {(search || hasActiveFilters) && (
-              <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
-                {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-              </p>
+            {/* Row 2: year row below search bar */}
+            {decade && (
+              <div className="pb-1">
+                <MovieFilters
+                  genre={genre} setGenre={setGenre}
+                  decade={decade} setDecade={setDecade}
+                  year={year} setYear={setYear}
+                  rating={rating} setRating={setRating}
+                  availableGenres={availableGenres}
+                  availableDecades={availableDecades}
+                  ratingOptions={ratingOptions}
+                  hasActiveFilters={hasActiveFilters}
+                  reset={reset}
+                  yearRowOnly
+                />
+              </div>
             )}
           </div>
         </div>
@@ -201,11 +220,23 @@ const LikedMoviesPage = () => {
           <EmptyState />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <Search className="w-10 h-10 text-[#94A3B8]/25 mb-3" />
-            <p className="text-[#94A3B8] text-sm">
-              Nothing found for{" "}
-              <span className="text-[#F8FAFC] font-medium">"{search}"</span>
-            </p>
+            <Heart className="w-10 h-10 text-[#FF61D2]/20 mb-4" />
+            {(year || decade) && !search ? (
+              <>
+                <p className="text-[#F8FAFC] font-semibold text-base mb-1">
+                  Nothing here yet
+                </p>
+                <p className="text-[#94A3B8] text-sm max-w-xs">
+                  You didn't like anything released in{" "}
+                  <span className="text-[#FF61D2] font-medium">{year ?? decade}</span>.
+                </p>
+              </>
+            ) : (
+              <p className="text-[#94A3B8] text-sm">
+                Nothing found for{" "}
+                <span className="text-[#F8FAFC] font-medium">"{search}"</span>
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
