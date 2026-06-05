@@ -25,6 +25,7 @@ import  LikedMoviesPage  from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
+import { ActorPage } from './pages/ActorPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
             {
                 path: 'movie/:id',
                 element: _jsx(MovieDetailPage, {}),
+            },
+            {
+                path: 'actor/:id',
+                element: _jsx(ActorPage, {}),
             },
             {
                 path: 'weekly-favorites',
