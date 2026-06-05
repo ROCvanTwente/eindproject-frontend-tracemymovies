@@ -25,6 +25,7 @@ export function ActorPage() {
   const [loading, setLoading] = useState(true);
   const [showFullBio, setShowFullBio] = useState(false);
   const [page, setPage] = useState(1);
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -56,10 +57,25 @@ export function ActorPage() {
 
   const photo = IMG(actor.profile_path, 'w342');
   const personAge = age(actor.birthday, actor.deathday);
-  const allCredits = (actor.movie_credits?.cast || [])
-    .filter((m, i, arr) => m.release_date && arr.findIndex(x => x.id === m.id) === i)
+
+  // Build role groups from cast + crew
+  const dedupe = (arr) => arr
+    .filter((m, i, a) => m.release_date && a.findIndex(x => x.id === m.id) === i)
     .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
+  const roleGroups = {
+    Acting: dedupe(actor.movie_credits?.cast || []),
+    ...['Directing', 'Writing', 'Production', 'Sound', 'Visual Effects', 'Camera'].reduce((acc, dept) => {
+      const items = dedupe((actor.movie_credits?.crew || []).filter(m => m.department === dept));
+      if (items.length > 0) acc[dept] = items;
+      return acc;
+    }, {}),
+  };
+
+  const availableRoles = Object.keys(roleGroups);
+  const activeRole = role && roleGroups[role] ? role : availableRoles[0] || 'Acting';
+
+  const allCredits = roleGroups[activeRole] || [];
   const totalPages = Math.ceil(allCredits.length / PER_PAGE);
   const credits = allCredits.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
@@ -147,19 +163,35 @@ export function ActorPage() {
             {/* Known for count */}
             <div className="flex items-center gap-2 text-sm text-[#94A3B8]">
               <Film size={14} className="text-[#BFBCFC]" />
-              <span>{actor.movie_credits?.cast?.length || 0} films</span>
+              <span>{allCredits.length} films als {activeRole === 'Acting' ? 'acteur' : activeRole === 'Directing' ? 'regisseur' : activeRole === 'Writing' ? 'schrijver' : activeRole === 'Production' ? 'producent' : activeRole.toLowerCase()}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Movies grid */}
-      {allCredits.length > 0 && (
+      {availableRoles.length > 0 && (
         <div className="max-w-5xl mx-auto px-6 pb-16">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-white">
-              Filmografie
-            </h2>
+          {/* Header + role tabs */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-xl font-bold text-white">Filmografie</h2>
+            <div className="flex flex-wrap gap-2">
+              {availableRoles.map(r => (
+                <button
+                  key={r}
+                  onClick={() => { setRole(r); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                    activeRole === r
+                      ? 'bg-[#BFBCFC] text-[#0B0E14]'
+                      : 'bg-[#151921] border border-[#BFBCFC]/10 text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#BFBCFC]/30'
+                  }`}
+                >
+                  {r} <span className="opacity-60 font-normal">({roleGroups[r].length})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end mb-4">
             <p className="text-[#64748B] text-sm">Pagina {page} van {totalPages}</p>
           </div>
 
