@@ -12,6 +12,7 @@ const LikedMoviesPage = () => {
   const { userId } = useParams();
   const isPublic = !!userId;
   const [likedMovies, setLikedMovies] = useState([]);
+  const [ownerUsername, setOwnerUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortValue, setSortValue] = useState(null);
@@ -49,6 +50,10 @@ const LikedMoviesPage = () => {
         if (!response.ok) throw new Error("Could not fetch liked films");
         const data = await response.json();
         setLikedMovies(data);
+        if (isPublic) {
+          const profRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+          if (profRes.ok) { const d = await profRes.json(); setOwnerUsername(d.username); }
+        }
       } catch (error) {
         console.error(error);
         toast.error("Error loading your likes");
@@ -131,13 +136,10 @@ const LikedMoviesPage = () => {
 
             {/* Title */}
             <div className="flex-1">
-              <p className="text-[#FF61D2]/65 text-[9px] font-bold uppercase tracking-[0.25em] mb-0.5">
-                Your Collection
-              </p>
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
-                Liked{" "}
+                {isPublic && <span className="text-[#F8FAFC]">{ownerUsername ?? "..."}'s </span>}
                 <span className="bg-gradient-to-r from-[#FF61D2] via-[#cc7be0] to-[#BFBCFC] bg-clip-text text-transparent">
-                  Movies
+                  Likes
                 </span>
               </h1>
             </div>

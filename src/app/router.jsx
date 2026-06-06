@@ -26,6 +26,7 @@ import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
 import { WatchlistPage } from './pages/WatchlistPage';
+import { BadgesPage } from './pages/BadgesPage';
 import { ActorPage } from './pages/ActorPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -143,6 +144,18 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
+                path: 'badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:id/badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:userId/watchlist',
                 element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
             },
             {
