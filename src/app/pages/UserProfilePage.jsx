@@ -18,6 +18,7 @@ import {
   RotateCw,
   AlignLeft,
   Pencil,
+  Bookmark,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
@@ -36,6 +37,7 @@ export function UserProfilePage() {
   const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [likedMoviesCount, setLikedMoviesCount] = useState(0);
   const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
+  const [watchedThisYear, setWatchedThisYear] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [recentReviews, setRecentReviews] = useState([]);
@@ -48,6 +50,8 @@ export function UserProfilePage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateError, setDuplicateError] = useState("");
   const [friends, setFriends] = useState([]);
+  const [watchlistPreview, setWatchlistPreview] = useState([]);
+  const [watchlistLoading, setWatchlistLoading] = useState(true);
 
   const isOwnProfile = !id;
   const { refreshKey } = useRefresh();
@@ -185,6 +189,25 @@ export function UserProfilePage() {
     fetchWatchedCount();
   }, [isOwnProfile, refreshKey]);
 
+  // WATCHED THIS YEAR COUNT
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchThisYear = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Activity/WatchedThisYear`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setWatchedThisYear(data.count ?? 0);
+      } catch {}
+    };
+    fetchThisYear();
+  }, [isOwnProfile, refreshKey]);
+
   // RECENT ACTIVITY
   useEffect(() => {
     if (!isOwnProfile) return;
@@ -232,6 +255,26 @@ export function UserProfilePage() {
       } catch {}
     };
     fetchFriends();
+  }, [isOwnProfile, refreshKey]);
+
+  // WATCHLIST PREVIEW
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchWatchlist = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatchlist`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setWatchlistPreview(await res.json());
+      } catch {} finally {
+        setWatchlistLoading(false);
+      }
+    };
+    fetchWatchlist();
   }, [isOwnProfile, refreshKey]);
 
   // RECENT REVIEWS - OWN PROFILE
@@ -376,16 +419,17 @@ export function UserProfilePage() {
               {/* Stats */}
               <div className="flex items-center">
                 {[
-                  { label: "WATCHED", value: pub.watchedCount, to: `/user/${id}/watched` },
-                  { label: "LIKED", value: pub.likedCount, to: `/user/${id}/liked` },
+                  { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
+                  { label: "THIS YEAR", value: pub.watchedThisYear ?? 0 },
                   { label: "LISTS", value: "—" },
+                  { label: "FRIENDS", value: pub.friendCount ?? 0 },
                 ].map(({ label, value, to }, i, arr) => (
                   <div key={label} className="flex items-center">
                     <div
                       onClick={() => to && navigate(to)}
                       className={`px-5 text-center transition-transform duration-100 ${to ? "cursor-pointer group active:scale-95" : ""}`}
                     >
-                      <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#FF61D2]" : "text-[#F8FAFC]"}`}>{value}</p>
+                      <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#44FFFF]" : "text-[#F8FAFC]"}`}>{value}</p>
                       <p className="text-[#94A3B8] text-xs uppercase tracking-widest">{label}</p>
                     </div>
                     {i < arr.length - 1 && <div className="w-px h-10 bg-[#BFBCFC]/15" />}
@@ -637,16 +681,17 @@ export function UserProfilePage() {
             {/* Stats */}
             <div className="flex items-center">
               {[
-                { label: "WATCHED", value: watchedMoviesCount, onClick: () => navigate('/watched') },
-                { label: "LIKED", value: likedMoviesCount, onClick: () => navigate('/likedmoviespage') },
+                { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate('/watched') },
+                { label: "THIS YEAR", value: watchedThisYear },
                 { label: "LISTS", value: "—" },
+                { label: "FRIENDS", value: friends.length },
               ].map(({ label, value, onClick }, i, arr) => (
                 <div key={label} className="flex items-center">
                   <div
                     onClick={onClick}
                     className={`px-5 text-center ${onClick ? 'cursor-pointer group' : ''}`}
                   >
-                    <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${onClick ? 'text-[#F8FAFC] group-hover:text-[#FF61D2]' : 'text-[#F8FAFC]'}`}>
+                    <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${onClick ? 'text-[#F8FAFC] group-hover:text-[#44FFFF]' : 'text-[#F8FAFC]'}`}>
                       {value}
                     </p>
                     <p className="text-[#94A3B8] text-xs uppercase tracking-widest">
@@ -920,48 +965,49 @@ export function UserProfilePage() {
           <div className="space-y-8 pt-8">
 
             {/* Quick links */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
+            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
               </div>
-              <div className="space-y-0.5">
-                <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
-                  Movie DNA & Analytics
-                </Link>
-                <Link to="/my-lists" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <List className="w-3.5 h-3.5 group-hover:text-[#BFBCFC] transition-colors" />
-                  My Lists
-                </Link>
-                <Link to="/likedmoviespage" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Heart className="w-3.5 h-3.5 group-hover:text-[#FF61D2] transition-colors" />
-                  Liked Films
-                </Link>
+              <div className="p-2">
+                {[
+                  { to: "/watchlist", icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  { to: "/analytics", icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                  { to: "/my-lists", icon: <List className="w-3.5 h-3.5" />, label: "My Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  { to: "/likedmoviespage", icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                ].map(({ to, icon, label, color, bg }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}
+                  >
+                    <span className={`transition-colors ${color}`}>{icon}</span>
+                    {label}
+                  </Link>
+                ))}
               </div>
             </div>
 
             {/* Recent Lists */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
+            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#44FFFF]/30 to-transparent" />
+                <Link to="/my-lists" className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">
+                  All →
+                </Link>
               </div>
-              <div className="space-y-1">
+              <div className="p-2">
                 {[
                   { name: "Top 10 Sci-Fi", count: 10 },
                   { name: "Favourite Thrillers", count: 7 },
                   { name: "Must Watch 2024", count: 15 },
                 ].map((list) => (
-                  <div key={list.name} className="flex items-center justify-between cursor-pointer group py-1.5">
-                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors">{list.name}</span>
-                    <span className="text-[#94A3B8]/40 text-xs tabular-nums">{list.count}</span>
+                  <div key={list.name} className="group flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-[#44FFFF]/6 cursor-pointer transition-all">
+                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors truncate">{list.name}</span>
+                    <span className="text-[#94A3B8]/40 text-xs tabular-nums ml-2 flex-shrink-0">{list.count}</span>
                   </div>
                 ))}
               </div>
-              <Link to="/my-lists" className="mt-3 inline-flex items-center gap-1 text-[#44FFFF]/50 text-xs hover:text-[#44FFFF] transition-colors">
-                View all →
-              </Link>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
-import { Eye, Heart, Film, Star, MoreHorizontal } from "lucide-react";
+import { Eye, Heart, Film, Star, MoreHorizontal, Bookmark } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ export function ProfilePosterCard({
   isLikedProp,
   hasActivityProp,
   watchCountProp,
+  isInWatchlistProp,
 }) {
   const navigate = useNavigate();
   const auth = useAuth();
@@ -34,6 +35,7 @@ export function ProfilePosterCard({
   const [isLiked, setIsLiked] = useState(isLikedProp ?? false);
   const [hasActivity, setHasActivity] = useState(hasActivityProp ?? false);
   const [watchCount, setWatchCount] = useState(watchCountProp ?? 0);
+  const [isInWatchlist, setIsInWatchlist] = useState(isInWatchlistProp ?? false);
   const [saving, setSaving] = useState(false);
 
   // Context menu
@@ -48,6 +50,10 @@ export function ProfilePosterCard({
   useEffect(() => {
     if (isLikedProp !== undefined) setIsLiked(isLikedProp);
   }, [isLikedProp]);
+
+  useEffect(() => {
+    if (isInWatchlistProp !== undefined) setIsInWatchlist(isInWatchlistProp);
+  }, [isInWatchlistProp]);
 
   useEffect(() => {
     if (isWatchedProp !== undefined) return;
@@ -65,6 +71,7 @@ export function ProfilePosterCard({
         setWatchCount(data.logCount ?? 0);
         setFilmRating(data.filmRating ?? 0);
         setLatestReviewText(data.latestReviewText ?? "");
+        setIsInWatchlist(data.isInWatchlist ?? false);
       } catch {}
     };
     if (token && movieId) fetchStatus();
@@ -76,7 +83,7 @@ export function ProfilePosterCard({
     const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
     const onScroll = () => setMenuOpen(false);
     window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll, true); // capture: catches any scrolling container
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", onScroll, true);
@@ -95,8 +102,7 @@ export function ProfilePosterCard({
       const top = Math.min(rect.top, window.innerHeight - 320);
       setMenuPos({ top, left });
     }
-    setMenuOpen(true);
-    // Fetch latest rating
+    // Fetch status first so the menu opens with correct label immediately
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/database/GetMovieStatus/${movieId}`,
@@ -106,8 +112,10 @@ export function ProfilePosterCard({
         const data = await res.json();
         setFilmRating(data.filmRating ?? 0);
         setLatestReviewText(data.latestReviewText ?? "");
+        setIsInWatchlist(data.isInWatchlist ?? false);
       }
     } catch {}
+    setMenuOpen(true);
   };
 
   const handleSetRating = async (n) => {
@@ -121,6 +129,26 @@ export function ProfilePosterCard({
       });
       triggerRefresh();
     } catch {}
+  };
+
+  const handleToggleWatchlist = async () => {
+    const next = !isInWatchlist;
+    setIsInWatchlist(next);
+    setMenuOpen(false);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/ToggleWatchlistStatus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ MovieId: movieId, IsInWatchlist: next }),
+      });
+      if (!res.ok) setIsInWatchlist(!next);
+      else {
+        toast.success(next ? `'${title}' added to watchlist` : `'${title}' removed from watchlist`);
+        triggerRefresh();
+      }
+    } catch {
+      setIsInWatchlist(!next);
+    }
   };
 
   const handleEye = async (e) => {
@@ -176,7 +204,6 @@ export function ProfilePosterCard({
     }
   };
 
-  // Build preSelectedMovie for WatchLogModal
   const posterPath = poster
     ? poster.replace(/^https:\/\/image\.tmdb\.org\/t\/p\/w\d+/, "")
     : null;
@@ -185,7 +212,12 @@ export function ProfilePosterCard({
   const menuItems = [
     { label: "Show your activity", active: false },
     { label: "Review or log film again...", active: true, action: () => { setMenuOpen(false); setLogModalOpen(true); } },
-    { label: "Add to watchlist", active: false },
+    ...(!isWatched ? [{
+      label: isInWatchlist ? "Remove from watchlist" : "Add to watchlist",
+      active: true,
+      action: handleToggleWatchlist,
+      highlight: isInWatchlist,
+    }] : []),
     { label: "Add to lists...", active: false },
   ];
 
@@ -232,13 +264,15 @@ export function ProfilePosterCard({
 
             {/* Menu items */}
             <div className="py-0.5">
-              {menuItems.map(({ label, active, action }) => (
+              {menuItems.map(({ label, active, action, highlight }) => (
                 <button
                   key={label}
                   onClick={active ? action : undefined}
                   className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                     active
-                      ? "text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer"
+                      ? highlight
+                        ? "text-[#BFBCFC] hover:bg-[#BFBCFC]/10 cursor-pointer"
+                        : "text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer"
                       : "text-[#94A3B8]/35 cursor-default"
                   }`}
                 >
