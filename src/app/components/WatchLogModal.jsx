@@ -126,7 +126,7 @@ export function DatePicker({ value, onChange }) {
   );
 }
 
-export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsRewatch = false, preIsLiked = false, preRating = 0 }) {
+export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsRewatch = false, preIsLiked = false, preRating = 0, preReviewText = "", onSuccess }) {
   const auth = useAuth();
   const { triggerRefresh } = useRefresh();
 
@@ -175,7 +175,7 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
       setIsLiked(preIsLiked);
       setRating(preRating);
       setHoverRating(0);
-      setReviewText("");
+      setReviewText(preReviewText);
       setContainsSpoilers(false);
       document.body.style.overflow = "hidden";
     } else {
@@ -253,6 +253,7 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
       if (!res.ok) throw new Error();
       toast.success(`"${selectedMovie.title}" logged!`);
       triggerRefresh();
+      onSuccess?.();
       onClose();
     } catch {
       toast.error("Save failed. Please try again.");

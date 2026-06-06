@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { Eye, Search, Film, Heart, Star, AlignLeft, Film as FilmIcon } from "lucide-react";
+import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { useRefresh } from "../context/RefreshContext";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 
@@ -240,79 +241,30 @@ export function WatchedPage() {
 }
 
 /* ── MOVIE CARD ── */
-const MovieCard = ({ movie, index }) => (
+const MovieCard = ({ movie }) => (
   <div className="flex flex-col gap-1.5">
-    <Link to={`/movie/${movie.movieId}`} className="group relative block">
-      <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border border-white/5 transition-all duration-300 group-hover:border-[#BFBCFC]/35 group-hover:shadow-xl group-hover:shadow-[#BFBCFC]/12">
-
-        {/* Poster */}
-        {movie.poster && !movie.poster.endsWith("null") ? (
-          <img
-            src={movie.poster}
-            alt={movie.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Film className="w-8 h-8 text-[#94A3B8]/20" />
-          </div>
-        )}
-
-        {/* Number badge — top left */}
-        <div className="absolute top-2 left-2 min-w-[22px] h-[22px] px-1.5 bg-[#0B0E14]/80 backdrop-blur-sm rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <span className="text-[#94A3B8] text-[10px] font-bold leading-none">
-            #{index + 1}
-          </span>
-        </div>
-
-        {/* Eye badge — top right */}
-        <div className="absolute top-2 right-2 w-[22px] h-[22px] bg-[#0B0E14]/80 backdrop-blur-sm rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <Eye className="w-3 h-3 text-[#BFBCFC]" />
-        </div>
-
-        {/* Dark gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-        {/* Title — slides up from bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-2.5 translate-y-1.5 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          {movie.title && (
-            <h3 className="text-[#F8FAFC] text-[11px] font-semibold leading-tight line-clamp-2">
-              {movie.title}
-            </h3>
-          )}
-        </div>
-
-        {/* Ring glow */}
-        <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/5 group-hover:ring-[#BFBCFC]/22 transition-all duration-300 pointer-events-none" />
-      </div>
-    </Link>
+    <ProfilePosterCard
+      movieId={movie.movieId}
+      poster={movie.poster}
+      title={movie.title}
+      to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.movieId}`}
+      isWatchedProp={true}
+      isLikedProp={movie.isLiked}
+      hasActivityProp={!!movie.latestLogId}
+    />
 
     {/* Icons below poster */}
     <div className="flex items-center gap-1 px-0.5 flex-wrap">
       {movie.userRating > 0 && (
         <div className="grid grid-cols-5 gap-[2px]">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-            <Star
-              key={n}
-              className={`w-2 h-2 ${
-                n <= movie.userRating
-                  ? "text-[#44FFFF] fill-[#44FFFF]"
-                  : "text-[#94A3B8]/20"
-              }`}
-            />
+            <Star key={n} className={`w-2 h-2 ${n <= movie.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
           ))}
         </div>
       )}
-      {movie.isLiked && (
-        <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
-      )}
-      {movie.hasReview && (
-        <Link
-          to={`/log/${movie.latestLogId}`}
-          onClick={(e) => e.stopPropagation()}
-          title="View review"
-        >
+      {movie.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
+      {movie.hasReview && movie.latestLogId && (
+        <Link to={`/log/${movie.latestLogId}`} onClick={(e) => e.stopPropagation()} title="View review">
           <AlignLeft className="w-3 h-3 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors" />
         </Link>
       )}

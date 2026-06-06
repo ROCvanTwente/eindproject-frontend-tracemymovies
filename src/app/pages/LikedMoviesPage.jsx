@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
 import { Heart, Search, Film, Star, AlignLeft } from "lucide-react";
+import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 import { Link } from "react-router";
 
@@ -240,8 +241,8 @@ const LikedMoviesPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
-            {filtered.map((movie, index) => (
-              <MovieCard key={movie.movieId} movie={movie} index={index} />
+            {filtered.map((movie) => (
+              <MovieCard key={movie.movieId} movie={movie} />
             ))}
           </div>
         )}
@@ -251,53 +252,16 @@ const LikedMoviesPage = () => {
 };
 
 /* ── MOVIE CARD ── */
-const MovieCard = ({ movie, index }) => (
+const MovieCard = ({ movie }) => (
   <div className="flex flex-col gap-1.5">
-    <Link to={`/movie/${movie.movieId}`} className="group relative block">
-    <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border border-white/5 transition-all duration-300 group-hover:border-[#FF61D2]/35 group-hover:shadow-xl group-hover:shadow-[#FF61D2]/12">
-
-      {/* Poster */}
-      {movie.poster ? (
-        <img
-          src={movie.poster}
-          alt={movie.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Film className="w-8 h-8 text-[#94A3B8]/20" />
-        </div>
-      )}
-
-      {/* Number badge — top left */}
-      <div className="absolute top-2 left-2 min-w-[22px] h-[22px] px-1.5 bg-[#0B0E14]/80 backdrop-blur-sm rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <span className="text-[#94A3B8] text-[10px] font-bold leading-none">
-          #{index + 1}
-        </span>
-      </div>
-
-      {/* Heart badge — top right */}
-      <div className="absolute top-2 right-2 w-[22px] h-[22px] bg-[#0B0E14]/80 backdrop-blur-sm rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
-      </div>
-
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-      {/* Title — slides up from bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-2.5 translate-y-1.5 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-        {movie.title && (
-          <h3 className="text-[#F8FAFC] text-[11px] font-semibold leading-tight line-clamp-2">
-            {movie.title}
-          </h3>
-        )}
-      </div>
-
-      {/* Pink ring glow */}
-      <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/5 group-hover:ring-[#FF61D2]/22 transition-all duration-300 pointer-events-none" />
-    </div>
-  </Link>
+    <ProfilePosterCard
+      movieId={movie.movieId}
+      poster={movie.poster}
+      title={movie.title}
+      to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.movieId}`}
+      isLikedProp={true}
+      hasActivityProp={!!movie.latestLogId}
+    />
 
     {/* Icons below poster */}
     <div className="flex items-center gap-1 px-0.5 flex-wrap">
@@ -308,8 +272,7 @@ const MovieCard = ({ movie, index }) => (
           ))}
         </div>
       )}
-      <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
-      {movie.hasReview && (
+      {movie.hasReview && movie.latestLogId && (
         <Link
           to={`/log/${movie.latestLogId}`}
           onClick={(e) => e.stopPropagation()}
