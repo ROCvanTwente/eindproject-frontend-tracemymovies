@@ -29,12 +29,19 @@ export function UserProfilePage() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const [favoriteMovies, setFavoriteMovies] = useState([]);
+  const [favoriteMovies, setFavoriteMovies] = useState([null, null, null, null]);
+  const [targetSlot, setTargetSlot] = useState(0);
+  const [draggedSlot, setDraggedSlot] = useState(null);
+  const [dragOverSlot, setDragOverSlot] = useState(null);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [likedMoviesCount, setLikedMoviesCount] = useState(0);
   const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [recentReviews, setRecentReviews] = useState([]);
+  const [recentReviewsLoading, setRecentReviewsLoading] = useState(true);
+  const [publicRecentReviews, setPublicRecentReviews] = useState([]);
+  const [publicRecentReviewsLoading, setPublicRecentReviewsLoading] = useState(true);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -73,6 +80,27 @@ export function UserProfilePage() {
     fetchPublicProfile();
   }, [id, isOwnProfile]);
 
+  // OTHER USER RECENT REVIEWS
+  useEffect(() => {
+    if (isOwnProfile || !id) return;
+    const fetchPublicRecentReviews = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Log/RecentReviews/${id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setPublicRecentReviews(await res.json());
+      } catch {}
+      finally {
+        setPublicRecentReviewsLoading(false);
+      }
+    };
+    fetchPublicRecentReviews();
+  }, [id, isOwnProfile]);
+
   // FAVORITES
   useEffect(() => {
     if (!isOwnProfile) return;
@@ -102,7 +130,10 @@ export function UserProfilePage() {
             ).then((r) => (r.ok ? r.json() : null))
           )
         );
-        setFavoriteMovies(movies.filter(Boolean));
+
+        const slots = [null, null, null, null];
+        movies.forEach((m, i) => { if (m) slots[i] = m; });
+        setFavoriteMovies(slots);
       } catch (error) {
         console.error("Error fetching favorite movies:", error);
       } finally {
@@ -110,7 +141,7 @@ export function UserProfilePage() {
       }
     };
     fetchFavorites();
-  }, [isOwnProfile, refreshKey]);
+  }, [isOwnProfile]);
 
   // LIKED MOVIES COUNT
   useEffect(() => {
@@ -203,6 +234,28 @@ export function UserProfilePage() {
     fetchFriends();
   }, [isOwnProfile, refreshKey]);
 
+  // RECENT REVIEWS - OWN PROFILE
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchRecentReviews = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Log/MyRecentReviews`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setRecentReviews(await res.json());
+      } catch (err) {
+        console.error("Error fetching recent reviews:", err);
+      } finally {
+        setRecentReviewsLoading(false);
+      }
+    };
+    fetchRecentReviews();
+  }, [isOwnProfile, refreshKey]);
+
   // SEARCH FAVORITES MODAL
   useEffect(() => {
     if (!searchModalOpen) return;
@@ -224,38 +277,39 @@ export function UserProfilePage() {
     return () => clearTimeout(timer);
   }, [searchQuery, searchModalOpen]);
 
+  const saveFavoriteSlots = async (slots) => {
+    const token = getToken();
+    if (!token) return;
+    const ids = slots.filter(Boolean).map((m) => m.id);
+    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ movieIds: ids }),
+    });
+  };
+
   const addFavorite = async (movie) => {
-    if (favoriteMovies.length >= 4) return;
-    if (favoriteMovies.some((m) => m.id === movie.id)) {
+    if (favoriteMovies.filter(Boolean).some((m) => m.id === movie.id)) {
       setDuplicateError(`"${movie.title}" is already in your favourites.`);
       return;
     }
     setDuplicateError("");
     setSearchModalOpen(false);
-    setFavoriteMovies((prev) => [...prev, movie]);
-    try {
-      const token = getToken();
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/Favorites/${movie.id}`,
-        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-    } catch {
-      setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-    }
+    const newSlots = [...favoriteMovies];
+    newSlots[targetSlot] = movie;
+    setFavoriteMovies(newSlots);
+    await saveFavoriteSlots(newSlots);
   };
 
-  const removeFavorite = async (movieId) => {
-    const token = getToken();
-    if (!token) return;
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites/${movieId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setFavoriteMovies((prev) => prev.filter((m) => m.id !== movieId));
+  const removeFavorite = async (slotIndex) => {
+    const newSlots = [...favoriteMovies];
+    newSlots[slotIndex] = null;
+    setFavoriteMovies(newSlots);
+    await saveFavoriteSlots(newSlots);
   };
 
-  const openSearch = () => {
+  const openSearch = (slotIndex) => {
+    setTargetSlot(slotIndex);
     setSearchQuery("");
     setSearchResults([]);
     setDuplicateError("");
@@ -391,6 +445,8 @@ export function UserProfilePage() {
                           poster={activity.poster}
                           title={activity.movieTitle}
                           to={`/log/${activity.logId}`}
+                          isLikedProp={activity.filmIsLiked ?? activity.isLiked}
+                          watchCountProp={activity.watchCount ?? 0}
                         />
                         <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 px-0.5 flex-wrap">
                           {activity.userRating > 0 && (
@@ -408,6 +464,78 @@ export function UserProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* Recent Reviews */}
+              {(publicRecentReviewsLoading || publicRecentReviews.length > 0) && (
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                      <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
+                      Recent Reviews
+                    </h2>
+                  </div>
+                  {publicRecentReviewsLoading ? (
+                    <div className="space-y-6">
+                      {[0, 1].map((i) => (
+                        <div key={i} className="flex gap-5">
+                          <div className="w-28 aspect-[2/3] rounded-lg bg-[#151921] animate-pulse flex-none" />
+                          <div className="flex-1 space-y-2 pt-1">
+                            <div className="h-5 bg-[#151921] animate-pulse rounded w-3/4" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-1/3" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-full mt-4" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-5/6" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-4/5" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div>
+                      {publicRecentReviews.map((review, idx) => (
+                        <div key={review.logId} className={`flex gap-5 py-6 ${idx < publicRecentReviews.length - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}>
+                          <div className="w-28 flex-none">
+                            <ProfilePosterCard
+                              movieId={review.movieId}
+                              poster={review.poster}
+                              title={review.title}
+                              to={`/log/${review.logId}`}
+                              isWatchedProp={true}
+                              isLikedProp={review.filmIsLiked}
+                              hasActivityProp={true}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-1">
+                            <Link to={`/log/${review.logId}`} className="group/title">
+                              <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                                <span className="text-[#F8FAFC] font-bold text-lg leading-snug group-hover/title:text-[#BFBCFC] transition-colors">{review.title}</span>
+                                <span className="text-[#94A3B8] text-sm">{review.releaseYear}</span>
+                              </div>
+                            </Link>
+                            <div className="flex items-center gap-3 mb-3 flex-wrap">
+                              {review.rating > 0 && (
+                                <div className="flex gap-[2px]">
+                                  {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                                    <Star key={n} className={`w-3.5 h-3.5 ${n <= review.rating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/15"}`} />
+                                  ))}
+                                </div>
+                              )}
+                              <span className="text-[#94A3B8]/70 text-xs">
+                                {review.isRewatch ? "Rewatched" : "Watched"}{" "}
+                                {new Date(review.watchedDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                              </span>
+                              {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
+                            </div>
+                            {review.containsSpoilers && (
+                              <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
+                            )}
+                            <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{review.reviewText}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -538,20 +666,44 @@ export function UserProfilePage() {
           <div className="lg:col-span-2 space-y-8">
 
             {/* Liked Films */}
-            <div
-              onClick={() => navigate('/likedmoviespage')}
-              className="cursor-pointer"
-            >
+            <div>
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
                 <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                {Array.from({ length: 4 }).map((_, i) => {
+                {[0, 1, 2, 3].map((i) => {
                   const movie = favoritesLoading ? undefined : favoriteMovies[i];
+                  const isDragging = draggedSlot === i;
+                  const isDragOver = dragOverSlot === i;
+
+                  const dropProps = isOwnProfile ? {
+                    onDragOver: (e) => { e.preventDefault(); setDragOverSlot(i); },
+                    onDragLeave: () => setDragOverSlot(null),
+                    onDrop: (e) => {
+                      e.preventDefault();
+                      setDragOverSlot(null);
+                      if (draggedSlot === null || draggedSlot === i) return;
+                      const newSlots = [...favoriteMovies];
+                      const tmp = newSlots[draggedSlot];
+                      newSlots[draggedSlot] = newSlots[i];
+                      newSlots[i] = tmp;
+                      setFavoriteMovies(newSlots);
+                      saveFavoriteSlots(newSlots);
+                      setDraggedSlot(null);
+                    },
+                  } : {};
+
                   return movie ? (
-                    <div key={movie.id} className="relative group">
+                    <div
+                      key={`slot-${i}`}
+                      className={`relative group transition-all duration-150 ${isDragging ? "opacity-40 scale-95" : ""} ${isDragOver && draggedSlot !== i ? "ring-2 ring-[#FF61D2]/60 rounded-xl scale-[1.02]" : ""}`}
+                      draggable={isOwnProfile}
+                      onDragStart={() => setDraggedSlot(i)}
+                      onDragEnd={() => { setDraggedSlot(null); setDragOverSlot(null); }}
+                      {...dropProps}
+                    >
                       <ProfilePosterCard
                         movieId={movie.id}
                         poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
@@ -559,7 +711,7 @@ export function UserProfilePage() {
                       />
                       {isOwnProfile && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); removeFavorite(movie.id); }}
+                          onClick={(e) => { e.stopPropagation(); removeFavorite(i); }}
                           className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10"
                         >
                           <X className="w-3.5 h-3.5 text-white" />
@@ -569,16 +721,21 @@ export function UserProfilePage() {
                   ) : favoritesLoading ? (
                     <div key={`skel-${i}`} className="w-full aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
                   ) : isOwnProfile ? (
-                    <button
+                    <div
                       key={`empty-${i}`}
-                      onClick={(e) => { e.stopPropagation(); openSearch(); }}
-                      className="group relative w-full aspect-[2/3] rounded-lg border border-dashed border-[#BFBCFC]/20 hover:border-[#FF61D2]/50 hover:bg-[#FF61D2]/5 transition-all duration-300 flex flex-col items-center justify-center gap-2"
+                      className={`relative group w-full aspect-[2/3] rounded-lg border border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-2 ${isDragOver ? "border-[#FF61D2]/60 bg-[#FF61D2]/8 scale-[1.02]" : "border-[#BFBCFC]/20 hover:border-[#FF61D2]/50 hover:bg-[#FF61D2]/5"}`}
+                      {...dropProps}
                     >
-                      <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
-                        <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
-                      </div>
-                      <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
-                    </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openSearch(i); }}
+                        className="flex flex-col items-center justify-center gap-2 w-full h-full"
+                      >
+                        <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
+                          <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
+                        </div>
+                        <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
+                      </button>
+                    </div>
                   ) : (
                     <div
                       key={`empty-${i}`}
@@ -624,8 +781,9 @@ export function UserProfilePage() {
                         title={activity.movieTitle}
                         to={`/log/${activity.logId}`}
                         isWatchedProp={true}
-                        isLikedProp={activity.isLiked}
+                        isLikedProp={activity.filmIsLiked ?? activity.isLiked}
                         hasActivityProp={true}
+                        watchCountProp={activity.watchCount ?? 0}
                       />
                       {/* Icons + log link */}
                       <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 flex-wrap px-0.5">
@@ -645,6 +803,78 @@ export function UserProfilePage() {
                 </div>
               )}
             </div>
+
+            {/* Recent Reviews */}
+            {(recentReviewsLoading || recentReviews.length > 0) && (
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                    <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
+                    Recent Reviews
+                  </h2>
+                </div>
+                {recentReviewsLoading ? (
+                  <div className="space-y-6">
+                    {[0, 1].map((i) => (
+                      <div key={i} className="flex gap-5">
+                        <div className="w-28 aspect-[2/3] rounded-lg bg-[#151921] animate-pulse flex-none" />
+                        <div className="flex-1 space-y-2 pt-1">
+                          <div className="h-5 bg-[#151921] animate-pulse rounded w-3/4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-1/3" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-full mt-4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-5/6" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-4/5" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    {recentReviews.map((review, idx) => (
+                      <div key={review.logId} className={`flex gap-5 py-6 ${idx < recentReviews.length - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}>
+                        <div className="w-28 flex-none">
+                          <ProfilePosterCard
+                            movieId={review.movieId}
+                            poster={review.poster}
+                            title={review.title}
+                            to={`/log/${review.logId}`}
+                            isWatchedProp={true}
+                            isLikedProp={review.filmIsLiked}
+                            hasActivityProp={true}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 pt-1">
+                          <Link to={`/log/${review.logId}`} className="group/title">
+                            <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                              <span className="text-[#F8FAFC] font-bold text-lg leading-snug group-hover/title:text-[#BFBCFC] transition-colors">{review.title}</span>
+                              <span className="text-[#94A3B8] text-sm">{review.releaseYear}</span>
+                            </div>
+                          </Link>
+                          <div className="flex items-center gap-3 mb-3 flex-wrap">
+                            {review.rating > 0 && (
+                              <div className="flex gap-[2px]">
+                                {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                                  <Star key={n} className={`w-3.5 h-3.5 ${n <= review.rating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/15"}`} />
+                                ))}
+                              </div>
+                            )}
+                            <span className="text-[#94A3B8]/70 text-xs">
+                              {review.isRewatch ? "Rewatched" : "Watched"}{" "}
+                              {new Date(review.watchedDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                            </span>
+                            {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
+                          </div>
+                          {review.containsSpoilers && (
+                            <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
+                          )}
+                          <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{review.reviewText}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Friends */}
             {friends.length > 0 && (
