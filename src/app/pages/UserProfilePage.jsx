@@ -24,6 +24,7 @@ import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { useSignalR } from "../context/SignalRContext";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
+import { BadgesSection, BadgeChip } from "../components/BadgesSection";
 
 export function UserProfilePage() {
   const { id } = useParams();
@@ -52,6 +53,7 @@ export function UserProfilePage() {
   const [friends, setFriends] = useState([]);
   const [watchlistPreview, setWatchlistPreview] = useState([]);
   const [watchlistLoading, setWatchlistLoading] = useState(true);
+  const [badges, setBadges] = useState([]);
 
   const isOwnProfile = !id;
   const { refreshKey } = useRefresh();
@@ -277,6 +279,42 @@ export function UserProfilePage() {
     fetchWatchlist();
   }, [isOwnProfile, refreshKey]);
 
+  // BADGES - OWN PROFILE
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const loadBadges = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Badge/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setBadges(data.badges || []);
+      } catch {}
+    };
+    loadBadges();
+  }, [isOwnProfile, refreshKey]);
+
+  // BADGES - PUBLIC PROFILE
+  useEffect(() => {
+    if (isOwnProfile || !id) return;
+    const loadBadges = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Badge/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setBadges(data.badges || []);
+      } catch {}
+    };
+    loadBadges();
+  }, [isOwnProfile, id]);
+
   // RECENT REVIEWS - OWN PROFILE
   useEffect(() => {
     if (!isOwnProfile) return;
@@ -362,6 +400,13 @@ export function UserProfilePage() {
   const displayName = user?.username || user?.email || "User";
   const avatarLetter = displayName.charAt(0).toUpperCase();
 
+  const getHighestBadge = (category) => {
+    const earned = badges.filter(b => b.category === category && b.earned);
+    return earned.length ? earned.reduce((max, b) => b.threshold > max.threshold ? b : max, earned[0]) : null;
+  };
+  const highestWatchedBadge = getHighestBadge('watched');
+  const highestReviewBadge = getHighestBadge('reviews');
+
   // ── OTHER USER'S PROFILE ──
   if (!isOwnProfile) {
     if (publicLoading) {
@@ -404,7 +449,11 @@ export function UserProfilePage() {
               </div>
 
               <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">{pub.username}</h1>
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC]">{pub.username}</h1>
+                  {highestWatchedBadge && <BadgeChip badge={highestWatchedBadge} />}
+                  {highestReviewBadge && <BadgeChip badge={highestReviewBadge} />}
+                </div>
                 {pub.bio && (
                   <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{pub.bio}</p>
                 )}
@@ -580,6 +629,16 @@ export function UserProfilePage() {
                   )}
                 </div>
               )}
+
+            {badges.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Badges</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+                </div>
+                <BadgesSection badges={badges} />
+              </div>
+            )}
             </div>
 
             {/* Sidebar */}
@@ -649,10 +708,12 @@ export function UserProfilePage() {
             <div className="flex-1 min-w-0">
 
               {/* Name + Edit button inline */}
-              <div className="flex items-center gap-4 mb-2">
+              <div className="flex items-center gap-3 flex-wrap mb-2">
                 <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">
                   {displayName}
                 </h1>
+                {highestWatchedBadge && <BadgeChip badge={highestWatchedBadge} />}
+                {highestReviewBadge && <BadgeChip badge={highestReviewBadge} />}
                 <Link
                   to="/profile"
                   className="ml-4 flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap"
@@ -957,6 +1018,16 @@ export function UserProfilePage() {
                     </Link>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {badges.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Badges</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+                </div>
+                <BadgesSection badges={badges} />
               </div>
             )}
           </div>
