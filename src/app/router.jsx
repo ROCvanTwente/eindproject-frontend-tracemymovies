@@ -25,6 +25,7 @@ import  LikedMoviesPage  from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
+import { WatchlistPage } from './pages/WatchlistPage';
 import { ActorPage } from './pages/ActorPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -139,6 +140,10 @@ export const router = createBrowserRouter([
             {
                 path: 'watched',
                 element: _jsx(ProtectedRoute, { children: _jsx(WatchedPage, {}) }),
+            },
+            {
+                path: 'watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
             },
             {
                 path: '500',

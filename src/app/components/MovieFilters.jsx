@@ -97,7 +97,7 @@ const SORT_GROUPS = [
   { label: "Film Length",   options: ["Shortest First", "Longest First"] },
 ];
 
-export function SortDropdown({ value, onChange }) {
+export function SortDropdown({ value, onChange, excludeGroups = [] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -107,6 +107,7 @@ export function SortDropdown({ value, onChange }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const visibleGroups = SORT_GROUPS.filter(g => !excludeGroups.includes(g.label));
   const active = value !== null;
   const label = active ? `${value.group}: ${value.option}` : "Sort by";
 
@@ -134,7 +135,7 @@ export function SortDropdown({ value, onChange }) {
               Default
             </button>
             <hr className="border-[#BFBCFC]/10 mx-2 my-1" />
-            {SORT_GROUPS.map((group, gi) => (
+            {visibleGroups.map((group, gi) => (
               <div key={group.label}>
                 {gi > 0 && <hr className="border-[#BFBCFC]/8 mx-2 my-0.5" />}
                 <p className="px-4 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-widest text-[#BFBCFC]/50">
@@ -276,7 +277,7 @@ function YearRow({ decade, year, setYear, setDecade }) {
   );
 }
 
-export function MovieFilters({ genre, setGenre, decade, setDecade, year, setYear, rating, setRating, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset, hideYearRow, yearRowOnly }) {
+export function MovieFilters({ genre, setGenre, decade, setDecade, year, setYear, rating, setRating, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset, hideYearRow, yearRowOnly, hideRating }) {
   if (yearRowOnly) {
     return decade ? <YearRow decade={decade} year={year} setYear={setYear} setDecade={setDecade} /> : null;
   }
@@ -295,13 +296,15 @@ export function MovieFilters({ genre, setGenre, decade, setDecade, year, setYear
         options={availableDecades}
         onChange={setDecade}
       />
-      <FilterDropdown
-        label="Rating"
-        value={rating}
-        options={ratingOptions}
-        onChange={setRating}
-        topOption="No Rating"
-      />
+      {!hideRating && (
+        <FilterDropdown
+          label="Rating"
+          value={rating}
+          options={ratingOptions}
+          onChange={setRating}
+          topOption="No Rating"
+        />
+      )}
       {hasActiveFilters && (
         <button
           onClick={reset}
