@@ -222,9 +222,11 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
       if (res.ok) {
         const data = await res.json();
         setHasWatched(data.isWatched === true);
+        setIsLiked(data.isFavorite === true);
+        setRating(data.filmRating ?? 0);
       }
     } catch {
-      // leave hasWatched false
+      // leave defaults
     }
   };
 

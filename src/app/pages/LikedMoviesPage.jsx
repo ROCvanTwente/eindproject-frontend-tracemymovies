@@ -274,6 +274,7 @@ const MovieCard = ({ movie }) => (
           ))}
         </div>
       )}
+      <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
       {movie.hasReview && movie.latestLogId && (
         <Link
           to={`/log/${movie.latestLogId}`}

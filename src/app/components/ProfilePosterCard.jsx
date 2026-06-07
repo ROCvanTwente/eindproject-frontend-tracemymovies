@@ -17,6 +17,8 @@ export function ProfilePosterCard({
   hasActivityProp,
   watchCountProp,
   isInWatchlistProp,
+  filmRatingProp,
+  onEyeOverride,
 }) {
   const navigate = useNavigate();
   const auth = useAuth();
@@ -36,6 +38,7 @@ export function ProfilePosterCard({
   const [hasActivity, setHasActivity] = useState(hasActivityProp ?? false);
   const [watchCount, setWatchCount] = useState(watchCountProp ?? 0);
   const [isInWatchlist, setIsInWatchlist] = useState(isInWatchlistProp ?? false);
+  const [autoLatestLogId, setAutoLatestLogId] = useState(null);
   const [saving, setSaving] = useState(false);
 
   // Context menu
@@ -48,12 +51,20 @@ export function ProfilePosterCard({
   const menuButtonRef = useRef(null);
 
   useEffect(() => {
+    if (isWatchedProp !== undefined) setIsWatched(isWatchedProp);
+  }, [isWatchedProp]);
+
+  useEffect(() => {
     if (isLikedProp !== undefined) setIsLiked(isLikedProp);
   }, [isLikedProp]);
 
   useEffect(() => {
     if (isInWatchlistProp !== undefined) setIsInWatchlist(isInWatchlistProp);
   }, [isInWatchlistProp]);
+
+  useEffect(() => {
+    if (filmRatingProp !== undefined) setFilmRating(filmRatingProp);
+  }, [filmRatingProp]);
 
   useEffect(() => {
     if (isWatchedProp !== undefined) return;
@@ -72,6 +83,7 @@ export function ProfilePosterCard({
         setFilmRating(data.filmRating ?? 0);
         setLatestReviewText(data.latestReviewText ?? "");
         setIsInWatchlist(data.isInWatchlist ?? false);
+        setAutoLatestLogId(data.latestLogId ?? null);
       } catch {}
     };
     if (token && movieId) fetchStatus();
@@ -290,7 +302,7 @@ export function ProfilePosterCard({
     <>
       <div
         className="relative group cursor-pointer"
-        onClick={(e) => { e.stopPropagation(); navigate(to ?? `/movie/${movieId}`); }}
+        onClick={(e) => { e.stopPropagation(); navigate(to ?? (autoLatestLogId ? `/log/${autoLatestLogId}` : `/movie/${movieId}`)); }}
       >
         {/* Poster */}
         <div
@@ -312,7 +324,7 @@ export function ProfilePosterCard({
           <div className="absolute inset-0 bg-[#0B0E14]/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-end justify-center pb-3 gap-1.5">
             {/* Eye */}
             <button
-              onClick={handleEye}
+              onClick={onEyeOverride ? (e) => { e.stopPropagation(); onEyeOverride(); } : handleEye}
               className={`relative w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-all ${
                 isWatched
                   ? "bg-[#44FFFF]/20 text-[#44FFFF] hover:bg-[#44FFFF]/30"
