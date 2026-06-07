@@ -637,6 +637,10 @@ export function UserProfilePage() {
                               {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
                             </div>
                             <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
+                            <div className="mt-3 flex items-center gap-1.5 text-[#94A3B8]/50 text-xs">
+                              <Heart className="w-3 h-3" />
+                              <span>No likes yet</span>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1008,6 +1012,10 @@ export function UserProfilePage() {
                             {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
                           </div>
                           <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
+                          <div className="mt-3 flex items-center gap-1.5 text-[#94A3B8]/50 text-xs">
+                            <Heart className="w-3 h-3" />
+                            <span>No likes yet</span>
+                          </div>
                         </div>
                       </div>
                     ))}

@@ -257,7 +257,7 @@ export function ActivityDetailPage() {
 
             {/* Review */}
             {data.reviewText && (
-              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl p-4">
+              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl p-4 flex flex-col gap-3">
                 <p className="text-xs text-[#94A3B8] flex items-center gap-1.5 mb-3 uppercase tracking-wider font-medium">
                   <MessageSquare className="w-3.5 h-3.5" />
                   Review
@@ -293,6 +293,10 @@ export function ActivityDetailPage() {
                     )}
                   </div>
                 )}
+                <div className="flex items-center gap-1.5 text-[#94A3B8]/50 text-xs">
+                  <Heart className="w-3 h-3" />
+                  <span>No likes yet</span>
+                </div>
               </div>
             )}
 
@@ -412,14 +416,14 @@ export function ActivityDetailPage() {
                   className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
                 >
                   <Pencil className="w-4 h-4" />
-                  Edit review
+                  {data.reviewText ? "Edit review" : "Add review"}
                 </button>
                 <button
                   onClick={() => setLogAgainOpen(true)}
                   className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  Log again
+                  {data.watchCount > 1 ? "Log again" : "Log this film"}
                 </button>
               </>
             ) : (
@@ -428,7 +432,7 @@ export function ActivityDetailPage() {
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
               >
                 <RefreshCw className="w-4 h-4" />
-                Log this film
+                {myWatchCount > 0 ? "Log again" : "Log this film"}
               </button>
             )}
           </div>
