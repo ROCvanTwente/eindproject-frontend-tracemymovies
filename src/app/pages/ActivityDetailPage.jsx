@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import { useRefresh } from "../context/RefreshContext";
 import {
   ArrowLeft, Heart, RotateCw, Eye, Star,
   MessageSquare, Film, AlertCircle, Play, Pencil, RefreshCw,
@@ -15,6 +16,7 @@ export function ActivityDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const auth = useAuth();
+  const { refreshKey, triggerRefresh } = useRefresh();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -27,6 +29,8 @@ export function ActivityDetailPage() {
   const [currentFilmIsLiked, setCurrentFilmIsLiked] = useState(false);
   const [currentFilmRating, setCurrentFilmRating] = useState(0);
   const [hoverFilmRating, setHoverFilmRating] = useState(0);
+  const [myIsWatched, setMyIsWatched] = useState(false);
+  const [myWatchCount, setMyWatchCount] = useState(0);
 
   const token = useMemo(
     () =>
@@ -53,8 +57,10 @@ export function ActivityDetailPage() {
       if (!res.ok) return;
       const detail = await res.json();
       setData(detail);
-      setCurrentFilmIsLiked(detail.filmIsLiked ?? false);
-      setCurrentFilmRating(detail.filmRating ?? 0);
+      setCurrentFilmIsLiked(detail.isOwnLog ? (detail.filmIsLiked ?? false) : (detail.myFilmIsLiked ?? false));
+      setCurrentFilmRating(detail.isOwnLog ? (detail.filmRating ?? 0) : (detail.myFilmRating ?? 0));
+      setMyIsWatched(detail.myIsWatched ?? false);
+      setMyWatchCount(detail.myWatchCount ?? 0);
 
       // Fetch trailer only once
       if (!trailerKey) {
@@ -78,7 +84,21 @@ export function ActivityDetailPage() {
 
   useEffect(() => {
     if (token && id) loadData();
-  }, [id, token]);
+  }, [id, token, refreshKey]);
+
+  const handleEyeToggle = async () => {
+    if (data?.isOwnLog) return;
+    const isEffectivelyWatched = myIsWatched || currentFilmRating > 0;
+    if (isEffectivelyWatched) {
+      if (currentFilmRating > 0) { toast.error("Remove your rating first before unwatching."); return; }
+      if (myWatchCount > 1) { toast.error("Can't remove — you have activity on this film."); return; }
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/RemoveWatchActivity/${data.movieId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) { setMyIsWatched(false); setMyWatchCount(0); triggerRefresh(); }
+    } else {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
+      if (res.ok) { setMyIsWatched(true); setMyWatchCount(1); triggerRefresh(); }
+    }
+  };
 
   const openTrailer = () => {
     setTrailerOpen(true);
@@ -143,9 +163,10 @@ export function ActivityDetailPage() {
               poster={data.poster}
               title={data.title}
               to={`/movie/${data.movieId}`}
-              isWatchedProp={true}
+              isWatchedProp={data.isOwnLog ? true : myIsWatched}
               isLikedProp={currentFilmIsLiked}
-              hasActivityProp={true}
+              hasActivityProp={data.isOwnLog ? true : undefined}
+              onEyeOverride={data.isOwnLog ? undefined : handleEyeToggle}
             />
 
             {/* Trailer button — only if available */}
@@ -162,6 +183,16 @@ export function ActivityDetailPage() {
 
           {/* ── RIGHT: Info ── */}
           <div className="flex-1 min-w-0">
+
+            {/* Logged by (other user's log) */}
+            {!data.isOwnLog && data.ownerUsername && (
+              <p className="text-[#94A3B8] text-xs font-semibold uppercase tracking-widest mb-2">
+                {data.isRewatch ? "Rewatched" : "Watched"} by{" "}
+                <Link to={`/user/${data.ownerUsername}`} className="text-[#BFBCFC] hover:text-[#F8FAFC] transition-colors">
+                  {data.ownerUsername}
+                </Link>
+              </p>
+            )}
 
             {/* Title + year */}
             <div className="flex items-start justify-between gap-3 mb-1">
@@ -181,10 +212,13 @@ export function ActivityDetailPage() {
                   ? "text-[#44FFFF] bg-[#44FFFF]/10 border-[#44FFFF]/25"
                   : "text-[#BFBCFC] bg-[#BFBCFC]/10 border-[#BFBCFC]/25"
               }`}>
-                {data.isRewatch
-                  ? <><RotateCw className="w-3.5 h-3.5" /> Rewatched {dateStr}</>
-                  : <><Eye className="w-3.5 h-3.5" /> Watched {dateStr}</>
-                }
+                {data.isOwnLog ? (
+                  data.isRewatch
+                    ? <><RotateCw className="w-3.5 h-3.5" /> Rewatched {dateStr}</>
+                    : <><Eye className="w-3.5 h-3.5" /> Watched {dateStr}</>
+                ) : (
+                  dateStr
+                )}
               </span>
             </div>
 
@@ -193,7 +227,7 @@ export function ActivityDetailPage() {
               <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl p-4 mb-4">
                 <p className="text-xs text-[#94A3B8] flex items-center gap-1.5 mb-3 uppercase tracking-wider font-medium">
                   <Star className="w-3.5 h-3.5" />
-                  Your score
+                  {data.isOwnLog ? "Your score" : `${data.ownerUsername ?? "Their"}'s score`}
                 </p>
                 <div className="flex items-center gap-2 flex-wrap">
                   {data.rating != null && data.rating > 0 && (
@@ -270,117 +304,134 @@ export function ActivityDetailPage() {
             )}
           </div>
 
-          {/* ── RIGHT SIDEBAR — only for own logs ── */}
-          {data.isOwnLog && (
-            <div className="flex-shrink-0 w-full md:w-52 flex flex-col gap-3 md:pt-8">
+          {/* ── RIGHT SIDEBAR ── */}
+          <div className="flex-shrink-0 w-full md:w-52 flex flex-col gap-3 md:pt-8">
 
-              {/* Eye + Heart icons row */}
-              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4 flex items-center justify-between">
-                {/* Eye */}
-                <div className="relative">
-                  <Eye className="w-10 h-10 text-[#44FFFF] fill-[#44FFFF]/15" />
-                  {data.watchCount > 1 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#44FFFF] text-[#0B0E14] text-[9px] font-black rounded-full flex items-center justify-center px-0.5 leading-none">
-                      {data.watchCount}
-                    </span>
-                  )}
-                </div>
+            {/* Sidebar header label */}
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94A3B8] px-1">
+              {data.isOwnLog ? "Your status" : "Your status"}
+            </p>
 
-                {/* Heart */}
-                <button
-                  className="cursor-pointer transition-all hover:scale-110"
-                  onClick={async () => {
-                    const next = !currentFilmIsLiked;
-                    setCurrentFilmIsLiked(next);
-                    await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/ToggleLikeStatus`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                      body: JSON.stringify({ MovieId: data.movieId, IsLiked: next }),
-                    });
-                    loadData();
-                  }}
-                >
-                  <Heart className={`w-10 h-10 transition-all ${currentFilmIsLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/30"}`} />
-                </button>
-              </div>
-
-              {/* Rating */}
-              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Your Rating</p>
-                  {currentFilmRating > 0 && (
-                    <span className="text-sm font-bold text-[#44FFFF]">{currentFilmRating}/10</span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1.5" onMouseLeave={() => setHoverFilmRating(0)}>
-                  {/* Row 1: stars 1–5 */}
-                  <div className="flex items-center gap-1">
-                    {[1,2,3,4,5].map((n) => {
-                      const active = n <= (hoverFilmRating || currentFilmRating);
-                      return (
-                        <Star
-                          key={n}
-                          className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
-                          onMouseEnter={() => setHoverFilmRating(n)}
-                          onClick={async () => {
-                            const newRating = n === currentFilmRating ? 0 : n;
-                            setCurrentFilmRating(newRating);
-                            await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                              body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }),
-                            });
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                  {/* Row 2: stars 6–10 */}
-                  <div className="flex items-center gap-1">
-                    {[6,7,8,9,10].map((n) => {
-                      const active = n <= (hoverFilmRating || currentFilmRating);
-                      return (
-                        <Star
-                          key={n}
-                          className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
-                          onMouseEnter={() => setHoverFilmRating(n)}
-                          onClick={async () => {
-                            const newRating = n === currentFilmRating ? 0 : n;
-                            setCurrentFilmRating(newRating);
-                            await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                              body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }),
-                            });
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-                {currentFilmRating === 0 && (
-                  <p className="text-xs text-[#94A3B8]/40 mt-2">Click a star to rate</p>
-                )}
-              </div>
-
-              {/* Action buttons */}
+            {/* Eye + Heart icons row */}
+            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4 flex items-center justify-between">
+              {/* Eye */}
               <button
-                onClick={() => setEditOpen(true)}
-                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                className="relative transition-all hover:scale-110"
+                onClick={handleEyeToggle}
               >
-                <Pencil className="w-4 h-4" />
-                Edit review
+                <Eye className={`w-10 h-10 ${(data.isOwnLog || myIsWatched || currentFilmRating > 0) ? "text-[#44FFFF] fill-[#44FFFF]/15" : "text-[#94A3B8]/30"}`} />
+                {(data.isOwnLog ? data.watchCount : myWatchCount) > 1 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#44FFFF] text-[#0B0E14] text-[9px] font-black rounded-full flex items-center justify-center px-0.5 leading-none">
+                    {data.isOwnLog ? data.watchCount : myWatchCount}
+                  </span>
+                )}
               </button>
 
+              {/* Heart */}
+              <button
+                className="cursor-pointer transition-all hover:scale-110"
+                onClick={async () => {
+                  const next = !currentFilmIsLiked;
+                  setCurrentFilmIsLiked(next);
+                  await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/ToggleLikeStatus`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ MovieId: data.movieId, IsLiked: next }),
+                  });
+                  loadData();
+                }}
+              >
+                <Heart className={`w-10 h-10 transition-all ${currentFilmIsLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/30"}`} />
+              </button>
+            </div>
+
+            {/* Rating */}
+            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Your Rating</p>
+                {currentFilmRating > 0 && (
+                  <span className="text-sm font-bold text-[#44FFFF]">{currentFilmRating}/10</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1.5" onMouseLeave={() => setHoverFilmRating(0)}>
+                <div className="flex items-center gap-1">
+                  {[1,2,3,4,5].map((n) => {
+                    const active = n <= (hoverFilmRating || currentFilmRating);
+                    return (
+                      <Star
+                        key={n}
+                        className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
+                        onMouseEnter={() => setHoverFilmRating(n)}
+                        onClick={async () => {
+                          const newRating = n === currentFilmRating ? 0 : n;
+                          setCurrentFilmRating(newRating);
+                          await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }) });
+                          if (newRating > 0 && !myIsWatched) {
+                            const r = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
+                            if (r.ok) { setMyIsWatched(true); setMyWatchCount(1); }
+                          }
+                          triggerRefresh();
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-1">
+                  {[6,7,8,9,10].map((n) => {
+                    const active = n <= (hoverFilmRating || currentFilmRating);
+                    return (
+                      <Star
+                        key={n}
+                        className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
+                        onMouseEnter={() => setHoverFilmRating(n)}
+                        onClick={async () => {
+                          const newRating = n === currentFilmRating ? 0 : n;
+                          setCurrentFilmRating(newRating);
+                          await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }) });
+                          if (newRating > 0 && !myIsWatched) {
+                            const r = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
+                            if (r.ok) { setMyIsWatched(true); setMyWatchCount(1); }
+                          }
+                          triggerRefresh();
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+              {currentFilmRating === 0 && (
+                <p className="text-xs text-[#94A3B8]/40 mt-2">Click a star to rate</p>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            {data.isOwnLog ? (
+              <>
+                <button
+                  onClick={() => setEditOpen(true)}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit review
+                </button>
+                <button
+                  onClick={() => setLogAgainOpen(true)}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Log again
+                </button>
+              </>
+            ) : (
               <button
                 onClick={() => setLogAgainOpen(true)}
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
               >
                 <RefreshCw className="w-4 h-4" />
-                Log again
+                Log this film
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

@@ -16,11 +16,8 @@ function Emblem({ badge, size = 56 }) {
 
   return (
     <div style={{ width: size, height: size, position: 'relative', flexShrink: 0 }}>
-      {/* ambient glow behind emblem */}
       <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', background: `radial-gradient(circle, ${t.glow} 0%, transparent 65%)`, filter: 'blur(8px)', zIndex: 0 }} />
-      {/* outer ring */}
       <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1.5px solid ${t.ring}`, opacity: 0.45, zIndex: 1 }} />
-      {/* main face */}
       <div style={{
         position: 'absolute', inset: 3, borderRadius: '50%', background: t.gradient, zIndex: 2,
         display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -19,6 +19,7 @@ import {
   AlignLeft,
   Pencil,
   Bookmark,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
@@ -51,6 +52,7 @@ export function UserProfilePage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateError, setDuplicateError] = useState("");
   const [friends, setFriends] = useState([]);
+  const [publicFriends, setPublicFriends] = useState([]);
   const [watchlistPreview, setWatchlistPreview] = useState([]);
   const [watchlistLoading, setWatchlistLoading] = useState(true);
   const [badges, setBadges] = useState([]);
@@ -105,6 +107,23 @@ export function UserProfilePage() {
       }
     };
     fetchPublicRecentReviews();
+  }, [id, isOwnProfile]);
+
+  // OTHER USER FRIENDS
+  useEffect(() => {
+    if (isOwnProfile || !id) return;
+    const fetchPublicFriends = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetUserFriends/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        setPublicFriends(await res.json());
+      } catch {}
+    };
+    fetchPublicFriends();
   }, [id, isOwnProfile]);
 
   // FAVORITES
@@ -506,6 +525,7 @@ export function UserProfilePage() {
                         movieId={movie.id}
                         poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                         title={movie.title}
+                        to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.id}`}
                       />
                     ) : (
                       <div key={`empty-${i}`} className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]" />
@@ -538,8 +558,6 @@ export function UserProfilePage() {
                           poster={activity.poster}
                           title={activity.movieTitle}
                           to={`/log/${activity.logId}`}
-                          isLikedProp={activity.filmIsLiked ?? activity.isLiked}
-                          watchCountProp={activity.watchCount ?? 0}
                         />
                         <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 px-0.5 flex-wrap">
                           {activity.userRating > 0 && (
@@ -592,9 +610,6 @@ export function UserProfilePage() {
                               poster={review.poster}
                               title={review.title}
                               to={`/log/${review.logId}`}
-                              isWatchedProp={true}
-                              isLikedProp={review.filmIsLiked}
-                              hasActivityProp={true}
                             />
                           </div>
                           <div className="flex-1 min-w-0 pt-1">
@@ -618,10 +633,7 @@ export function UserProfilePage() {
                               </span>
                               {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
                             </div>
-                            {review.containsSpoilers && (
-                              <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
-                            )}
-                            <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{review.reviewText}</p>
+                            <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
                           </div>
                         </div>
                       ))}
@@ -630,49 +642,68 @@ export function UserProfilePage() {
                 </div>
               )}
 
-            {badges.length > 0 && (
+            {/* Friends */}
+            {publicFriends.length > 0 && (
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Badges</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Friends</span>
                   <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+                  <span className="text-[#94A3B8]/50 text-xs">{publicFriends.length}</span>
                 </div>
-                <BadgesSection badges={badges} />
+                <div className="flex flex-wrap gap-3">
+                  {publicFriends.map((f) => (
+                    <Link key={f.userId} to={`/user/${f.userId}`} title={f.userName} className="group relative flex-shrink-0">
+                      {f.profileImageBase64 ? (
+                        <img src={`data:image/jpeg;base64,${f.profileImageBase64}`} alt={f.userName}
+                          className="w-11 h-11 rounded-full object-cover border-2 border-[#BFBCFC]/20 group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md" />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] flex items-center justify-center border-2 border-transparent group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md">
+                          <span className="text-[#0B0E14] font-bold text-sm">{f.userName?.charAt(0).toUpperCase() ?? "?"}</span>
+                        </div>
+                      )}
+                      {isUserOnline(f.userId, f.isOnline) && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#0B0E14]" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
+
             </div>
 
             {/* Sidebar */}
             <div className="space-y-8 pt-8">
 
               {/* Quick links */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
+              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
                 </div>
-                <div className="space-y-0.5">
-                  <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                    <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
-                    Movie DNA & Analytics
-                  </Link>
-                  <Link to={`/user/${id}/watched`} className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                    <Eye className="w-3.5 h-3.5 group-hover:text-[#BFBCFC] transition-colors" />
-                    Watched Films
-                  </Link>
-                  <Link to={`/user/${id}/liked`} className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                    <Heart className="w-3.5 h-3.5 group-hover:text-[#FF61D2] transition-colors" />
-                    Liked Films
-                  </Link>
+                <div className="p-2">
+                  {[
+                    { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/analytics`, icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                    { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                    { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  ].map(({ to, icon, label, color, bg }) => (
+                    <Link key={to} to={to}
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
+                      <span className={`transition-colors ${color}`}>{icon}</span>
+                      {label}
+                    </Link>
+                  ))}
                 </div>
               </div>
 
-              {/* Lists — placeholder */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Lists</span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-[#44FFFF]/30 to-transparent" />
+              {/* Recent Lists */}
+              <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
                 </div>
-                <p className="text-[#94A3B8]/50 text-xs italic">No lists yet.</p>
+                <div className="px-4 py-3">
+                  <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -970,10 +1001,7 @@ export function UserProfilePage() {
                             </span>
                             {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
                           </div>
-                          {review.containsSpoilers && (
-                            <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
-                          )}
-                          <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{review.reviewText}</p>
+                          <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
                         </div>
                       </div>
                     ))}
@@ -1021,15 +1049,6 @@ export function UserProfilePage() {
               </div>
             )}
 
-            {badges.length > 0 && (
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Badges</span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
-                </div>
-                <BadgesSection badges={badges} />
-              </div>
-            )}
           </div>
 
           {/* Sidebar */}
@@ -1046,6 +1065,7 @@ export function UserProfilePage() {
                   { to: "/analytics", icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
                   { to: "/my-lists", icon: <List className="w-3.5 h-3.5" />, label: "My Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: "/likedmoviespage", icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                  { to: "/badges", icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                 ].map(({ to, icon, label, color, bg }) => (
                   <Link
                     key={to}
@@ -1157,5 +1177,32 @@ export function UserProfilePage() {
         </div>
       )}
     </div>
+  );
+}
+
+function ReviewTextBlock({ text, containsSpoilers }) {
+  const [revealed, setRevealed] = useState(false);
+  if (!containsSpoilers) {
+    return <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{text}</p>;
+  }
+  if (!revealed) {
+    return (
+      <>
+        <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
+        <button onClick={() => setRevealed(true)} className="w-full text-left group block">
+          <p className="text-[#94A3B8] text-sm italic leading-relaxed group-hover:text-[#F8FAFC] transition-colors">
+            Some mysteries are meant to be discovered on screen.{" "}
+            <span className="underline underline-offset-2 text-[#FF61D2]/80 group-hover:text-[#FF61D2] transition-colors">This review may reveal them.</span>
+          </p>
+        </button>
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
+      <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{text}</p>
+      <button onClick={() => setRevealed(false)} className="mt-1 text-[#94A3B8]/40 hover:text-[#94A3B8] text-xs transition-colors">Hide spoilers</button>
+    </>
   );
 }

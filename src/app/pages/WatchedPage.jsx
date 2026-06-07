@@ -12,6 +12,7 @@ export function WatchedPage() {
   const auth = useAuth();
   const { refreshKey } = useRefresh();
   const [movies, setMovies] = useState([]);
+  const [ownerUsername, setOwnerUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortValue, setSortValue] = useState(null);
@@ -39,6 +40,10 @@ export function WatchedPage() {
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
         setMovies(await res.json());
+        if (isPublic) {
+          const profRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+          if (profRes.ok) { const d = await profRes.json(); setOwnerUsername(d.username); }
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -120,11 +125,8 @@ export function WatchedPage() {
 
             {/* Title */}
             <div className="flex-1">
-              <p className="text-[#BFBCFC]/65 text-[9px] font-bold uppercase tracking-[0.25em] mb-0.5">
-                Your Collection
-              </p>
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
-                Watched{" "}
+                {isPublic && <span className="text-[#F8FAFC]">{ownerUsername ?? "..."}'s </span>}
                 <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
                   Movies
                 </span>
@@ -231,7 +233,7 @@ export function WatchedPage() {
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
             {filtered.map((movie, index) => (
-              <MovieCard key={movie.movieId} movie={movie} index={index} />
+              <MovieCard key={movie.movieId} movie={movie} index={index} isPublic={isPublic} />
             ))}
           </div>
         )}
@@ -241,16 +243,16 @@ export function WatchedPage() {
 }
 
 /* ── MOVIE CARD ── */
-const MovieCard = ({ movie }) => (
+const MovieCard = ({ movie, isPublic }) => (
   <div className="flex flex-col gap-1.5">
     <ProfilePosterCard
       movieId={movie.movieId}
       poster={movie.poster}
       title={movie.title}
       to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.movieId}`}
-      isWatchedProp={true}
-      isLikedProp={movie.isLiked}
-      hasActivityProp={!!movie.latestLogId}
+      isWatchedProp={isPublic ? undefined : true}
+      isLikedProp={isPublic ? undefined : movie.isLiked}
+      hasActivityProp={isPublic ? undefined : !!movie.latestLogId}
     />
 
     {/* Icons below poster */}

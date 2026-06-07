@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { Bookmark, Search, Film } from "lucide-react";
@@ -7,9 +7,12 @@ import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 
 export function WatchlistPage() {
+  const { userId } = useParams();
+  const isPublic = !!userId;
   const auth = useAuth();
   const { refreshKey } = useRefresh();
   const [movies, setMovies] = useState([]);
+  const [ownerUsername, setOwnerUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortValue, setSortValue] = useState(null);
@@ -31,12 +34,18 @@ export function WatchlistPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatchlist`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const url = isPublic
+          ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Watchlist`
+          : `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatchlist`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
-        setMovies(await res.json());
+        if (isPublic) {
+          const data = await res.json();
+          setOwnerUsername(data.username);
+          setMovies(data.items ?? []);
+        } else {
+          setMovies(await res.json());
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -44,7 +53,7 @@ export function WatchlistPage() {
       }
     };
     if (token) load();
-  }, [token, refreshKey]);
+  }, [token, refreshKey, userId]);
 
   const { genre, setGenre, decade, setDecade, year, setYear, rating, setRating, filtered: filterResult, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset } = useMovieFilters(movies);
 
@@ -107,11 +116,8 @@ export function WatchlistPage() {
               <Bookmark className="w-6 h-6 md:w-7 md:h-7 text-[#BFBCFC]" />
             </div>
             <div className="flex-1">
-              <p className="text-[#BFBCFC]/60 text-[9px] font-bold uppercase tracking-[0.25em] mb-0.5">
-                Your Collection
-              </p>
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
-                My{" "}
+                {isPublic && <span className="text-[#F8FAFC]">{ownerUsername ?? "..."}'s </span>}
                 <span className="bg-gradient-to-r from-[#BFBCFC] via-[#d4d2fd] to-[#44FFFF] bg-clip-text text-transparent">
                   Watchlist
                 </span>
@@ -189,7 +195,7 @@ export function WatchlistPage() {
       {/* ── CONTENT ── */}
       <div className="container mx-auto px-4 max-w-7xl py-8 md:py-10">
         {movies.length === 0 ? (
-          <EmptyState />
+          <EmptyState isPublic={isPublic} ownerUsername={ownerUsername} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Bookmark className="w-10 h-10 text-[#94A3B8]/20 mb-4" />
@@ -207,7 +213,7 @@ export function WatchlistPage() {
                 poster={movie.poster}
                 title={movie.title}
                 to={`/movie/${movie.movieId}`}
-                isInWatchlistProp={true}
+                isInWatchlistProp={isPublic ? undefined : true}
               />
             ))}
           </div>
@@ -217,7 +223,7 @@ export function WatchlistPage() {
   );
 }
 
-const EmptyState = () => (
+const EmptyState = ({ isPublic, ownerUsername }) => (
   <div className="flex flex-col items-center justify-center py-32 text-center">
     <div className="relative mb-8">
       <div className="w-32 h-32 bg-gradient-to-br from-[#BFBCFC]/12 to-[#44FFFF]/6 rounded-full flex items-center justify-center border border-[#BFBCFC]/15">
@@ -226,7 +232,7 @@ const EmptyState = () => (
       <div className="absolute inset-0 rounded-full bg-[#BFBCFC]/6 blur-2xl -z-10" />
     </div>
     <h2 className="text-2xl md:text-3xl font-bold text-[#F8FAFC] mb-3">
-      Your watchlist is empty
+      {isPublic ? `${ownerUsername ?? "This user"}'s watchlist is empty` : "Your watchlist is empty"}
     </h2>
   </div>
 );
