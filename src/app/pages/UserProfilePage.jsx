@@ -543,7 +543,7 @@ export function UserProfilePage() {
                   </h2>
                   {pub.recentActivity.length > 4 && (
                     <Link to={`/user/${id}/watched`} className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">
-                      All →
+                      All
                     </Link>
                   )}
                 </div>
@@ -584,6 +584,9 @@ export function UserProfilePage() {
                       <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
                       Recent Reviews
                     </h2>
+                    <Link to={`/user/${id}/reviews`} className="text-xs text-[#94A3B8] hover:text-[#FF61D2] transition-colors font-medium uppercase tracking-widest">
+                      All
+                    </Link>
                   </div>
                   {publicRecentReviewsLoading ? (
                     <div className="space-y-6">
@@ -892,10 +895,10 @@ export function UserProfilePage() {
                 </h2>
                 {recentActivity.length > 4 && (
                   <Link
-                    to="/activity"
+                    to="/watched"
                     className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest"
                   >
-                    All →
+                    All
                   </Link>
                 )}
               </div>
@@ -949,6 +952,9 @@ export function UserProfilePage() {
                     <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
                     Recent Reviews
                   </h2>
+                  <Link to="/reviews" className="text-xs text-[#94A3B8] hover:text-[#FF61D2] transition-colors font-medium uppercase tracking-widest">
+                    All
+                  </Link>
                 </div>
                 {recentReviewsLoading ? (
                   <div className="space-y-6">
