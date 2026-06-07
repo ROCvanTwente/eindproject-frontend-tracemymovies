@@ -20,7 +20,7 @@ export function DirectorSynergy({ rawPairings }) {
         </button>
       </div>
 
-      {/* Guide Overlay */}
+      {/* Guide Overlay Layer */}
       <div 
         className={`absolute inset-0 bg-[#0B0E14]/98 backdrop-blur-md z-30 p-6 rounded-2xl flex flex-col justify-between border border-accent/20 transition-all duration-300 ease-out origin-top-right ${
           showInfo ? "scale-100 opacity-100 pointer-events-auto" : "scale-90 opacity-0 pointer-events-none"
@@ -37,10 +37,13 @@ export function DirectorSynergy({ rawPairings }) {
             </button>
           </div>
           <p className="text-xs text-[#94A3B8] leading-relaxed">
-            This module processes recurring cast-crew creative cross-project relationships inside your active watch logs:
+            This module processes recurring cast-crew relationships inside your watch logs by isolating correlations between behind-the-camera crew and on-screen talent:
           </p>
           <ul className="space-y-3 text-[11px] text-[#94A3B8]">
-            <li><strong className="text-white block mb-0.5">Match Rate (% ACC)</strong> Frequency metrics of an actor surfacing across your logged director libraries.</li>
+            <li>
+              <strong className="text-white block mb-0.5">Match Rate (% ACC)</strong> 
+              Frequency metrics tracking how often an actor surfaces inside your logged director libraries.
+            </li>
           </ul>
         </div>
         <p className="text-[10px] text-accent/60 font-semibold italic border-t border-white/5 pt-2">
@@ -48,7 +51,7 @@ export function DirectorSynergy({ rawPairings }) {
         </p>
       </div>
 
-      {/* Dynamic List Render Matrix */}
+      {/* Stacked Connection Cards Layer */}
       <div className="space-y-3.5 flex-1 flex flex-col justify-center min-h-0 relative">
         {hasData ? (
           rawPairings.map((pair, idx) => (
@@ -74,7 +77,7 @@ export function DirectorSynergy({ rawPairings }) {
           <div className="flex flex-col items-center justify-center text-center p-6">
             <Award className="w-8 h-8 text-[#94A3B8]/20 mb-2" />
             <p className="text-xs text-[#94A3B8] font-medium max-w-[220px]">
-              No director/actor creative overlaps found in your catalog profiles yet.
+              No director/actor partnerships found in your catalog profiles yet.
             </p>
           </div>
         )}

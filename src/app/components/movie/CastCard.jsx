@@ -1,14 +1,18 @@
+import { Link } from "react-router";
 import { User } from "lucide-react";
 
 export function CastCard({ actor }) {
     return (
-        <div className="flex-none w-[120px] md:w-[140px] bg-[#151921] border border-[#BFBCFC]/10 rounded-xl overflow-hidden shadow-lg snap-start">
+        <Link
+            to={`/actor/${actor.id}`}
+            className="flex-none w-[120px] md:w-[140px] bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 rounded-xl overflow-hidden shadow-lg snap-start transition-all hover:scale-[1.02] group"
+        >
             {actor.profile_path ? (
                 <img
                     src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
                     alt={actor.name}
                     loading="lazy"
-                    className="w-full h-[150px] md:h-[185px] object-cover"
+                    className="w-full h-[150px] md:h-[185px] object-cover group-hover:brightness-110 transition-all"
                 />
             ) : (
                 <div className="w-full h-[150px] md:h-[185px] bg-[#1c222d] flex items-center justify-center border-b border-[#BFBCFC]/10">
@@ -18,7 +22,7 @@ export function CastCard({ actor }) {
 
             <div className="p-2 space-y-0.5">
                 <p
-                    className="text-[#F8FAFC] font-semibold text-xs md:text-sm truncate"
+                    className="text-[#F8FAFC] font-semibold text-xs md:text-sm truncate group-hover:text-[#BFBCFC] transition-colors"
                     title={actor.name}
                 >
                     {actor.name}
@@ -31,6 +35,6 @@ export function CastCard({ actor }) {
                     {actor.character}
                 </p>
             </div>
-        </div>
+        </Link>
     );
 }

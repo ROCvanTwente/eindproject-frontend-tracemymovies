@@ -25,6 +25,9 @@ import  LikedMoviesPage  from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
+import { WatchlistPage } from './pages/WatchlistPage';
+import { BadgesPage } from './pages/BadgesPage';
+import { ActorPage } from './pages/ActorPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -48,6 +51,10 @@ export const router = createBrowserRouter([
             {
                 path: 'movie/:id',
                 element: _jsx(MovieDetailPage, {}),
+            },
+            {
+                path: 'actor/:id',
+                element: _jsx(ActorPage, {}),
             },
             {
                 path: 'weekly-favorites',
@@ -134,6 +141,22 @@ export const router = createBrowserRouter([
             {
                 path: 'watched',
                 element: _jsx(ProtectedRoute, { children: _jsx(WatchedPage, {}) }),
+            },
+            {
+                path: 'watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
+                path: 'badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:id/badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:userId/watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
             },
             {
                 path: '500',

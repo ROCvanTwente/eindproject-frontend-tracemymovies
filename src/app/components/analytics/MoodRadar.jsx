@@ -5,7 +5,6 @@ import { Eye, Info, X, Film, Activity } from "lucide-react";
 export function MoodRadar({ rawData }) {
   const [showInfo, setShowInfo] = useState(false);
 
-  // Fallback map layout if user has no metrics recorded yet
   const chartData = rawData && rawData.length > 0 ? rawData : [
     { subject: "Sci-Fi & Mystery", A: 0 },
     { subject: "Action & Horror", A: 0 },
@@ -32,7 +31,7 @@ export function MoodRadar({ rawData }) {
         </button>
       </div>
 
-      {/* Guide Layer */}
+      {/* Smoothly Scaling Animated Informational Overlay */}
       <div 
         className={`absolute inset-0 bg-[#0B0E14]/98 backdrop-blur-md z-30 p-6 rounded-2xl flex flex-col justify-between border border-accent/20 transition-all duration-300 ease-out origin-top-right ${
           showInfo ? "scale-100 opacity-100 pointer-events-auto" : "scale-90 opacity-0 pointer-events-none"
@@ -48,14 +47,18 @@ export function MoodRadar({ rawData }) {
               <X className="w-4 h-4" />
             </button>
           </div>
+          
           <p className="text-xs text-[#94A3B8] leading-relaxed">
             This matrix tracks real-time data calculations across user profiles:
           </p>
+          
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] text-[#94A3B8]">
             <li><strong className="text-white block mb-0.5">Sci-Fi & Mystery</strong> High-concept puzzle narratives.</li>
             <li><strong className="text-white block mb-0.5">Action & Horror</strong> High-impact visceral pacing.</li>
             <li><strong className="text-white block mb-0.5">Fantasy & Adventure</strong> Escapist alternate worlds.</li>
             <li><strong className="text-white block mb-0.5">Drama & Realism</strong> Grounded human complexities.</li>
+            <li><strong className="text-white block mb-0.5">Thriller & Noir</strong> Psychological tension and dark motifs.</li>
+            <li><strong className="text-white block mb-0.5">Comedy & Feel-Good</strong> Lighthearted and high-wit narratives.</li>
           </ul>
         </div>
         <p className="text-[10px] text-accent/60 font-semibold italic border-t border-white/5 pt-2">
@@ -63,13 +66,13 @@ export function MoodRadar({ rawData }) {
         </p>
       </div>
 
-      {/* Canvas Layer */}
+      {/* Chart Canvas Area */}
       <div className="flex-1 w-full h-full relative flex items-center justify-center min-h-0">
         {!hasData && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4 bg-[#0B0E14]/20 backdrop-blur-xs">
             <Activity className="w-8 h-8 text-[#94A3B8]/30 mb-2 animate-pulse" />
             <p className="text-sm font-bold text-[#F8FAFC]">No Telemetry Footprint</p>
-            <p className="text-xs text-[#94A3B8] max-w-[200px] mt-1">Log film reviews to generate your personal Taste Matrix.</p>
+            <p className="text-xs text-[#94A3B8] max-w-[200px] mt-1 text-center">Log or rate film logs to generate your personal Taste Matrix.</p>
           </div>
         )}
         

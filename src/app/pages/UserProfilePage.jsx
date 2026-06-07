@@ -17,30 +17,49 @@ import {
   UserPlus,
   RotateCw,
   AlignLeft,
+  Pencil,
+  Bookmark,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
+import { useSignalR } from "../context/SignalRContext";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
+import { BadgesSection, BadgeChip } from "../components/BadgesSection";
 
 export function UserProfilePage() {
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const [favoriteMovies, setFavoriteMovies] = useState([]);
+  const [favoriteMovies, setFavoriteMovies] = useState([null, null, null, null]);
+  const [targetSlot, setTargetSlot] = useState(0);
+  const [draggedSlot, setDraggedSlot] = useState(null);
+  const [dragOverSlot, setDragOverSlot] = useState(null);
   const [favoritesLoading, setFavoritesLoading] = useState(true);
   const [likedMoviesCount, setLikedMoviesCount] = useState(0);
   const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
+  const [watchedThisYear, setWatchedThisYear] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [recentReviews, setRecentReviews] = useState([]);
+  const [recentReviewsLoading, setRecentReviewsLoading] = useState(true);
+  const [publicRecentReviews, setPublicRecentReviews] = useState([]);
+  const [publicRecentReviewsLoading, setPublicRecentReviewsLoading] = useState(true);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateError, setDuplicateError] = useState("");
+  const [friends, setFriends] = useState([]);
+  const [publicFriends, setPublicFriends] = useState([]);
+  const [watchlistPreview, setWatchlistPreview] = useState([]);
+  const [watchlistLoading, setWatchlistLoading] = useState(true);
+  const [badges, setBadges] = useState([]);
 
   const isOwnProfile = !id;
   const { refreshKey } = useRefresh();
+  const { isUserOnline } = useSignalR();
   const [publicProfile, setPublicProfile] = useState(null);
   const [publicLoading, setPublicLoading] = useState(!isOwnProfile);
 
@@ -67,6 +86,44 @@ export function UserProfilePage() {
       }
     };
     fetchPublicProfile();
+  }, [id, isOwnProfile]);
+
+  // OTHER USER RECENT REVIEWS
+  useEffect(() => {
+    if (isOwnProfile || !id) return;
+    const fetchPublicRecentReviews = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Log/RecentReviews/${id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setPublicRecentReviews(await res.json());
+      } catch {}
+      finally {
+        setPublicRecentReviewsLoading(false);
+      }
+    };
+    fetchPublicRecentReviews();
+  }, [id, isOwnProfile]);
+
+  // OTHER USER FRIENDS
+  useEffect(() => {
+    if (isOwnProfile || !id) return;
+    const fetchPublicFriends = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetUserFriends/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        setPublicFriends(await res.json());
+      } catch {}
+    };
+    fetchPublicFriends();
   }, [id, isOwnProfile]);
 
   // FAVORITES
@@ -98,7 +155,10 @@ export function UserProfilePage() {
             ).then((r) => (r.ok ? r.json() : null))
           )
         );
-        setFavoriteMovies(movies.filter(Boolean));
+
+        const slots = [null, null, null, null];
+        movies.forEach((m, i) => { if (m) slots[i] = m; });
+        setFavoriteMovies(slots);
       } catch (error) {
         console.error("Error fetching favorite movies:", error);
       } finally {
@@ -106,7 +166,7 @@ export function UserProfilePage() {
       }
     };
     fetchFavorites();
-  }, [isOwnProfile, refreshKey]);
+  }, [isOwnProfile]);
 
   // LIKED MOVIES COUNT
   useEffect(() => {
@@ -150,6 +210,25 @@ export function UserProfilePage() {
     fetchWatchedCount();
   }, [isOwnProfile, refreshKey]);
 
+  // WATCHED THIS YEAR COUNT
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchThisYear = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Activity/WatchedThisYear`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setWatchedThisYear(data.count ?? 0);
+      } catch {}
+    };
+    fetchThisYear();
+  }, [isOwnProfile, refreshKey]);
+
   // RECENT ACTIVITY
   useEffect(() => {
     if (!isOwnProfile) return;
@@ -182,6 +261,101 @@ export function UserProfilePage() {
     fetchRecentActivity();
   }, [isOwnProfile, refreshKey]);
 
+  // FRIENDS
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchFriends = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetMyFriends`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        setFriends(await res.json());
+      } catch {}
+    };
+    fetchFriends();
+  }, [isOwnProfile, refreshKey]);
+
+  // WATCHLIST PREVIEW
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchWatchlist = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatchlist`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setWatchlistPreview(await res.json());
+      } catch {} finally {
+        setWatchlistLoading(false);
+      }
+    };
+    fetchWatchlist();
+  }, [isOwnProfile, refreshKey]);
+
+  // BADGES - OWN PROFILE
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const loadBadges = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Badge/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setBadges(data.badges || []);
+      } catch {}
+    };
+    loadBadges();
+  }, [isOwnProfile, refreshKey]);
+
+  // BADGES - PUBLIC PROFILE
+  useEffect(() => {
+    if (isOwnProfile || !id) return;
+    const loadBadges = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Badge/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setBadges(data.badges || []);
+      } catch {}
+    };
+    loadBadges();
+  }, [isOwnProfile, id]);
+
+  // RECENT REVIEWS - OWN PROFILE
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const fetchRecentReviews = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/Log/MyRecentReviews`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) return;
+        setRecentReviews(await res.json());
+      } catch (err) {
+        console.error("Error fetching recent reviews:", err);
+      } finally {
+        setRecentReviewsLoading(false);
+      }
+    };
+    fetchRecentReviews();
+  }, [isOwnProfile, refreshKey]);
+
   // SEARCH FAVORITES MODAL
   useEffect(() => {
     if (!searchModalOpen) return;
@@ -203,38 +377,39 @@ export function UserProfilePage() {
     return () => clearTimeout(timer);
   }, [searchQuery, searchModalOpen]);
 
+  const saveFavoriteSlots = async (slots) => {
+    const token = getToken();
+    if (!token) return;
+    const ids = slots.filter(Boolean).map((m) => m.id);
+    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ movieIds: ids }),
+    });
+  };
+
   const addFavorite = async (movie) => {
-    if (favoriteMovies.length >= 4) return;
-    if (favoriteMovies.some((m) => m.id === movie.id)) {
+    if (favoriteMovies.filter(Boolean).some((m) => m.id === movie.id)) {
       setDuplicateError(`"${movie.title}" is already in your favourites.`);
       return;
     }
     setDuplicateError("");
     setSearchModalOpen(false);
-    setFavoriteMovies((prev) => [...prev, movie]);
-    try {
-      const token = getToken();
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/Favorites/${movie.id}`,
-        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-    } catch {
-      setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-    }
+    const newSlots = [...favoriteMovies];
+    newSlots[targetSlot] = movie;
+    setFavoriteMovies(newSlots);
+    await saveFavoriteSlots(newSlots);
   };
 
-  const removeFavorite = async (movieId) => {
-    const token = getToken();
-    if (!token) return;
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites/${movieId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setFavoriteMovies((prev) => prev.filter((m) => m.id !== movieId));
+  const removeFavorite = async (slotIndex) => {
+    const newSlots = [...favoriteMovies];
+    newSlots[slotIndex] = null;
+    setFavoriteMovies(newSlots);
+    await saveFavoriteSlots(newSlots);
   };
 
-  const openSearch = () => {
+  const openSearch = (slotIndex) => {
+    setTargetSlot(slotIndex);
     setSearchQuery("");
     setSearchResults([]);
     setDuplicateError("");
@@ -243,6 +418,13 @@ export function UserProfilePage() {
 
   const displayName = user?.username || user?.email || "User";
   const avatarLetter = displayName.charAt(0).toUpperCase();
+
+  const getHighestBadge = (category) => {
+    const earned = badges.filter(b => b.category === category && b.earned);
+    return earned.length ? earned.reduce((max, b) => b.threshold > max.threshold ? b : max, earned[0]) : null;
+  };
+  const highestWatchedBadge = getHighestBadge('watched');
+  const highestReviewBadge = getHighestBadge('reviews');
 
   // ── OTHER USER'S PROFILE ──
   if (!isOwnProfile) {
@@ -280,33 +462,42 @@ export function UserProfilePage() {
                     <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{pubLetter}</span>
                   </div>
                 )}
-                <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
+                {isUserOnline(pub?.userId ?? user?.id, pub?.isOnline ?? user?.isOnline) && (
+                  <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
+                )}
               </div>
 
               <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">{pub.username}</h1>
-                <p className="text-[#BFBCFC] text-sm md:text-base mb-3">@{pub.username}</p>
-                <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" />
-                    Member of TraceMyMovies
-                  </div>
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC]">{pub.username}</h1>
+                  {highestWatchedBadge && <BadgeChip badge={highestWatchedBadge} />}
+                  {highestReviewBadge && <BadgeChip badge={highestReviewBadge} />}
                 </div>
+                {pub.bio && (
+                  <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{pub.bio}</p>
+                )}
+                {pub.location && (
+                  <div className="flex items-center gap-1.5 text-[#94A3B8] text-sm">
+                    <MapPin className="w-4 h-4" />
+                    {pub.location}
+                  </div>
+                )}
               </div>
 
               {/* Stats */}
               <div className="flex items-center">
                 {[
-                  { label: "WATCHED", value: pub.watchedCount, to: `/user/${id}/watched` },
-                  { label: "LIKED", value: pub.likedCount, to: `/user/${id}/liked` },
+                  { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
+                  { label: "THIS YEAR", value: pub.watchedThisYear ?? 0 },
                   { label: "LISTS", value: "—" },
+                  { label: "FRIENDS", value: pub.friendCount ?? 0 },
                 ].map(({ label, value, to }, i, arr) => (
                   <div key={label} className="flex items-center">
                     <div
                       onClick={() => to && navigate(to)}
                       className={`px-5 text-center transition-transform duration-100 ${to ? "cursor-pointer group active:scale-95" : ""}`}
                     >
-                      <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#FF61D2]" : "text-[#F8FAFC]"}`}>{value}</p>
+                      <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#44FFFF]" : "text-[#F8FAFC]"}`}>{value}</p>
                       <p className="text-[#94A3B8] text-xs uppercase tracking-widest">{label}</p>
                     </div>
                     {i < arr.length - 1 && <div className="w-px h-10 bg-[#BFBCFC]/15" />}
@@ -334,6 +525,7 @@ export function UserProfilePage() {
                         movieId={movie.id}
                         poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                         title={movie.title}
+                        to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.id}`}
                       />
                     ) : (
                       <div key={`empty-${i}`} className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]" />
@@ -383,6 +575,136 @@ export function UserProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* Recent Reviews */}
+              {(publicRecentReviewsLoading || publicRecentReviews.length > 0) && (
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                      <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
+                      Recent Reviews
+                    </h2>
+                  </div>
+                  {publicRecentReviewsLoading ? (
+                    <div className="space-y-6">
+                      {[0, 1].map((i) => (
+                        <div key={i} className="flex gap-5">
+                          <div className="w-28 aspect-[2/3] rounded-lg bg-[#151921] animate-pulse flex-none" />
+                          <div className="flex-1 space-y-2 pt-1">
+                            <div className="h-5 bg-[#151921] animate-pulse rounded w-3/4" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-1/3" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-full mt-4" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-5/6" />
+                            <div className="h-3 bg-[#151921] animate-pulse rounded w-4/5" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div>
+                      {publicRecentReviews.map((review, idx) => (
+                        <div key={review.logId} className={`flex gap-5 py-6 ${idx < publicRecentReviews.length - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}>
+                          <div className="w-28 flex-none">
+                            <ProfilePosterCard
+                              movieId={review.movieId}
+                              poster={review.poster}
+                              title={review.title}
+                              to={`/log/${review.logId}`}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-1">
+                            <Link to={`/log/${review.logId}`} className="group/title">
+                              <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                                <span className="text-[#F8FAFC] font-bold text-lg leading-snug group-hover/title:text-[#BFBCFC] transition-colors">{review.title}</span>
+                                <span className="text-[#94A3B8] text-sm">{review.releaseYear}</span>
+                              </div>
+                            </Link>
+                            <div className="flex items-center gap-3 mb-3 flex-wrap">
+                              {review.rating > 0 && (
+                                <div className="flex gap-[2px]">
+                                  {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                                    <Star key={n} className={`w-3.5 h-3.5 ${n <= review.rating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/15"}`} />
+                                  ))}
+                                </div>
+                              )}
+                              <span className="text-[#94A3B8]/70 text-xs">
+                                {review.isRewatch ? "Rewatched" : "Watched"}{" "}
+                                {new Date(review.watchedDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                              </span>
+                              {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
+                            </div>
+                            <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            {/* Friends */}
+            {publicFriends.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Friends</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+                  <span className="text-[#94A3B8]/50 text-xs">{publicFriends.length}</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {publicFriends.map((f) => (
+                    <Link key={f.userId} to={`/user/${f.userId}`} title={f.userName} className="group relative flex-shrink-0">
+                      {f.profileImageBase64 ? (
+                        <img src={`data:image/jpeg;base64,${f.profileImageBase64}`} alt={f.userName}
+                          className="w-11 h-11 rounded-full object-cover border-2 border-[#BFBCFC]/20 group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md" />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] flex items-center justify-center border-2 border-transparent group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md">
+                          <span className="text-[#0B0E14] font-bold text-sm">{f.userName?.charAt(0).toUpperCase() ?? "?"}</span>
+                        </div>
+                      )}
+                      {isUserOnline(f.userId, f.isOnline) && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#0B0E14]" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-8 pt-8">
+
+              {/* Quick links */}
+              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                </div>
+                <div className="p-2">
+                  {[
+                    { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/analytics`, icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                    { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                    { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  ].map(({ to, icon, label, color, bg }) => (
+                    <Link key={to} to={to}
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
+                      <span className={`transition-colors ${color}`}>{icon}</span>
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Lists */}
+              <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                </div>
+                <div className="px-4 py-3">
+                  <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -414,34 +736,54 @@ export function UserProfilePage() {
               <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
             </div>
 
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">
-                {displayName}
-              </h1>
-              <p className="text-[#BFBCFC] text-sm md:text-base mb-3">
-                @{user?.username || "user"}
-              </p>
-              <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" />
-                  Member of TraceMyMovies
-                </div>
+            <div className="flex-1 min-w-0">
+
+              {/* Name + Edit button inline */}
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">
+                  {displayName}
+                </h1>
+                {highestWatchedBadge && <BadgeChip badge={highestWatchedBadge} />}
+                {highestReviewBadge && <BadgeChip badge={highestReviewBadge} />}
+                <Link
+                  to="/profile"
+                  className="ml-4 flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap"
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit Profile
+                </Link>
               </div>
+
+              {/* Bio */}
+              {user?.bio && (
+                <p className="text-[#94A3B8] text-sm leading-relaxed mb-2 max-w-sm">
+                  {user.bio}
+                </p>
+              )}
+
+              {/* Location */}
+              {user?.location && (
+                <div className="flex items-center gap-1.5 text-[#94A3B8] text-xs">
+                  <MapPin className="w-3.5 h-3.5 text-[#BFBCFC]/50" />
+                  <span className="uppercase tracking-wide">{user.location}</span>
+                </div>
+              )}
             </div>
 
             {/* Stats */}
             <div className="flex items-center">
               {[
-                { label: "WATCHED", value: watchedMoviesCount, onClick: () => navigate('/watched') },
-                { label: "LIKED", value: likedMoviesCount, onClick: () => navigate('/likedmoviespage') },
+                { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate('/watched') },
+                { label: "THIS YEAR", value: watchedThisYear },
                 { label: "LISTS", value: "—" },
+                { label: "FRIENDS", value: friends.length },
               ].map(({ label, value, onClick }, i, arr) => (
                 <div key={label} className="flex items-center">
                   <div
                     onClick={onClick}
                     className={`px-5 text-center ${onClick ? 'cursor-pointer group' : ''}`}
                   >
-                    <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${onClick ? 'text-[#F8FAFC] group-hover:text-[#FF61D2]' : 'text-[#F8FAFC]'}`}>
+                    <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${onClick ? 'text-[#F8FAFC] group-hover:text-[#44FFFF]' : 'text-[#F8FAFC]'}`}>
                       {value}
                     </p>
                     <p className="text-[#94A3B8] text-xs uppercase tracking-widest">
@@ -461,20 +803,44 @@ export function UserProfilePage() {
           <div className="lg:col-span-2 space-y-8">
 
             {/* Liked Films */}
-            <div
-              onClick={() => navigate('/likedmoviespage')}
-              className="cursor-pointer"
-            >
+            <div>
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
                 <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                {Array.from({ length: 4 }).map((_, i) => {
+                {[0, 1, 2, 3].map((i) => {
                   const movie = favoritesLoading ? undefined : favoriteMovies[i];
+                  const isDragging = draggedSlot === i;
+                  const isDragOver = dragOverSlot === i;
+
+                  const dropProps = isOwnProfile ? {
+                    onDragOver: (e) => { e.preventDefault(); setDragOverSlot(i); },
+                    onDragLeave: () => setDragOverSlot(null),
+                    onDrop: (e) => {
+                      e.preventDefault();
+                      setDragOverSlot(null);
+                      if (draggedSlot === null || draggedSlot === i) return;
+                      const newSlots = [...favoriteMovies];
+                      const tmp = newSlots[draggedSlot];
+                      newSlots[draggedSlot] = newSlots[i];
+                      newSlots[i] = tmp;
+                      setFavoriteMovies(newSlots);
+                      saveFavoriteSlots(newSlots);
+                      setDraggedSlot(null);
+                    },
+                  } : {};
+
                   return movie ? (
-                    <div key={movie.id} className="relative group">
+                    <div
+                      key={`slot-${i}`}
+                      className={`relative group transition-all duration-150 ${isDragging ? "opacity-40 scale-95" : ""} ${isDragOver && draggedSlot !== i ? "ring-2 ring-[#FF61D2]/60 rounded-xl scale-[1.02]" : ""}`}
+                      draggable={isOwnProfile}
+                      onDragStart={() => setDraggedSlot(i)}
+                      onDragEnd={() => { setDraggedSlot(null); setDragOverSlot(null); }}
+                      {...dropProps}
+                    >
                       <ProfilePosterCard
                         movieId={movie.id}
                         poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
@@ -482,7 +848,7 @@ export function UserProfilePage() {
                       />
                       {isOwnProfile && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); removeFavorite(movie.id); }}
+                          onClick={(e) => { e.stopPropagation(); removeFavorite(i); }}
                           className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10"
                         >
                           <X className="w-3.5 h-3.5 text-white" />
@@ -492,16 +858,21 @@ export function UserProfilePage() {
                   ) : favoritesLoading ? (
                     <div key={`skel-${i}`} className="w-full aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
                   ) : isOwnProfile ? (
-                    <button
+                    <div
                       key={`empty-${i}`}
-                      onClick={(e) => { e.stopPropagation(); openSearch(); }}
-                      className="group relative w-full aspect-[2/3] rounded-lg border border-dashed border-[#BFBCFC]/20 hover:border-[#FF61D2]/50 hover:bg-[#FF61D2]/5 transition-all duration-300 flex flex-col items-center justify-center gap-2"
+                      className={`relative group w-full aspect-[2/3] rounded-lg border border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-2 ${isDragOver ? "border-[#FF61D2]/60 bg-[#FF61D2]/8 scale-[1.02]" : "border-[#BFBCFC]/20 hover:border-[#FF61D2]/50 hover:bg-[#FF61D2]/5"}`}
+                      {...dropProps}
                     >
-                      <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
-                        <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
-                      </div>
-                      <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
-                    </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openSearch(i); }}
+                        className="flex flex-col items-center justify-center gap-2 w-full h-full"
+                      >
+                        <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
+                          <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
+                        </div>
+                        <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
+                      </button>
+                    </div>
                   ) : (
                     <div
                       key={`empty-${i}`}
@@ -547,8 +918,9 @@ export function UserProfilePage() {
                         title={activity.movieTitle}
                         to={`/log/${activity.logId}`}
                         isWatchedProp={true}
-                        isLikedProp={activity.isLiked}
+                        isLikedProp={activity.filmIsLiked ?? activity.isLiked}
                         hasActivityProp={true}
+                        watchCountProp={activity.watchCount ?? 0}
                       />
                       {/* Icons + log link */}
                       <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 flex-wrap px-0.5">
@@ -569,78 +941,164 @@ export function UserProfilePage() {
               )}
             </div>
 
-            {/* Friends */}
-            <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-1 pb-3 border-b border-[#BFBCFC]/10">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-[#BFBCFC]">
-                  Following
-                </h2>
-                <span className="text-[#94A3B8] text-sm font-data">4</span>
-              </div>
-              <div className="flex items-center gap-3 pt-3">
-                {[
-                  { letter: "A", color: "from-[#BFBCFC] to-[#44FFFF]" },
-                  { letter: "J", color: "from-[#FF61D2] to-[#BFBCFC]" },
-                  { letter: "M", color: "from-[#44FFFF] to-[#BFBCFC]" },
-                  { letter: "S", color: "from-[#44FFFF] to-[#FF61D2]" },
-                ].map(({ letter, color }) => (
-                  <div
-                    key={letter}
-                    className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 flex-shrink-0 shadow-md`}
-                  >
-                    <span className="text-[#0B0E14] font-bold text-sm">{letter}</span>
+            {/* Recent Reviews */}
+            {(recentReviewsLoading || recentReviews.length > 0) && (
+              <div>
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                    <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
+                    Recent Reviews
+                  </h2>
+                </div>
+                {recentReviewsLoading ? (
+                  <div className="space-y-6">
+                    {[0, 1].map((i) => (
+                      <div key={i} className="flex gap-5">
+                        <div className="w-28 aspect-[2/3] rounded-lg bg-[#151921] animate-pulse flex-none" />
+                        <div className="flex-1 space-y-2 pt-1">
+                          <div className="h-5 bg-[#151921] animate-pulse rounded w-3/4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-1/3" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-full mt-4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-5/6" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-4/5" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div>
+                    {recentReviews.map((review, idx) => (
+                      <div key={review.logId} className={`flex gap-5 py-6 ${idx < recentReviews.length - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}>
+                        <div className="w-28 flex-none">
+                          <ProfilePosterCard
+                            movieId={review.movieId}
+                            poster={review.poster}
+                            title={review.title}
+                            to={`/log/${review.logId}`}
+                            isWatchedProp={true}
+                            isLikedProp={review.filmIsLiked}
+                            hasActivityProp={true}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 pt-1">
+                          <Link to={`/log/${review.logId}`} className="group/title">
+                            <div className="flex items-baseline gap-2 mb-2 flex-wrap">
+                              <span className="text-[#F8FAFC] font-bold text-lg leading-snug group-hover/title:text-[#BFBCFC] transition-colors">{review.title}</span>
+                              <span className="text-[#94A3B8] text-sm">{review.releaseYear}</span>
+                            </div>
+                          </Link>
+                          <div className="flex items-center gap-3 mb-3 flex-wrap">
+                            {review.rating > 0 && (
+                              <div className="flex gap-[2px]">
+                                {[1,2,3,4,5,6,7,8,9,10].map((n) => (
+                                  <Star key={n} className={`w-3.5 h-3.5 ${n <= review.rating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/15"}`} />
+                                ))}
+                              </div>
+                            )}
+                            <span className="text-[#94A3B8]/70 text-xs">
+                              {review.isRewatch ? "Rewatched" : "Watched"}{" "}
+                              {new Date(review.watchedDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                            </span>
+                            {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
+                          </div>
+                          <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
+
+            {/* Friends */}
+            {friends.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Friends</span>
+                  <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
+                  <span className="text-[#94A3B8]/50 text-xs">{friends.length}</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {friends.map((f) => (
+                    <Link
+                      key={f.userId}
+                      to={`/user/${f.userId}`}
+                      title={f.userName}
+                      className="group relative flex-shrink-0"
+                    >
+                      {f.profileImageBase64 ? (
+                        <img
+                          src={`data:image/jpeg;base64,${f.profileImageBase64}`}
+                          alt={f.userName}
+                          className="w-11 h-11 rounded-full object-cover border-2 border-[#BFBCFC]/20 group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] flex items-center justify-center border-2 border-transparent group-hover:border-[#BFBCFC]/60 transition-all duration-200 group-hover:scale-105 shadow-md">
+                          <span className="text-[#0B0E14] font-bold text-sm">
+                            {f.userName?.charAt(0).toUpperCase() ?? "?"}
+                          </span>
+                        </div>
+                      )}
+                      {/* Online dot */}
+                      {isUserOnline(f.userId, f.isOnline) && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#0B0E14]" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Sidebar */}
           <div className="space-y-8 pt-8">
 
             {/* Quick links */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
+            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
               </div>
-              <div className="space-y-0.5">
-                <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
-                  Movie DNA & Analytics
-                </Link>
-                <Link to="/my-lists" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <List className="w-3.5 h-3.5 group-hover:text-[#BFBCFC] transition-colors" />
-                  My Lists
-                </Link>
-                <Link to="/likedmoviespage" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Heart className="w-3.5 h-3.5 group-hover:text-[#FF61D2] transition-colors" />
-                  Liked Films
-                </Link>
+              <div className="p-2">
+                {[
+                  { to: "/watchlist", icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  { to: "/analytics", icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                  { to: "/my-lists", icon: <List className="w-3.5 h-3.5" />, label: "My Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  { to: "/likedmoviespage", icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                  { to: "/badges", icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                ].map(({ to, icon, label, color, bg }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}
+                  >
+                    <span className={`transition-colors ${color}`}>{icon}</span>
+                    {label}
+                  </Link>
+                ))}
               </div>
             </div>
 
             {/* Recent Lists */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
+            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#44FFFF]/30 to-transparent" />
+                <Link to="/my-lists" className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">
+                  All →
+                </Link>
               </div>
-              <div className="space-y-1">
+              <div className="p-2">
                 {[
                   { name: "Top 10 Sci-Fi", count: 10 },
                   { name: "Favourite Thrillers", count: 7 },
                   { name: "Must Watch 2024", count: 15 },
                 ].map((list) => (
-                  <div key={list.name} className="flex items-center justify-between cursor-pointer group py-1.5">
-                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors">{list.name}</span>
-                    <span className="text-[#94A3B8]/40 text-xs tabular-nums">{list.count}</span>
+                  <div key={list.name} className="group flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-[#44FFFF]/6 cursor-pointer transition-all">
+                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors truncate">{list.name}</span>
+                    <span className="text-[#94A3B8]/40 text-xs tabular-nums ml-2 flex-shrink-0">{list.count}</span>
                   </div>
                 ))}
               </div>
-              <Link to="/my-lists" className="mt-3 inline-flex items-center gap-1 text-[#44FFFF]/50 text-xs hover:text-[#44FFFF] transition-colors">
-                View all →
-              </Link>
             </div>
           </div>
         </div>
@@ -719,5 +1177,32 @@ export function UserProfilePage() {
         </div>
       )}
     </div>
+  );
+}
+
+function ReviewTextBlock({ text, containsSpoilers }) {
+  const [revealed, setRevealed] = useState(false);
+  if (!containsSpoilers) {
+    return <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{text}</p>;
+  }
+  if (!revealed) {
+    return (
+      <>
+        <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
+        <button onClick={() => setRevealed(true)} className="w-full text-left group block">
+          <p className="text-[#94A3B8] text-sm italic leading-relaxed group-hover:text-[#F8FAFC] transition-colors">
+            Some mysteries are meant to be discovered on screen.{" "}
+            <span className="underline underline-offset-2 text-[#FF61D2]/80 group-hover:text-[#FF61D2] transition-colors">This review may reveal them.</span>
+          </p>
+        </button>
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
+      <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{text}</p>
+      <button onClick={() => setRevealed(false)} className="mt-1 text-[#94A3B8]/40 hover:text-[#94A3B8] text-xs transition-colors">Hide spoilers</button>
+    </>
   );
 }

@@ -4,7 +4,7 @@ import { Clock } from 'lucide-react';
 const ERA_DATA = [
   { id: 0, label: 'Vintage Classics', range: 'Pre-1980', color: '#BFBCFC', pct: 15, summary: 'Foundational cornerstones of cinema history and early narrative masterpieces.' },
   { id: 1, label: 'Nostalgia Gold', range: '1980 - 2000', color: '#FF61D2', pct: 35, summary: 'Practical effects, legendary scripts, and indie revolutions.' },
-  { id: 2, label: 'Modern Blockbusters', range: '2000 - 2020', color: '#44FFFF', pct: 40, summary: ' pristine digital workflows and sprawling complex franchises.' },
+  { id: 2, label: 'Modern Blockbusters', range: '2000 - 2020', color: '#44FFFF', pct: 40, summary: 'Pristine digital workflows and sprawling complex franchises.' },
   { id: 3, label: 'Streaming Era', range: '2020+', color: '#AFA9FF', pct: 10, summary: 'Hyper-modern aesthetics and contemporary experimental formats.' }
 ];
 
