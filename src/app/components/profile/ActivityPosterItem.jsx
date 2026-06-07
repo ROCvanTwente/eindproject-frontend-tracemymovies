@@ -14,6 +14,7 @@ export function ActivityPosterItem({ activity }) {
         isLikedProp={activity.filmIsLiked ?? activity.isLiked}
         hasActivityProp={true}
         watchCountProp={activity.watchCount ?? 0}
+        logIdProp={activity.logId}
       />
       <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 flex-wrap px-0.5">
         {activity.userRating > 0 && (

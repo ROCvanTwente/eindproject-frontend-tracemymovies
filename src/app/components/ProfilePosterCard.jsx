@@ -18,6 +18,7 @@ export function ProfilePosterCard({
   watchCountProp,
   isInWatchlistProp,
   filmRatingProp,
+  logIdProp,
   onEyeOverride,
 }) {
   const navigate = useNavigate();
@@ -44,11 +45,21 @@ export function ProfilePosterCard({
   // Context menu
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [subMenuOpen, setSubMenuOpen] = useState(false);
+  const [subMenuPos, setSubMenuPos] = useState({ top: 0, left: 0 });
   const [filmRating, setFilmRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [latestReviewText, setLatestReviewText] = useState("");
+  const [latestWatchedDate, setLatestWatchedDate] = useState("");
+  const [preModalDate, setPreModalDate] = useState("");
+  const [preModalReviewText, setPreModalReviewText] = useState("");
+  const [preModalIsRewatch, setPreModalIsRewatch] = useState(false);
+  const [preModalLogId, setPreModalLogId] = useState(null);
+  const [preModalRating, setPreModalRating] = useState(0);
+  const [specificLogRating, setSpecificLogRating] = useState(0);
   const [logModalOpen, setLogModalOpen] = useState(false);
   const menuButtonRef = useRef(null);
+  const logButtonRef = useRef(null);
 
   useEffect(() => {
     if (isWatchedProp !== undefined) setIsWatched(isWatchedProp);
@@ -82,6 +93,7 @@ export function ProfilePosterCard({
         setWatchCount(data.logCount ?? 0);
         setFilmRating(data.filmRating ?? 0);
         setLatestReviewText(data.latestReviewText ?? "");
+        setLatestWatchedDate(data.latestWatchedDate ?? "");
         setIsInWatchlist(data.isInWatchlist ?? false);
         setAutoLatestLogId(data.latestLogId ?? null);
       } catch {}
@@ -92,8 +104,8 @@ export function ProfilePosterCard({
   // Close menu on Escape or scroll
   useEffect(() => {
     if (!menuOpen) return;
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
-    const onScroll = () => setMenuOpen(false);
+    const onKey = (e) => { if (e.key === "Escape") { setMenuOpen(false); setSubMenuOpen(false); } };
+    const onScroll = () => { setMenuOpen(false); setSubMenuOpen(false); };
     window.addEventListener("keydown", onKey);
     window.addEventListener("scroll", onScroll, true);
     return () => {
@@ -104,6 +116,7 @@ export function ProfilePosterCard({
 
   const openMenu = async (e) => {
     e.stopPropagation();
+    setSubMenuOpen(false);
     const rect = menuButtonRef.current?.getBoundingClientRect();
     if (rect) {
       const menuWidth = 224;
@@ -116,15 +129,30 @@ export function ProfilePosterCard({
     }
     // Fetch status first so the menu opens with correct label immediately
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/database/GetMovieStatus/${movieId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setFilmRating(data.filmRating ?? 0);
-        setLatestReviewText(data.latestReviewText ?? "");
-        setIsInWatchlist(data.isInWatchlist ?? false);
+      if (logIdProp) {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/log/ActivityDetail/${logIdProp}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setFilmRating(data.filmRating ?? 0);
+          setLatestReviewText(data.reviewText ?? "");
+          setLatestWatchedDate(data.watchedDate ? new Date(data.watchedDate).toISOString().split("T")[0] : "");
+          setSpecificLogRating(data.rating ?? 0);
+        }
+      } else {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/database/GetMovieStatus/${movieId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setFilmRating(data.filmRating ?? 0);
+          setLatestReviewText(data.latestReviewText ?? "");
+          setLatestWatchedDate(data.latestWatchedDate ?? "");
+          setIsInWatchlist(data.isInWatchlist ?? false);
+        }
       }
     } catch {}
     setMenuOpen(true);
@@ -221,22 +249,12 @@ export function ProfilePosterCard({
     : null;
   const preSelectedMovie = { id: movieId, title: title || "", poster_path: posterPath };
 
-  const menuItems = [
-    { label: "Show your activity", active: false },
-    { label: "Review or log film again...", active: true, action: () => { setMenuOpen(false); setLogModalOpen(true); } },
-    ...(!isWatched ? [{
-      label: isInWatchlist ? "Remove from watchlist" : "Add to watchlist",
-      active: true,
-      action: handleToggleWatchlist,
-      highlight: isInWatchlist,
-    }] : []),
-    { label: "Add to lists...", active: false },
-  ];
+  const hasLogOrReview = isWatched || hasActivity;
 
   const menu = menuOpen
     ? createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+          <div className="fixed inset-0 z-40" onClick={() => { setMenuOpen(false); setSubMenuOpen(false); }} />
           <div
             className="fixed z-50 w-52 bg-[#0F1318] border border-[#BFBCFC]/25 rounded-lg shadow-2xl overflow-hidden"
             style={{ top: menuPos.top, left: menuPos.left }}
@@ -276,23 +294,65 @@ export function ProfilePosterCard({
 
             {/* Menu items */}
             <div className="py-0.5">
-              {menuItems.map(({ label, active, action, highlight }) => (
+              <button className="w-full text-left px-4 py-2 text-sm text-[#94A3B8]/35 cursor-default">
+                Show your activity
+              </button>
+
+              {/* Log / Review — submenu when film is already logged */}
+              <button
+                ref={logButtonRef}
+                onClick={
+                  hasLogOrReview
+                    ? () => {
+                        const rect = logButtonRef.current?.getBoundingClientRect();
+                        if (rect) setSubMenuPos({ top: rect.top, left: rect.right + 4 });
+                        setSubMenuOpen((p) => !p);
+                      }
+                    : () => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(false); setPreModalLogId(null); setMenuOpen(false); setLogModalOpen(true); }
+                }
+                className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
+              >
+                {hasLogOrReview ? "Log again / edit review..." : "Review or log film again..."}
+              </button>
+
+              {!isWatched && (
                 <button
-                  key={label}
-                  onClick={active ? action : undefined}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                    active
-                      ? highlight
-                        ? "text-[#BFBCFC] hover:bg-[#BFBCFC]/10 cursor-pointer"
-                        : "text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer"
-                      : "text-[#94A3B8]/35 cursor-default"
+                  onClick={handleToggleWatchlist}
+                  className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer ${
+                    isInWatchlist ? "text-[#BFBCFC] hover:bg-[#BFBCFC]/10" : "text-[#F8FAFC] hover:bg-[#BFBCFC]/10"
                   }`}
                 >
-                  {label}
+                  {isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
                 </button>
-              ))}
+              )}
+
+              <button className="w-full text-left px-4 py-2 text-sm text-[#94A3B8]/35 cursor-default">
+                Add to lists...
+              </button>
             </div>
           </div>
+          {subMenuOpen && (
+            <div
+              className="fixed z-50 w-52 bg-[#0F1318] border border-[#BFBCFC]/25 rounded-lg shadow-2xl overflow-hidden"
+              style={{ top: subMenuPos.top, left: subMenuPos.left }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="py-0.5">
+                <button
+                  onClick={() => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(true); setPreModalLogId(null); setPreModalRating(filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
+                  className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
+                >
+                  Review or log film again...
+                </button>
+                <button
+                  onClick={() => { setPreModalDate(latestWatchedDate); setPreModalReviewText(latestReviewText); setPreModalIsRewatch(false); setPreModalLogId(logIdProp ?? autoLatestLogId); setPreModalRating(logIdProp ? specificLogRating : filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
+                  className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
+                >
+                  {latestReviewText ? "Edit review..." : "Add review..."}
+                </button>
+              </div>
+            </div>
+          )}
         </>,
         document.body
       )
@@ -376,9 +436,12 @@ export function ProfilePosterCard({
         isOpen={logModalOpen}
         onClose={() => setLogModalOpen(false)}
         preSelectedMovie={preSelectedMovie}
+        preIsRewatch={preModalIsRewatch}
         preIsLiked={isLiked}
-        preRating={filmRating}
-        preReviewText={latestReviewText}
+        preRating={preModalRating}
+        preReviewText={preModalReviewText}
+        preDate={preModalDate}
+        preLogId={preModalLogId}
         onSuccess={() => triggerRefresh()}
       />
     </>
