@@ -17,6 +17,7 @@ import {
   UserPlus,
   RotateCw,
   AlignLeft,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
@@ -605,6 +606,12 @@ export function UserProfilePage() {
                 <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
               </div>
               <div className="space-y-0.5">
+            {user?.isAdmin && (
+              <Link to="/admin" className="flex items-center gap-2.5 text-[#FF61D2] hover:text-[#FF4DC7] font-semibold transition-colors text-sm py-2 group">
+                <Shield className="w-3.5 h-3.5 group-hover:text-[#FF4DC7] transition-colors" />
+                Admin Dashboard
+              </Link>
+            )}
                 <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
                   <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
                   Movie DNA & Analytics
