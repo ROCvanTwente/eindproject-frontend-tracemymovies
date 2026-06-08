@@ -282,7 +282,7 @@ export function ReviewsPage() {
                   className={`flex gap-5 py-6 ${idx < paginated.length - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}
                 >
                   {/* Poster */}
-                  <div className="w-20 md:w-28 flex-none">
+                  <div className="w-28 md:w-36 flex-none">
                     <ProfilePosterCard
                       movieId={review.movieId}
                       poster={review.poster}
@@ -324,9 +324,9 @@ export function ReviewsPage() {
 
                     <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
 
-                    <div className="mt-3 flex items-center gap-1.5 text-[#94A3B8]/50 text-xs">
-                      <Heart className="w-3 h-3" />
-                      <span>No likes yet</span>
+                    <div className="mt-3 flex items-center gap-2 text-[#94A3B8]/60 text-sm">
+                      <Heart className={`w-4 h-4 ${(review.likes ?? 0) > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
+                      <span>{(review.likes ?? 0) > 0 ? `${review.likes} like${review.likes !== 1 ? "s" : ""}` : "No likes yet"}</span>
                     </div>
                   </div>
                 </div>

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useRefresh } from "../context/RefreshContext";
 
 export function useMovieDetail(id, token) {
-    const { triggerRefresh } = useRefresh();
+    const { triggerRefresh, refreshKey } = useRefresh();
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -15,6 +15,11 @@ export function useMovieDetail(id, token) {
     const [isInWatchlist, setIsInWatchlist] = useState(false);
     const [isWatched, setIsWatched] = useState(false);
     const [hasLogEntries, setHasLogEntries] = useState(false);
+    const [filmRating, setFilmRating] = useState(0);
+    const [watchCount, setWatchCount] = useState(0);
+    const [latestLogId, setLatestLogId] = useState(null);
+    const [latestReviewText, setLatestReviewText] = useState("");
+    const [latestWatchedDate, setLatestWatchedDate] = useState("");
 
     const [showWatchLogModal, setShowWatchLogModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -53,6 +58,11 @@ export function useMovieDetail(id, token) {
                 setIsFavorite(status.isFavorite || false);
                 setIsInWatchlist(status.isInWatchlist || false);
                 setHasLogEntries(status.hasLogEntries || false);
+                setFilmRating(status.filmRating || 0);
+                setWatchCount(status.logCount || 0);
+                setLatestLogId(status.latestLogId ?? null);
+                setLatestReviewText(status.latestReviewText || "");
+                setLatestWatchedDate(status.latestWatchedDate || "");
             }
         } catch (err) {
             console.error("Could not fetch status", err);
@@ -103,7 +113,7 @@ export function useMovieDetail(id, token) {
         if (token && id) {
             fetchUserStatus();
         }
-    }, [token, id, fetchUserStatus]);
+    }, [token, id, fetchUserStatus, refreshKey]);
 
     const trailerVideo = useMemo(() => {
         return (
@@ -251,6 +261,24 @@ export function useMovieDetail(id, token) {
         }
     };
 
+    const handleSetRating = async (newRating) => {
+        setFilmRating(newRating);
+        await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ MovieId: parseInt(id), Rating: newRating }),
+        });
+        if (newRating > 0 && !isWatched) {
+            const r = await fetch(SAVE_WATCH_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ MovieId: parseInt(id) }),
+            });
+            if (r.ok) { setIsWatched(true); setWatchCount(1); }
+        }
+        triggerRefresh();
+    };
+
     return {
         movie,
         loading,
@@ -270,12 +298,18 @@ export function useMovieDetail(id, token) {
         isSavingWatch,
         isSavingLike,
         isSavingWatchlist,
+        filmRating,
+        watchCount,
+        latestLogId,
+        latestReviewText,
+        latestWatchedDate,
         trailerVideo,
         openTrailer,
         closeTrailer,
         handleToggleWatch,
         handleToggleLike,
         handleToggleWatchlist,
+        handleSetRating,
         retryFetch: fetchMovieData
     };
 }

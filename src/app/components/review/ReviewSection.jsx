@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
+import { useRefresh } from "../../context/RefreshContext";
 import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteReview, reportReview, getReviewById } from "../../services/reviews";
 import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
@@ -10,8 +11,9 @@ import { ReviewItem } from "./ReviewItem";
 import { ReviewPagination } from "./ReviewPagination";
 import { ReportModal } from "./ReportModal";
 
-export function ReviewSection({ movieId, movieTitle }) {
+export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
     const auth = useAuth();
+    const { refreshKey } = useRefresh();
     const isAuthenticated = !!(auth?.user || getToken());
     const token = auth?.user?.token ?? auth?.token ?? getToken();
     const currentUserId = getCurrentUserId();
@@ -114,6 +116,11 @@ export function ReviewSection({ movieId, movieTitle }) {
             isMounted = false;
         };
     }, [movieId]);
+
+    useEffect(() => {
+        if (!movieId) return;
+        refreshReviews();
+    }, [refreshKey]);
 
     const normalizedReviews = useMemo(() => {
         return [...(reviews || [])].sort((a, b) => {
@@ -367,12 +374,14 @@ export function ReviewSection({ movieId, movieTitle }) {
         <div>
             <h3 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-3 md:mb-4">Reviews</h3>
 
-            <ReviewForm 
-                movieTitle={movieTitle} 
-                isAuthenticated={isAuthenticated} 
-                isSubmitting={isSubmitting} 
-                onSubmit={handleSubmitReview} 
-            />
+            {!hideForm && (
+                <ReviewForm
+                    movieTitle={movieTitle}
+                    isAuthenticated={isAuthenticated}
+                    isSubmitting={isSubmitting}
+                    onSubmit={handleSubmitReview}
+                />
+            )}
 
             {isLoadingReviews ? (
                 <div className="text-[#94A3B8] text-sm">Loading reviews...</div>

@@ -293,9 +293,9 @@ export function ActivityDetailPage() {
                     )}
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 text-[#94A3B8]/50 text-xs">
-                  <Heart className="w-3 h-3" />
-                  <span>No likes yet</span>
+                <div className="flex items-center gap-2 text-[#94A3B8]/60 text-sm">
+                  <Heart className={`w-4 h-4 ${(data.reviewLikes ?? 0) > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
+                  <span>{(data.reviewLikes ?? 0) > 0 ? `${data.reviewLikes} like${data.reviewLikes !== 1 ? "s" : ""}` : "No likes yet"}</span>
                 </div>
               </div>
             )}
