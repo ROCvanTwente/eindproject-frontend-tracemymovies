@@ -3,7 +3,7 @@ import { Star, Heart } from "lucide-react";
 import { ProfilePosterCard } from "../ProfilePosterCard";
 import { ReviewTextBlock } from "./ReviewTextBlock";
 
-export function ReviewCard({ review, index, total, showInteractions = false, posterClassName = "w-28 flex-none" }) {
+export function ReviewCard({ review, index, total, showInteractions = false, posterClassName = "w-36 flex-none" }) {
   return (
     <div className={`flex gap-5 py-6 ${index < total - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}>
       <div className={posterClassName}>
@@ -39,9 +39,9 @@ export function ReviewCard({ review, index, total, showInteractions = false, pos
           {review.isLiked && <Heart className="w-3.5 h-3.5 text-[#FF61D2] fill-[#FF61D2]" />}
         </div>
         <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
-        <div className="mt-3 flex items-center gap-1.5 text-[#94A3B8]/50 text-xs">
-          <Heart className="w-3 h-3" />
-          <span>No likes yet</span>
+        <div className="mt-3 flex items-center gap-2 text-[#94A3B8]/60 text-sm">
+          <Heart className={`w-4 h-4 ${(review.likes ?? 0) > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
+          <span>{(review.likes ?? 0) > 0 ? `${review.likes} like${review.likes !== 1 ? "s" : ""}` : "No likes yet"}</span>
         </div>
       </div>
     </div>

@@ -1,7 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Star, AlertCircle, MoreVertical, Trash, Edit, Flag, Eye } from "lucide-react";
-import { toast } from "sonner";
 import { ExpandableReviewText } from "./ExpandableReviewText";
+import { BadgeChip } from "../BadgesSection";
+import { getToken } from "../../services/auth";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const TIER_PRIORITY = { legendary: 6, diamond: 5, platinum: 4, gold: 3, silver: 2, bronze: 1 };
+
+// Module-level cache — avoids re-fetching the same user across re-renders
+const _badgeCache = {};
+
+function UserAvatar({ profileImageBase64, author }) {
+    const imgSrc = profileImageBase64
+        ? (profileImageBase64.startsWith('data:') || profileImageBase64.startsWith('http')
+            ? profileImageBase64
+            : `data:image/jpeg;base64,${profileImageBase64}`)
+        : null;
+
+    if (imgSrc) {
+        return (
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border border-[#BFBCFC]/20">
+                <img src={imgSrc} alt={author} className="w-full h-full object-cover" />
+            </div>
+        );
+    }
+    return (
+        <div className="w-10 h-10 bg-[#BFBCFC]/10 rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="text-[#BFBCFC] font-bold">{author.charAt(0).toUpperCase()}</span>
+        </div>
+    );
+}
 
 export function ReviewItem({
     review, reviewKey, movieTitle, isLiked, canEdit, canDelete,
@@ -9,6 +37,7 @@ export function ReviewItem({
     onToggleLike, onEdit, onDelete, onReport
 }) {
     const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
+    const [topBadges, setTopBadges] = useState(null);
 
     const author = review.user?.userName || (review.userId ? `User #${review.userId}` : "Anonymous");
     const content = review.review || "";
@@ -20,16 +49,52 @@ export function ReviewItem({
         month: 'short', day: 'numeric', year: 'numeric'
     }) : "No date";
 
+    const userId = review.user?.id;
+
+    useEffect(() => {
+        if (!userId) return;
+        if (_badgeCache[userId] !== undefined) {
+            setTopBadges(_badgeCache[userId]);
+            return;
+        }
+        const token = getToken();
+        if (!token) { _badgeCache[userId] = []; setTopBadges([]); return; }
+
+        fetch(`${API_BASE}/Badge/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                const earnedAll = (data?.badges ?? []).filter(b => b.earned);
+                const byCategory = {};
+                for (const b of earnedAll) {
+                    const cur = byCategory[b.category];
+                    if (!cur || (TIER_PRIORITY[b.tier] ?? 0) > (TIER_PRIORITY[cur.tier] ?? 0)) {
+                        byCategory[b.category] = b;
+                    }
+                }
+                const earned = Object.values(byCategory)
+                    .sort((a, b) => (TIER_PRIORITY[b.tier] ?? 0) - (TIER_PRIORITY[a.tier] ?? 0))
+                    .slice(0, 2);
+                _badgeCache[userId] = earned;
+                setTopBadges(earned);
+            })
+            .catch(() => { _badgeCache[userId] = []; setTopBadges([]); });
+    }, [userId]);
+
     return (
         <div className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-4 md:p-6 mb-4">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#BFBCFC]/10 rounded-full flex items-center justify-center">
-                        <span className="text-[#BFBCFC] font-bold">{author.charAt(0)}</span>
-                    </div>
+                    <UserAvatar profileImageBase64={review.user?.profileImageBase64} author={author} />
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-[#F8FAFC] font-medium">{author}</p>
+                            {topBadges && topBadges.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                    {topBadges.map(b => <BadgeChip key={b.id} badge={b} size={22} />)}
+                                </div>
+                            )}
                             <span className="text-[#94A3B8] text-xs">•</span>
                             <span className="text-[#94A3B8] text-xs">{dateString}</span>
                         </div>

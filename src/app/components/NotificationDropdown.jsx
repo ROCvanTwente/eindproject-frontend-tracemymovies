@@ -1,10 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Bell, UserPlus, CheckCircle, Film, MessageSquare, Check, Trophy } from 'lucide-react';
+import { Bell, UserPlus, UserCheck, UserX, Film, MessageSquare, Check, Trophy, Heart } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { useBadge } from '../context/BadgeContext';
 import { TIER } from '../utils/badgeTiers';
 import { motion, AnimatePresence } from 'framer-motion';
+
+function NotifCircle({ bg, glow, border, children }) {
+    return (
+        <div style={{
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+            background: bg,
+            boxShadow: glow,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `1px solid ${border}`,
+        }}>
+            {children}
+        </div>
+    );
+}
 
 export function NotificationDropdown() {
     const [showNotifications, setShowNotifications] = useState(false);
@@ -45,28 +59,25 @@ export function NotificationDropdown() {
         if (n._isBadge) {
             const t = TIER[n.tier] || TIER.bronze;
             return (
-                <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    background: t.gradient,
-                    boxShadow: `0 0 8px ${t.glow}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: `1px solid rgba(255,255,255,0.12)`,
-                }}>
+                <NotifCircle bg={t.gradient} glow={`0 0 8px ${t.glow}`} border="rgba(255,255,255,0.12)">
                     <Trophy size={16} color={t.iconColor} strokeWidth={2} />
-                </div>
+                </NotifCircle>
             );
         }
-        const icons = {
-            friend_request: <UserPlus className="w-5 h-5 text-[#BFBCFC]" />,
-            friend_accepted: <CheckCircle className="w-5 h-5 text-[#44FFFF]" />,
-            new_movie: <Film className="w-5 h-5 text-[#BFBCFC]" />,
-            comment_reply: <MessageSquare className="w-5 h-5 text-[#BFBCFC]" />,
-        };
-        return (
-            <div className="flex-shrink-0 mt-0.5">
-                {icons[n.type] || <Bell className="w-5 h-5 text-[#BFBCFC]" />}
-            </div>
-        );
+        const type = n.type?.toLowerCase().replace(/_/g, '');
+        if (type === 'friendrequest')
+            return <NotifCircle bg="linear-gradient(135deg,#6366f1,#818cf8)" glow="0 0 8px rgba(99,102,241,0.5)" border="rgba(129,140,248,0.3)"><UserPlus size={16} color="#fff" strokeWidth={2} /></NotifCircle>;
+        if (type === 'friendaccepted')
+            return <NotifCircle bg="linear-gradient(135deg,#16a34a,#4ade80)" glow="0 0 8px rgba(74,222,128,0.4)" border="rgba(74,222,128,0.3)"><UserCheck size={16} color="#fff" strokeWidth={2} /></NotifCircle>;
+        if (type === 'frienddeclined' || type === 'friendremoved')
+            return <NotifCircle bg="linear-gradient(135deg,#dc2626,#f87171)" glow="0 0 8px rgba(248,113,113,0.4)" border="rgba(248,113,113,0.3)"><UserX size={16} color="#fff" strokeWidth={2} /></NotifCircle>;
+        if (type === 'reviewlike')
+            return <NotifCircle bg="linear-gradient(135deg,#db2777,#f472b6)" glow="0 0 8px rgba(244,114,182,0.5)" border="rgba(244,114,182,0.3)"><Heart size={16} color="#fff" strokeWidth={2} /></NotifCircle>;
+        if (type === 'newmovie')
+            return <NotifCircle bg="linear-gradient(135deg,#7c3aed,#a78bfa)" glow="0 0 8px rgba(167,139,250,0.4)" border="rgba(167,139,250,0.3)"><Film size={16} color="#fff" strokeWidth={2} /></NotifCircle>;
+        if (type === 'commentreply')
+            return <NotifCircle bg="linear-gradient(135deg,#0891b2,#22d3ee)" glow="0 0 8px rgba(34,211,238,0.4)" border="rgba(34,211,238,0.3)"><MessageSquare size={16} color="#fff" strokeWidth={2} /></NotifCircle>;
+        return <NotifCircle bg="rgba(191,188,252,0.15)" glow="none" border="rgba(191,188,252,0.2)"><Bell size={16} color="#BFBCFC" strokeWidth={2} /></NotifCircle>;
     };
 
     return (
@@ -125,7 +136,7 @@ export function NotificationDropdown() {
                                                     <p className="font-semibold text-sm" style={{ color: isBadge ? t.labelColor : '#F8FAFC' }}>
                                                         {n.title}
                                                     </p>
-                                                    <p className="text-[#94A3B8] text-xs truncate">{n.message}</p>
+                                                    <p className="text-[#94A3B8] text-xs line-clamp-2">{n.message}</p>
                                                     <p className="text-[#94A3B8] text-[10px] mt-1">{n.time}</p>
                                                 </div>
                                                 <button

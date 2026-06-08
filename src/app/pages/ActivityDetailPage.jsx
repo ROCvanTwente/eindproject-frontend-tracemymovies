@@ -293,9 +293,9 @@ export function ActivityDetailPage() {
                     )}
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 text-[#94A3B8]/50 text-xs">
-                  <Heart className="w-3 h-3" />
-                  <span>No likes yet</span>
+                <div className="flex items-center gap-2 text-[#94A3B8]/60 text-sm">
+                  <Heart className={`w-4 h-4 ${(data.reviewLikes ?? 0) > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
+                  <span>{(data.reviewLikes ?? 0) > 0 ? `${data.reviewLikes} like${data.reviewLikes !== 1 ? "s" : ""}` : "No likes yet"}</span>
                 </div>
               </div>
             )}
@@ -313,7 +313,7 @@ export function ActivityDetailPage() {
 
             {/* Sidebar header label */}
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94A3B8] px-1">
-              {data.isOwnLog ? "Your status" : "Your status"}
+              {data.isOwnLog ? "Your current status" : "Your current status"}
             </p>
 
             {/* Eye + Heart icons row */}
@@ -352,7 +352,7 @@ export function ActivityDetailPage() {
             {/* Rating */}
             <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Your Rating</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">current Rating</p>
                 {currentFilmRating > 0 && (
                   <span className="text-sm font-bold text-[#44FFFF]">{currentFilmRating}/10</span>
                 )}

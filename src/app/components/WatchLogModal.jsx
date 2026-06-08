@@ -275,7 +275,7 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
 
   const modal = (
     <div
-      className="fixed inset-0 flex items-start justify-center px-4 py-8 sm:items-center overflow-y-auto"
+      className="fixed inset-0 flex items-start justify-center px-4 pt-6 pb-12 sm:items-start sm:pt-20 overflow-y-auto"
       style={{ zIndex: 99999 }}
     >
       {/* Backdrop */}
@@ -409,7 +409,39 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
 
             <div className="px-5 py-4 space-y-3">
 
-              {/* Review — top */}
+              {/* Date + Rewatch + Heart — top row */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-[#151921] border border-[#BFBCFC]/10 rounded-xl px-3 py-2.5 flex items-center">
+                  <DatePicker value={watchDate} onChange={setWatchDate} />
+                </div>
+
+                <button
+                  onClick={() => hasWatched && setIsRewatch((v) => !v)}
+                  disabled={!hasWatched}
+                  title={hasWatched ? "Rewatch" : "Watch it first"}
+                  className={`p-3.5 rounded-xl border transition-all duration-150 hover:scale-105 active:scale-95 ${
+                    isRewatch && hasWatched
+                      ? "bg-[#44FFFF]/15 border-[#44FFFF]/50 text-[#44FFFF] shadow-[0_0_12px_rgba(68,255,255,0.15)]"
+                      : "bg-[#151921] border-[#BFBCFC]/10 text-[#94A3B8] hover:border-[#44FFFF]/40 hover:text-[#44FFFF]/70"
+                  } ${!hasWatched ? "opacity-35 cursor-not-allowed hover:scale-100" : "cursor-pointer"}`}
+                >
+                  <RotateCw className="w-5 h-5" />
+                </button>
+
+                <button
+                  onClick={() => setIsLiked((v) => !v)}
+                  title="Like this film"
+                  className={`p-3.5 rounded-xl border transition-all duration-150 hover:scale-105 active:scale-95 ${
+                    isLiked
+                      ? "bg-[#FF61D2]/15 border-[#FF61D2]/50 shadow-[0_0_12px_rgba(255,97,210,0.2)]"
+                      : "bg-[#151921] border-[#BFBCFC]/10 hover:border-[#FF61D2]/40"
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 transition-all duration-150 ${isLiked ? "text-[#FF61D2] fill-[#FF61D2] scale-110" : "text-[#94A3B8] group-hover:text-[#FF61D2]/50"}`} />
+                </button>
+              </div>
+
+              {/* Review — middle */}
               <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-xl px-4 py-4">
                 <div className="flex items-center gap-1.5 mb-3">
                   <MessageSquare className="w-3.5 h-3.5 text-[#94A3B8]" />
@@ -435,52 +467,15 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
                 )}
               </div>
 
-              {/* Date + Rewatch + Heart — compact row */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-[#151921] border border-[#BFBCFC]/10 rounded-xl px-3 py-2.5 flex items-center">
-                  <DatePicker value={watchDate} onChange={setWatchDate} />
-                </div>
-
-                <button
-                  onClick={() => hasWatched && setIsRewatch((v) => !v)}
-                  disabled={!hasWatched}
-                  title={hasWatched ? "Rewatch" : "Watch it first"}
-                  className={`p-3.5 rounded-xl border transition-all ${
-                    isRewatch && hasWatched
-                      ? "bg-[#44FFFF]/15 border-[#44FFFF]/50 text-[#44FFFF]"
-                      : "bg-[#151921] border-[#BFBCFC]/10 text-[#94A3B8] hover:border-[#44FFFF]/30"
-                  } ${!hasWatched ? "opacity-35 cursor-not-allowed" : "cursor-pointer"}`}
-                >
-                  <RotateCw className="w-5 h-5" />
-                </button>
-
-                <button
-                  onClick={() => setIsLiked((v) => !v)}
-                  title="Like this film"
-                  className={`p-3.5 rounded-xl border transition-all ${
-                    isLiked
-                      ? "bg-[#FF61D2]/15 border-[#FF61D2]/50"
-                      : "bg-[#151921] border-[#BFBCFC]/10 hover:border-[#FF61D2]/30"
-                  }`}
-                >
-                  <Heart className={`w-5 h-5 transition-all ${isLiked ? "text-[#FF61D2] fill-[#FF61D2] scale-110" : "text-[#94A3B8]"}`} />
-                </button>
-              </div>
-
-              {/* Stars */}
-              <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-xl px-3 py-2">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] text-[#94A3B8] flex items-center gap-1">
-                    <Star className="w-2.5 h-2.5" />
+              {/* Stars — bottom */}
+              <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-xl px-3 py-1">
+                <div className="mb-2">
+                  <span className="text-xs text-[#94A3B8] flex items-center gap-1">
+                    <Star className="w-3 h-3" />
                     Rating
                   </span>
-                  {displayRating > 0 ? (
-                    <span className="text-[10px] font-bold text-[#44FFFF]">{displayRating}/10</span>
-                  ) : (
-                    <span className="text-[10px] text-[#94A3B8]/40">—</span>
-                  )}
                 </div>
-                <div className="flex gap-0.5">
+                <div className="flex gap-0.5 max-w-[85%]">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                     <button
                       key={n}
@@ -496,20 +491,22 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
               </div>
 
               {/* Save */}
-              <button
-                onClick={handleSubmit}
-                disabled={isSaving}
-                className="w-full bg-gradient-to-r from-[#44FFFF] to-[#BFBCFC] hover:opacity-90 text-[#0B0E14] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
-              >
-                {isSaving ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {preLogId ? "Save changes" : "Save log"}
-                  </>
-                )}
-              </button>
+              <div className="pt-2 pb-2">
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSaving}
+                  className="w-full bg-gradient-to-r from-[#44FFFF] to-[#BFBCFC] text-[#0B0E14] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-150 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(68,255,255,0.25)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      {preLogId ? "Save changes" : "Save log"}
+                    </>
+                  )}
+                </button>
+              </div>
 
             </div>
           </div>
