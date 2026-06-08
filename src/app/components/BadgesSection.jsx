@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Film, AlignLeft, Lock, Heart, RotateCcw, Star, User, Users, Bookmark } from 'lucide-react';
-import { TIER } from '../utils/badgeTiers';
+import { TIER, CATEGORY_TIERS } from '../utils/badgeTiers';
 
 const CATEGORY_META = {
   watched:   { Icon: Film,      label: 'Films Watched',   color: '#BFBCFC' },
@@ -94,7 +94,11 @@ export const BADGE_OVERRIDES = {
   },
 };
 
-const getTier = (badge) => BADGE_OVERRIDES[badge.id] || TIER[badge.tier] || TIER.bronze;
+const getTier = (badge) =>
+  BADGE_OVERRIDES[badge.id]
+  || CATEGORY_TIERS[badge.category]?.[badge.tier]
+  || TIER[badge.tier]
+  || TIER.bronze;
 
 function Emblem({ badge, size = 54 }) {
   const t = getTier(badge);
@@ -104,8 +108,8 @@ function Emblem({ badge, size = 54 }) {
 
   if (!badge.earned) {
     return (
-      <div style={{ width: size, height: size, borderRadius: '50%', background: '#11151e', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Lock size={iconSz - 2} color="rgba(148,163,184,0.45)" />
+      <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a2035', border: '1px solid rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Lock size={iconSz - 2} color="rgba(148,163,184,0.75)" />
       </div>
     );
   }
@@ -188,11 +192,11 @@ function BadgeCard({ badge }) {
         background: badge.earned
           ? `radial-gradient(ellipse at 50% -10%, ${t.cardGlow} 0%, #0c1018 55%)`
           : '#0a0c13',
-        border: `1px solid ${badge.earned ? t.cardBorder : 'rgba(255,255,255,0.06)'}`,
+        border: `1px solid ${badge.earned ? t.cardBorder : 'rgba(255,255,255,0.12)'}`,
         borderRadius: 14,
         padding: '14px 8px 10px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
-        opacity: badge.earned ? 1 : 0.78,
+        opacity: badge.earned ? 1 : 0.92,
         boxShadow: badge.earned
           ? t.legendary
             ? `0 0 28px ${t.cardGlow}, 0 0 50px rgba(191,188,252,0.08), 0 0 70px rgba(68,255,255,0.05)`
@@ -209,11 +213,8 @@ function BadgeCard({ badge }) {
       <Emblem badge={badge} size={54} />
 
       <div style={{ textAlign: 'center', lineHeight: 1 }}>
-        <p style={{ color: badge.earned ? '#F8FAFC' : '#64748B', fontSize: 10, fontWeight: 700, marginBottom: 3, letterSpacing: '0.01em' }}>
+        <p style={{ color: badge.earned ? '#F8FAFC' : '#94A3B8', fontSize: 10, fontWeight: 700, letterSpacing: '0.01em' }}>
           {badge.name}
-        </p>
-        <p style={{ fontSize: 8.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: badge.earned ? t.labelColor : '#475569' }}>
-          {t.label}
         </p>
       </div>
 
@@ -222,7 +223,7 @@ function BadgeCard({ badge }) {
           <div style={{ height: 2, background: '#161d2a', borderRadius: 9999, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${pct}%`, background: 'rgba(191,188,252,0.45)', borderRadius: 9999 }} />
           </div>
-          <p style={{ fontSize: 8.5, color: '#475569', textAlign: 'center', marginTop: 3 }}>
+          <p style={{ fontSize: 8.5, color: '#64748B', textAlign: 'center', marginTop: 3 }}>
             {badge.progress} / {badge.threshold}
           </p>
         </div>

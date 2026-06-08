@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Film, AlignLeft, Heart, RotateCcw, Star, User, Users, Bookmark, X } from 'lucide-react';
 import { useBadge } from '../context/BadgeContext';
-import { TIER } from '../utils/badgeTiers';
+import { TIER, CATEGORY_TIERS } from '../utils/badgeTiers';
 import { BADGE_OVERRIDES } from './BadgesSection';
 
 const CATEGORY_ICON = {
@@ -95,7 +95,9 @@ export function BadgeUnlockOverlay() {
   const [progress, setProgress] = useState(100);
 
   const badge = pendingUnlocks[0] ?? null;
-  const t = badge ? (BADGE_OVERRIDES[badge.id] || TIER[badge.tier] || TIER.bronze) : null;
+  const t = badge
+    ? (BADGE_OVERRIDES[badge.id] || CATEGORY_TIERS[badge.category]?.[badge.tier] || TIER[badge.tier] || TIER.bronze)
+    : null;
 
   useEffect(() => {
     if (!badge) return;
@@ -196,7 +198,7 @@ export function BadgeUnlockOverlay() {
                 {badge.name}
               </p>
               <p style={{ color: t.labelColor, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.15em', marginTop: 4 }}>
-                {t.label} · {CATEGORY_LABEL[badge.category] ?? badge.category}
+                {CATEGORY_LABEL[badge.category] ?? badge.category}
               </p>
               <p style={{ color: '#94a3b8', fontSize: 12, marginTop: 8 }}>
                 {badge.description}
