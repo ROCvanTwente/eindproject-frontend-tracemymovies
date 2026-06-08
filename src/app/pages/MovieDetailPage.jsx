@@ -54,9 +54,6 @@ export function MovieDetailPage() {
         setShowShareModal,
         showTrailerModal,
         isAnimateIn,
-        isSavingWatch,
-        isSavingLike,
-        isSavingWatchlist,
         trailerVideo,
         openTrailer,
         closeTrailer,
@@ -92,12 +89,9 @@ export function MovieDetailPage() {
                 isFavorite={isFavorite}
                 filmRating={filmRating}
                 watchCount={watchCount}
-                isSavingWatch={isSavingWatch}
-                isSavingLike={isSavingLike}
                 onToggleWatch={handleToggleWatch}
                 onToggleLike={handleToggleLike}
                 isInWatchlist={isInWatchlist}
-                isSavingWatchlist={isSavingWatchlist}
                 onToggleWatchlist={handleToggleWatchlist}
                 onSetRating={handleSetRating}
                 onOpenLog={() => setShowWatchLogModal(true)}
@@ -123,6 +117,7 @@ export function MovieDetailPage() {
                 preIsLiked={isFavorite}
                 preRating={filmRating}
                 preIsRewatch={watchCount > 0}
+                preHasWatchedBefore={watchCount > 0}
                 onSuccess={retryFetch}
             />
 

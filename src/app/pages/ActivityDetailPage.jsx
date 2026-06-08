@@ -87,11 +87,14 @@ export function ActivityDetailPage() {
   }, [id, token, refreshKey]);
 
   const handleEyeToggle = async () => {
-    if (data?.isOwnLog) return;
+    if (data?.isOwnLog) {
+      toast.error("Can't unwatch — you have activity on this film.");
+      return;
+    }
     const isEffectivelyWatched = myIsWatched || currentFilmRating > 0;
     if (isEffectivelyWatched) {
       if (currentFilmRating > 0) { toast.error("Remove your rating first before unwatching."); return; }
-      if (myWatchCount > 1) { toast.error("Can't remove — you have activity on this film."); return; }
+      if (myWatchCount > 0) { toast.error("Can't unwatch — you have activity on this film."); return; }
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/RemoveWatchActivity/${data.movieId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { setMyIsWatched(false); setMyWatchCount(0); triggerRefresh(); }
     } else {
