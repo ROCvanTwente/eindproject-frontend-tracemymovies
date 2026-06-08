@@ -313,7 +313,7 @@ export function ActivityDetailPage() {
 
             {/* Sidebar header label */}
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94A3B8] px-1">
-              {data.isOwnLog ? "Your status" : "Your status"}
+              {data.isOwnLog ? "Your current status" : "Your current status"}
             </p>
 
             {/* Eye + Heart icons row */}
@@ -352,7 +352,7 @@ export function ActivityDetailPage() {
             {/* Rating */}
             <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">Your Rating</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">current Rating</p>
                 {currentFilmRating > 0 && (
                   <span className="text-sm font-bold text-[#44FFFF]">{currentFilmRating}/10</span>
                 )}
