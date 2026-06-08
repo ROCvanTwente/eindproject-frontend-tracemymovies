@@ -127,7 +127,7 @@ export function DatePicker({ value, onChange }) {
   );
 }
 
-export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsRewatch = false, preIsLiked = false, preRating = 0, preReviewText = "", preDate = "", preLogId = null, onSuccess }) {
+export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsRewatch = false, preIsLiked = false, preRating = 0, preReviewText = "", preDate = "", preLogId = null, preHasWatchedBefore = null, onSuccess }) {
   const auth = useAuth();
   const { triggerRefresh } = useRefresh();
   const navigate = useNavigate();
@@ -159,7 +159,7 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
   const [reviewText, setReviewText] = useState("");
   const [containsSpoilers, setContainsSpoilers] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasWatched, setHasWatched] = useState(!!preSelectedMovie);
+  const [hasWatched, setHasWatched] = useState(preHasWatchedBefore !== null ? preHasWatchedBefore : !!preSelectedMovie);
 
   useEffect(() => {
     if (isOpen) {
@@ -172,6 +172,7 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
         setStep("search");
         setSelectedMovie(null);
       }
+      setHasWatched(preHasWatchedBefore !== null ? preHasWatchedBefore : !!preSelectedMovie);
       setWatchDate(preDate || new Date().toISOString().split("T")[0]);
       setIsRewatch(preIsRewatch);
       setIsLiked(preIsLiked);

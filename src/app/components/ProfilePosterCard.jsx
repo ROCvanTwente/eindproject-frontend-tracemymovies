@@ -54,6 +54,7 @@ export function ProfilePosterCard({
   const [preModalDate, setPreModalDate] = useState("");
   const [preModalReviewText, setPreModalReviewText] = useState("");
   const [preModalIsRewatch, setPreModalIsRewatch] = useState(false);
+  const [preModalHasWatched, setPreModalHasWatched] = useState(false);
   const [preModalLogId, setPreModalLogId] = useState(null);
   const [preModalRating, setPreModalRating] = useState(0);
   const [specificLogRating, setSpecificLogRating] = useState(0);
@@ -308,7 +309,7 @@ export function ProfilePosterCard({
                         if (rect) setSubMenuPos({ top: rect.top, left: rect.right + 4 });
                         setSubMenuOpen((p) => !p);
                       }
-                    : () => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(false); setPreModalLogId(null); setMenuOpen(false); setLogModalOpen(true); }
+                    : () => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(false); setPreModalHasWatched(false); setPreModalLogId(null); setMenuOpen(false); setLogModalOpen(true); }
                 }
                 className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
               >
@@ -339,13 +340,13 @@ export function ProfilePosterCard({
             >
               <div className="py-0.5">
                 <button
-                  onClick={() => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(true); setPreModalLogId(null); setPreModalRating(filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
+                  onClick={() => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(true); setPreModalHasWatched(true); setPreModalLogId(null); setPreModalRating(filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
                 >
                   Review or log film again...
                 </button>
                 <button
-                  onClick={() => { setPreModalDate(latestWatchedDate); setPreModalReviewText(latestReviewText); setPreModalIsRewatch(false); setPreModalLogId(logIdProp ?? autoLatestLogId); setPreModalRating(logIdProp ? specificLogRating : filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
+                  onClick={() => { setPreModalDate(latestWatchedDate); setPreModalReviewText(latestReviewText); setPreModalIsRewatch(false); setPreModalHasWatched(true); setPreModalLogId(logIdProp ?? autoLatestLogId); setPreModalRating(logIdProp ? specificLogRating : filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
                 >
                   {latestReviewText ? "Edit review..." : "Add review..."}
@@ -435,6 +436,7 @@ export function ProfilePosterCard({
         onClose={() => setLogModalOpen(false)}
         preSelectedMovie={preSelectedMovie}
         preIsRewatch={preModalIsRewatch}
+        preHasWatchedBefore={preModalHasWatched}
         preIsLiked={isLiked}
         preRating={preModalRating}
         preReviewText={preModalReviewText}

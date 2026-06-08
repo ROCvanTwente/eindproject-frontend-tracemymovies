@@ -17,10 +17,7 @@ export function MovieDetailContent({
   isFavorite,
   filmRating,
   watchCount,
-  isSavingWatch,
-  isSavingLike,
   isInWatchlist,
-  isSavingWatchlist,
   onToggleWatch,
   onToggleLike,
   onToggleWatchlist,
@@ -91,10 +88,7 @@ export function MovieDetailContent({
           isFavorite={isFavorite}
           filmRating={filmRating}
           watchCount={watchCount}
-          isSavingWatch={isSavingWatch}
-          isSavingLike={isSavingLike}
           isInWatchlist={isInWatchlist}
-          isSavingWatchlist={isSavingWatchlist}
           onToggleWatch={onToggleWatch}
           onToggleLike={onToggleLike}
           onToggleWatchlist={onToggleWatchlist}
