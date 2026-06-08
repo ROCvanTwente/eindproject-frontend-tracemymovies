@@ -100,6 +100,10 @@ const getTier = (badge) =>
   || TIER[badge.tier]
   || TIER.bronze;
 
+// Exact Lucide Shield path as SVG mask — scales to any size, preserves rounded corners
+const SHIELD_MASK = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .88-1L12 3l7 2.12A1 1 0 0 1 20 6Z' fill='white'/%3E%3C/svg%3E\")";
+const shieldMask = { WebkitMaskImage: SHIELD_MASK, maskImage: SHIELD_MASK, WebkitMaskSize: '100% 100%', maskSize: '100% 100%' };
+
 function Emblem({ badge, size = 54 }) {
   const t = getTier(badge);
   const meta = CATEGORY_META[badge.category] || CATEGORY_META.watched;
@@ -108,7 +112,12 @@ function Emblem({ badge, size = 54 }) {
 
   if (!badge.earned) {
     return (
-      <div style={{ width: size, height: size, borderRadius: '50%', background: '#1a2035', border: '1px solid rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{
+        width: size, height: size, flexShrink: 0,
+        ...shieldMask,
+        background: '#1a2035',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
         <Lock size={iconSz - 2} color="rgba(148,163,184,0.75)" />
       </div>
     );
@@ -116,15 +125,23 @@ function Emblem({ badge, size = 54 }) {
 
   return (
     <div style={{ width: size, height: size, position: 'relative', flexShrink: 0 }}>
-      <div style={{ position: 'absolute', inset: -6, borderRadius: '50%', background: `radial-gradient(circle, ${t.glow} 0%, transparent 65%)`, filter: 'blur(8px)', zIndex: 0 }} />
-      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1.5px solid ${t.ring}`, opacity: 0.45, zIndex: 1 }} />
+      {/* Outer glow */}
+      <div style={{ position: 'absolute', inset: -8, background: `radial-gradient(circle, ${t.glow} 0%, transparent 60%)`, filter: 'blur(10px)', zIndex: 0 }} />
+      {/* Ring layer */}
+      <div style={{ position: 'absolute', inset: 0, ...shieldMask, background: t.ring, opacity: 0.5, zIndex: 1 }} />
+      {/* Gradient fill */}
       <div style={{
-        position: 'absolute', inset: 3, borderRadius: '50%', background: t.gradient, zIndex: 2,
+        position: 'absolute', inset: 2, ...shieldMask, background: t.gradient, zIndex: 2,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `inset 0 2px 6px rgba(255,255,255,0.18), inset 0 -2px 6px rgba(0,0,0,0.35)`,
       }}>
         <Icon size={iconSz} color={t.iconColor} strokeWidth={2.2} />
       </div>
+      {/* Gloss highlight */}
+      <div style={{
+        position: 'absolute', inset: 2, ...shieldMask, zIndex: 3,
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.08) 35%, transparent 60%)',
+        pointerEvents: 'none',
+      }} />
     </div>
   );
 }
@@ -269,14 +286,27 @@ export function BadgeChip({ badge, size = 30 }) {
       title={`${badge.name} — ${t.label}`}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: size, height: size, borderRadius: '50%', flexShrink: 0,
-        background: t.gradient,
-        boxShadow: `0 0 10px ${t.glow}, 0 0 18px ${t.glow}`,
-        border: `1.5px solid rgba(255,255,255,0.18)`,
+        width: size, height: size, flexShrink: 0,
+        position: 'relative',
+        filter: `drop-shadow(0 0 5px ${t.glow}) drop-shadow(0 0 10px ${t.glow})`,
         cursor: 'default',
       }}
     >
-      <Icon size={iconSz} color={t.iconColor} strokeWidth={2.5} />
+      <span style={{
+        position: 'absolute', inset: 0,
+        ...shieldMask,
+        background: t.gradient,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Icon size={iconSz} color={t.iconColor} strokeWidth={2.5} />
+      </span>
+      {/* Gloss highlight */}
+      <span style={{
+        position: 'absolute', inset: 0,
+        ...shieldMask,
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 35%, transparent 60%)',
+        pointerEvents: 'none',
+      }} />
     </span>
   );
 }
