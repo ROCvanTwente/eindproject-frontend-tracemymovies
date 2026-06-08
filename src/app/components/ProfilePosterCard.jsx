@@ -368,8 +368,8 @@ export function ProfilePosterCard({
         <div
           className={`aspect-[2/3] rounded-lg overflow-hidden bg-[#151921] border transition-all duration-200 ${
             isWatched
-              ? "border-[#44FFFF]/50"
-              : "border-white/5 group-hover:border-[#BFBCFC]/30"
+              ? "border-white/5 group-hover:border-[#44FFFF]/50"
+              : "border-white/5 group-hover:border-white/30"
           }`}
         >
           {poster ? (
@@ -424,10 +424,8 @@ export function ProfilePosterCard({
           </div>
         </div>
 
-        {/* Cyan ring when watched */}
-        {isWatched && (
-          <div className="absolute inset-0 rounded-lg ring-2 ring-[#44FFFF]/40 pointer-events-none" />
-        )}
+        {/* Ring on hover — cyan if watched, white if not */}
+        <div className={`absolute inset-0 rounded-lg ring-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${isWatched ? "ring-[#44FFFF]/40" : "ring-white/20"}`} />
       </div>
 
       {menu}
