@@ -404,6 +404,7 @@ export function Header() {
                       {[
                         { to: "/my-profile", label: "Profiel" },
                         { to: "/my-lists", label: "My Lists" },
+                        { to: "/watchlist", label: "Watchlist" },
                         { to: "/profile", label: "Account" },
                         { to: "/messages", label: "Messages" },
                       ].map(({ to, label }) => (

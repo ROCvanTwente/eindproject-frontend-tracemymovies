@@ -4,6 +4,7 @@ import { router } from './router';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { RefreshProvider } from './context/RefreshContext';
+import { SignalRProvider } from './context/SignalRContext';
 export default function App() {
-    return (_jsx(AuthProvider, { children: _jsx(NotificationProvider, { children: _jsx(RefreshProvider, { children: _jsx(RouterProvider, { router: router }) }) }) }));
+    return (_jsx(AuthProvider, { children: _jsx(NotificationProvider, { children: _jsx(RefreshProvider, { children: _jsx(SignalRProvider, { children: _jsx(RouterProvider, { router: router }) }) }) }) }));
 }
