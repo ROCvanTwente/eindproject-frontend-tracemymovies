@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
-import { Eye, Search, Film, Heart, Star, AlignLeft, Film as FilmIcon } from "lucide-react";
-import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { useRefresh } from "../context/RefreshContext";
+import { Bookmark, Search, Film } from "lucide-react";
+import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 
-export function WatchedPage() {
+export function WatchlistPage() {
   const { userId } = useParams();
   const isPublic = !!userId;
   const auth = useAuth();
@@ -35,14 +35,16 @@ export function WatchedPage() {
       try {
         setLoading(true);
         const url = isPublic
-          ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Watched`
-          : `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatched`;
+          ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Watchlist`
+          : `${import.meta.env.VITE_API_BASE_URL}/Activity/GetWatchlist`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
-        setMovies(await res.json());
         if (isPublic) {
-          const profRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
-          if (profRes.ok) { const d = await profRes.json(); setOwnerUsername(d.username); }
+          const data = await res.json();
+          setOwnerUsername(data.username);
+          setMovies(data.items ?? []);
+        } else {
+          setMovies(await res.json());
         }
       } catch (err) {
         console.error(err);
@@ -71,11 +73,11 @@ export function WatchedPage() {
         <div className="text-center">
           <div className="relative w-20 h-20 mx-auto mb-4">
             <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20 flex items-center justify-center">
-              <Eye className="w-8 h-8 text-[#BFBCFC] animate-pulse" />
+              <Bookmark className="w-8 h-8 text-[#BFBCFC] animate-pulse" />
             </div>
             <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
           </div>
-          <p className="text-[#94A3B8] text-sm">Loading your watched movies...</p>
+          <p className="text-[#94A3B8] text-sm">Loading your watchlist...</p>
         </div>
       </div>
     );
@@ -84,10 +86,8 @@ export function WatchedPage() {
   return (
     <div className="min-h-screen bg-[#0B0E14]">
 
-      {/* ── CINEMATIC HEADER ── */}
+      {/* ── HEADER ── */}
       <div className="relative overflow-hidden">
-
-        {/* Backdrop: user's own watched posters blurred together */}
         {movies.length > 0 && (
           <>
             <div className="absolute inset-0 flex">
@@ -102,40 +102,29 @@ export function WatchedPage() {
             <div className="absolute inset-0 bg-[#0B0E14]/80 backdrop-blur-3xl" />
           </>
         )}
-
-        {/* Fallback blobs when no movies */}
         {movies.length === 0 && (
           <>
             <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#BFBCFC]/8 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#44FFFF]/6 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#44FFFF]/4 rounded-full blur-3xl pointer-events-none" />
           </>
         )}
-
-        {/* Soft fade into page */}
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0B0E14] to-transparent" />
 
-        {/* Header content */}
         <div className="relative container mx-auto px-4 max-w-7xl py-6 md:py-8">
           <div className="flex items-center gap-4 md:gap-6">
-
-            {/* Icon */}
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#BFBCFC]/30 to-[#44FFFF]/10 rounded-2xl flex items-center justify-center border border-[#BFBCFC]/35 shadow-lg shadow-[#BFBCFC]/15 flex-shrink-0">
-              <Eye className="w-6 h-6 md:w-7 md:h-7 text-[#BFBCFC]" />
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#BFBCFC]/20 to-[#44FFFF]/8 rounded-2xl flex items-center justify-center border border-[#BFBCFC]/30 shadow-lg shadow-[#BFBCFC]/10 flex-shrink-0">
+              <Bookmark className="w-6 h-6 md:w-7 md:h-7 text-[#BFBCFC]" />
             </div>
-
-            {/* Title */}
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
                 {isPublic && <span className="text-[#F8FAFC]">{ownerUsername ?? "..."}'s </span>}
-                <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
-                  Movies
+                <span className="bg-gradient-to-r from-[#BFBCFC] via-[#d4d2fd] to-[#44FFFF] bg-clip-text text-transparent">
+                  Watchlist
                 </span>
               </h1>
             </div>
-
-            {/* Count pill */}
             {movies.length > 0 && (
-              <div className="bg-[#BFBCFC]/12 border border-[#BFBCFC]/25 rounded-xl px-4 py-2 text-center backdrop-blur-sm flex-shrink-0">
+              <div className="bg-[#BFBCFC]/10 border border-[#BFBCFC]/20 rounded-xl px-4 py-2 text-center backdrop-blur-sm flex-shrink-0">
                 <p className="text-2xl md:text-3xl font-black text-[#BFBCFC] leading-none tabular-nums">
                   {movies.length}
                 </p>
@@ -148,24 +137,22 @@ export function WatchedPage() {
         </div>
       </div>
 
-      {/* ── STICKY TOOLBAR ── */}
+      {/* ── TOOLBAR ── */}
       {movies.length > 0 && (
         <div className="sticky top-16 z-30 bg-[#0B0E14]/92 backdrop-blur-xl border-b border-[#BFBCFC]/8">
           <div className="container mx-auto px-4 max-w-7xl pt-3 pb-2 flex flex-col gap-2">
-
-            {/* Row 1: search + sort + filters */}
             <div className="flex items-center gap-3">
               <div className="relative flex-1 max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
                 <input
                   type="text"
-                  placeholder="Search your watched..."
+                  placeholder="Search your watchlist..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
                 />
               </div>
-              <SortDropdown value={sortValue} onChange={setSortValue} />
+              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["Your Rating"]} />
               <MovieFilters
                 genre={genre} setGenre={setGenre}
                 decade={decade} setDecade={setDecade}
@@ -177,6 +164,7 @@ export function WatchedPage() {
                 hasActiveFilters={hasActiveFilters}
                 reset={reset}
                 hideYearRow
+                hideRating
               />
               {(search || hasActiveFilters) && (
                 <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
@@ -184,8 +172,6 @@ export function WatchedPage() {
                 </p>
               )}
             </div>
-
-            {/* Row 2: year row below search bar */}
             {decade && (
               <div className="pb-1">
                 <MovieFilters
@@ -209,31 +195,26 @@ export function WatchedPage() {
       {/* ── CONTENT ── */}
       <div className="container mx-auto px-4 max-w-7xl py-8 md:py-10">
         {movies.length === 0 ? (
-          <EmptyState />
+          <EmptyState isPublic={isPublic} ownerUsername={ownerUsername} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <Eye className="w-10 h-10 text-[#94A3B8]/20 mb-4" />
-            {(year || decade) && !search ? (
-              <>
-                <p className="text-[#F8FAFC] font-semibold text-base mb-1">
-                  Nothing here yet
-                </p>
-                <p className="text-[#94A3B8] text-sm max-w-xs">
-                  You didn't watch anything released in{" "}
-                  <span className="text-[#BFBCFC] font-medium">{year ?? decade}</span>.
-                </p>
-              </>
-            ) : (
-              <p className="text-[#94A3B8] text-sm">
-                Nothing found for{" "}
-                <span className="text-[#F8FAFC] font-medium">"{search}"</span>
-              </p>
-            )}
+            <Bookmark className="w-10 h-10 text-[#94A3B8]/20 mb-4" />
+            <p className="text-[#94A3B8] text-sm">
+              Nothing found for{" "}
+              <span className="text-[#F8FAFC] font-medium">"{search}"</span>
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
-            {filtered.map((movie, index) => (
-              <MovieCard key={movie.movieId} movie={movie} index={index} isPublic={isPublic} />
+            {filtered.map((movie) => (
+              <ProfilePosterCard
+                key={movie.movieId}
+                movieId={movie.movieId}
+                poster={movie.poster}
+                title={movie.title}
+                to={`/movie/${movie.movieId}`}
+                isInWatchlistProp={isPublic ? undefined : true}
+              />
             ))}
           </div>
         )}
@@ -242,59 +223,16 @@ export function WatchedPage() {
   );
 }
 
-/* ── MOVIE CARD ── */
-const MovieCard = ({ movie, isPublic }) => (
-  <div className="flex flex-col gap-1.5">
-    <ProfilePosterCard
-      movieId={movie.movieId}
-      poster={movie.poster}
-      title={movie.title}
-      to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.movieId}`}
-      isWatchedProp={isPublic ? undefined : true}
-      isLikedProp={isPublic ? undefined : movie.isLiked}
-      hasActivityProp={isPublic ? undefined : !!movie.latestLogId}
-    />
-
-    {/* Icons below poster */}
-    <div className="flex items-center gap-1 px-0.5 flex-wrap">
-      {movie.userRating > 0 && (
-        <div className="grid grid-cols-5 gap-[2px]">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-            <Star key={n} className={`w-2 h-2 ${n <= movie.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
-          ))}
-        </div>
-      )}
-      {movie.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
-      {movie.hasReview && movie.latestLogId && (
-        <Link to={`/log/${movie.latestLogId}`} onClick={(e) => e.stopPropagation()} title="View review">
-          <AlignLeft className="w-3 h-3 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors" />
-        </Link>
-      )}
-    </div>
-  </div>
-);
-
-/* ── EMPTY STATE ── */
-const EmptyState = () => (
+const EmptyState = ({ isPublic, ownerUsername }) => (
   <div className="flex flex-col items-center justify-center py-32 text-center">
     <div className="relative mb-8">
       <div className="w-32 h-32 bg-gradient-to-br from-[#BFBCFC]/12 to-[#44FFFF]/6 rounded-full flex items-center justify-center border border-[#BFBCFC]/15">
-        <Eye className="w-16 h-16 text-[#BFBCFC]/30" />
+        <Bookmark className="w-16 h-16 text-[#BFBCFC]/30" />
       </div>
       <div className="absolute inset-0 rounded-full bg-[#BFBCFC]/6 blur-2xl -z-10" />
     </div>
     <h2 className="text-2xl md:text-3xl font-bold text-[#F8FAFC] mb-3">
-      No films watched yet
+      {isPublic ? `${ownerUsername ?? "This user"}'s watchlist is empty` : "Your watchlist is empty"}
     </h2>
-    <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
-      Log films using the + Log button in the header to see them here.
-    </p>
-    <Link
-      to="/search"
-      className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BFBCFC] to-[#44FFFF] text-[#0B0E14] font-bold px-7 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#BFBCFC]/25"
-    >
-      <Film className="w-4 h-4" />
-      Discover Movies
-    </Link>
   </div>
 );

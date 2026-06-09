@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams } from "react-router";
 import {
     Heart, Plus, DollarSign, Globe, Calendar,
@@ -43,23 +43,35 @@ export function MovieDetailPage() {
         isFavorite,
         isInWatchlist,
         isWatched,
+        filmRating,
+        watchCount,
+        latestLogId,
+        latestReviewText,
+        latestWatchedDate,
         showWatchLogModal,
         setShowWatchLogModal,
         showShareModal,
         setShowShareModal,
         showTrailerModal,
         isAnimateIn,
-        isSavingWatch,
-        isSavingLike,
-        isSavingWatchlist,
         trailerVideo,
         openTrailer,
         closeTrailer,
         handleToggleWatch,
         handleToggleLike,
         handleToggleWatchlist,
+        handleSetRating,
         retryFetch
     } = useMovieDetail(id, token);
+
+    const [showEditLogModal, setShowEditLogModal] = useState(false);
+
+    const preSelectedMovie = movie ? {
+        id: movie.id,
+        title: movie.title,
+        poster_path: movie.poster_path,
+        release_date: movie.release_date,
+    } : null;
 
     if (loading) return <MovieDetailLoading />;
     if (error) return <MovieDetailError onRetry={retryFetch} />;
@@ -67,25 +79,27 @@ export function MovieDetailPage() {
 
     return (
         <div className="min-h-screen bg-[#0B0E14]">
-            <MovieHero
-                movie={movie}
-                isWatched={isWatched}
-                isFavorite={isFavorite}
-                isInWatchlist={isInWatchlist}
-                isSavingWatch={isSavingWatch}
-                isSavingLike={isSavingLike}
-                isSavingWatchlist={isSavingWatchlist}
-                onToggleWatch={handleToggleWatch}
-                onToggleLike={handleToggleLike}
-                onToggleWatchlist={handleToggleWatchlist}
-                onOpenTrailer={openTrailer}
-                onOpenShare={() => setShowShareModal(true)}
-            />
+            <MovieHero movie={movie} />
 
             <MovieDetailContent
                 movie={movie}
                 loadingRecommendations={loadingRecommendations}
                 recommendations={recommendations}
+                isWatched={isWatched}
+                isFavorite={isFavorite}
+                filmRating={filmRating}
+                watchCount={watchCount}
+                onToggleWatch={handleToggleWatch}
+                onToggleLike={handleToggleLike}
+                isInWatchlist={isInWatchlist}
+                onToggleWatchlist={handleToggleWatchlist}
+                onSetRating={handleSetRating}
+                onOpenLog={() => setShowWatchLogModal(true)}
+                onOpenEditLog={() => setShowEditLogModal(true)}
+                onOpenTrailer={openTrailer}
+                onOpenShare={() => setShowShareModal(true)}
+                hasReview={!!latestReviewText}
+                hasLog={!!latestLogId}
             />
 
             <TrailerModal
@@ -95,10 +109,29 @@ export function MovieDetailPage() {
                 videoKey={trailerVideo?.key}
             />
 
+            {/* Log again modal */}
             <WatchLogModal
                 isOpen={showWatchLogModal}
                 onClose={() => setShowWatchLogModal(false)}
-                movieTitle={movie.title}
+                preSelectedMovie={preSelectedMovie}
+                preIsLiked={isFavorite}
+                preRating={filmRating}
+                preIsRewatch={watchCount > 0}
+                preHasWatchedBefore={watchCount > 0}
+                onSuccess={retryFetch}
+            />
+
+            {/* Edit / Add review modal */}
+            <WatchLogModal
+                isOpen={showEditLogModal}
+                onClose={() => setShowEditLogModal(false)}
+                preSelectedMovie={preSelectedMovie}
+                preLogId={latestLogId}
+                preReviewText={latestReviewText}
+                preDate={latestWatchedDate || new Date().toISOString().split("T")[0]}
+                preIsLiked={isFavorite}
+                preRating={latestLogId ? filmRating : 0}
+                onSuccess={retryFetch}
             />
 
             <ShareModal

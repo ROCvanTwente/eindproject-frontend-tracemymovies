@@ -20,12 +20,15 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
-import  FriendPage from './pages/FriendPage';  
-import  LikedMoviesPage  from './pages/LikedMoviesPage';
+import FriendPage from './pages/FriendPage';
+import LikedMoviesPage from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
+import { WatchlistPage } from './pages/WatchlistPage';
+import { BadgesPage } from './pages/BadgesPage';
 import { ActorPage } from './pages/ActorPage';
+import { ReviewsPage } from './pages/ReviewsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -141,6 +144,30 @@ export const router = createBrowserRouter([
                 element: _jsx(ProtectedRoute, { children: _jsx(WatchedPage, {}) }),
             },
             {
+                path: 'watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
+                path: 'reviews',
+                element: _jsx(ProtectedRoute, { children: _jsx(ReviewsPage, {}) }),
+            },
+            {
+                path: 'user/:userId/reviews',
+                element: _jsx(ProtectedRoute, { children: _jsx(ReviewsPage, {}) }),
+            },
+            {
+                path: 'badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:id/badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:userId/watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
                 path: '500',
                 element: _jsx(ServerErrorPage, {}),
             },
@@ -151,7 +178,3 @@ export const router = createBrowserRouter([
         ],
     },
 ]);
-
-
-
-

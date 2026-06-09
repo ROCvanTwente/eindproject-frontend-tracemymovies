@@ -63,6 +63,10 @@ export function SignalRProvider({ children }) {
       window.dispatchEvent(new CustomEvent("signalr:notification", { detail: notification }));
     });
 
+    connection.on("TriggerBadgeCheck", () => {
+      window.dispatchEvent(new CustomEvent("signalr:badgecheck"));
+    });
+
     connection.onclose(() => setIsConnected(false));
     connection.onreconnected(() => setIsConnected(true));
 

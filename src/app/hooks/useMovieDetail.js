@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useRefresh } from "../context/RefreshContext";
 
 export function useMovieDetail(id, token) {
-    const { triggerRefresh } = useRefresh();
+    const { triggerRefresh, refreshKey } = useRefresh();
     const [movie, setMovie] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -15,6 +15,11 @@ export function useMovieDetail(id, token) {
     const [isInWatchlist, setIsInWatchlist] = useState(false);
     const [isWatched, setIsWatched] = useState(false);
     const [hasLogEntries, setHasLogEntries] = useState(false);
+    const [filmRating, setFilmRating] = useState(0);
+    const [watchCount, setWatchCount] = useState(0);
+    const [latestLogId, setLatestLogId] = useState(null);
+    const [latestReviewText, setLatestReviewText] = useState("");
+    const [latestWatchedDate, setLatestWatchedDate] = useState("");
 
     const [showWatchLogModal, setShowWatchLogModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -53,9 +58,14 @@ export function useMovieDetail(id, token) {
                 setIsFavorite(status.isFavorite || false);
                 setIsInWatchlist(status.isInWatchlist || false);
                 setHasLogEntries(status.hasLogEntries || false);
+                setFilmRating(status.filmRating || 0);
+                setWatchCount(status.logCount || 0);
+                setLatestLogId(status.latestLogId ?? null);
+                setLatestReviewText(status.latestReviewText || "");
+                setLatestWatchedDate(status.latestWatchedDate || "");
             }
         } catch (err) {
-            console.error("Kon status niet ophalen", err);
+            console.error("Could not fetch status", err);
         }
     }, [id, token]);
 
@@ -65,12 +75,12 @@ export function useMovieDetail(id, token) {
 
         try {
             const res = await fetch(`${API_URL}?id=${id}`);
-            if (!res.ok) throw new Error("Fout bij laden");
+            if (!res.ok) throw new Error("Error loading");
             const data = await res.json();
             setMovie(data);
         } catch (error) {
             setError(true);
-            toast.error("Fout bij het laden van de filmgegevens");
+            toast.error("Error loading movie details");
         } finally {
             setLoading(false);
         }
@@ -82,7 +92,7 @@ export function useMovieDetail(id, token) {
 
         try {
             const response = await fetch(RECOMMENDATIONS_URL);
-            if (!response.ok) throw new Error("Recommendations ophalen mislukt");
+            if (!response.ok) throw new Error("Fetching recommendations failed");
             const data = await response.json();
             setRecommendations(data || []);
         } catch (err) {
@@ -103,9 +113,10 @@ export function useMovieDetail(id, token) {
         if (token && id) {
             fetchUserStatus();
         }
-    }, [token, id, fetchUserStatus]);
+    }, [token, id, fetchUserStatus, refreshKey]);
 
     const trailerVideo = useMemo(() => {
+        console.log(movie)
         return (
             movie?.videos?.results?.find(
                 (v) => v.type === "Trailer" && v.site === "YouTube"
@@ -118,7 +129,7 @@ export function useMovieDetail(id, token) {
             setShowTrailerModal(true);
             setTimeout(() => setIsAnimateIn(true), 10);
         } else {
-            toast.info("Geen trailer beschikbaar");
+            toast.info("No trailer available");
         }
     };
 
@@ -129,13 +140,17 @@ export function useMovieDetail(id, token) {
 
     const handleToggleWatch = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn om films toe te voegen aan je lijst.");
+            toast.error("You must be logged in to add movies to your list.");
             return;
         }
 
-        // Can't unwatch via this button if diary log entries exist
-        if (isWatched && hasLogEntries) {
-            toast.error(`'${movie?.title}' kan niet verwijderd worden, er is activiteit op.`);
+        if (isWatched && filmRating > 0) {
+            toast.error("Remove your rating first before unwatching.");
+            return;
+        }
+
+        if (isWatched && (hasLogEntries || watchCount > 0)) {
+            toast.error(`Can't unwatch — you have activity on this film.`);
             return;
         }
 
@@ -151,7 +166,6 @@ export function useMovieDetail(id, token) {
                 if (response.ok) {
                     setIsWatched(false);
                     triggerRefresh();
-                    toast.success("Verwijderd van bekeken films");
                 }
             } else {
                 const response = await fetch(SAVE_WATCH_URL, {
@@ -166,11 +180,10 @@ export function useMovieDetail(id, token) {
                 if (response.ok) {
                     setIsWatched(true);
                     triggerRefresh();
-                    toast.success("Gemarkeerd als bekeken");
                 }
             }
         } catch (err) {
-            toast.error("Er is iets misgegaan.");
+            // silently fail
         } finally {
             setIsSavingWatch(false);
         }
@@ -178,7 +191,7 @@ export function useMovieDetail(id, token) {
 
     const handleToggleLike = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn.");
+            toast.error("You must be logged in.");
             return;
         }
 
@@ -201,14 +214,9 @@ export function useMovieDetail(id, token) {
             if (response.ok) {
                 setIsFavorite(nextLikeState);
                 triggerRefresh();
-                toast.success(
-                    nextLikeState ? "Toegevoegd aan favorieten" : "Verwijderd uit favorieten"
-                );
-            } else {
-                toast.error("Er is iets misgegaan.");
             }
         } catch (err) {
-            toast.error("Er is een netwerkfout opgetreden.");
+            // silently fail
         } finally {
             setIsSavingLike(false);
         }
@@ -216,7 +224,7 @@ export function useMovieDetail(id, token) {
 
     const handleToggleWatchlist = async () => {
         if (!token) {
-            toast.error("Je moet ingelogd zijn.");
+            toast.error("You must be logged in.");
             return;
         }
 
@@ -238,17 +246,30 @@ export function useMovieDetail(id, token) {
 
             if (response.ok) {
                 setIsInWatchlist(nextWatchlistState);
-                toast.success(
-                    nextWatchlistState ? "Toegevoegd aan watchlist" : "Verwijderd uit watchlist"
-                );
-            } else {
-                toast.error("Er is iets misgegaan.");
             }
         } catch (err) {
-            toast.error("Er is een netwerkfout opgetreden.");
+            // silently fail
         } finally {
             setIsSavingWatchlist(false);
         }
+    };
+
+    const handleSetRating = async (newRating) => {
+        setFilmRating(newRating);
+        await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ MovieId: parseInt(id), Rating: newRating }),
+        });
+        if (newRating > 0 && !isWatched) {
+            const r = await fetch(SAVE_WATCH_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ MovieId: parseInt(id) }),
+            });
+            if (r.ok) { setIsWatched(true); setWatchCount(1); }
+        }
+        triggerRefresh();
     };
 
     return {
@@ -270,12 +291,18 @@ export function useMovieDetail(id, token) {
         isSavingWatch,
         isSavingLike,
         isSavingWatchlist,
+        filmRating,
+        watchCount,
+        latestLogId,
+        latestReviewText,
+        latestWatchedDate,
         trailerVideo,
         openTrailer,
         closeTrailer,
         handleToggleWatch,
         handleToggleLike,
         handleToggleWatchlist,
+        handleSetRating,
         retryFetch: fetchMovieData
     };
 }
