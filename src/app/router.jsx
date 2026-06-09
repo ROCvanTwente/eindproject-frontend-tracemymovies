@@ -20,8 +20,8 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
-import  FriendPage from './pages/FriendPage';  
-import  LikedMoviesPage  from './pages/LikedMoviesPage';
+import FriendPage from './pages/FriendPage';
+import LikedMoviesPage from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
@@ -178,7 +178,3 @@ export const router = createBrowserRouter([
         ],
     },
 ]);
-
-
-
-
