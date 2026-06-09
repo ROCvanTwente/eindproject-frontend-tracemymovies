@@ -277,25 +277,29 @@ function YearRow({ decade, year, setYear, setDecade }) {
   );
 }
 
-export function MovieFilters({ genre, setGenre, decade, setDecade, year, setYear, rating, setRating, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset, hideYearRow, yearRowOnly, hideRating }) {
+export function MovieFilters({ genre, setGenre, decade, setDecade, year, setYear, rating, setRating, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset, hideYearRow, yearRowOnly, hideRating, hideGenre, hideDecade }) {
   if (yearRowOnly) {
     return decade ? <YearRow decade={decade} year={year} setYear={setYear} setDecade={setDecade} /> : null;
   }
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <FilterDropdown
-        label="Genre"
-        value={genre}
-        options={availableGenres}
-        onChange={setGenre}
-      />
-      <FilterDropdown
-        label="Decade"
-        value={decade}
-        options={availableDecades}
-        onChange={setDecade}
-      />
+      {!hideGenre && (
+        <FilterDropdown
+          label="Genre"
+          value={genre}
+          options={availableGenres}
+          onChange={setGenre}
+        />
+      )}
+      {!hideDecade && (
+        <FilterDropdown
+          label="Decade"
+          value={decade}
+          options={availableDecades}
+          onChange={setDecade}
+        />
+      )}
       {!hideRating && (
         <FilterDropdown
           label="Rating"

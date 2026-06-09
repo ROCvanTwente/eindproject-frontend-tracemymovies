@@ -182,8 +182,9 @@ export function useOwnProfileData() {
   const removeFavorite = async (slotIndex) => {
     const newSlots = [...favoriteMovies];
     newSlots[slotIndex] = null;
-    setFavoriteMovies(newSlots);
-    await saveFavoriteSlots(newSlots);
+    const compacted = [...newSlots.filter(Boolean), null, null, null, null].slice(0, 4);
+    setFavoriteMovies(compacted);
+    await saveFavoriteSlots(compacted);
   };
 
   const swapFavorites = async (fromSlot, toSlot) => {
