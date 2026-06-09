@@ -297,11 +297,11 @@ export function DiaryPage() {
 
         <div className="relative container mx-auto px-4 max-w-7xl py-6">
           <Link
-            to={isPublic ? `/user/${userId}` : "/analytics"}
+            to={isPublic ? `/user/${userId}` : "/my-profile"}
             className="inline-flex items-center gap-1.5 text-[#94A3B8] hover:text-[#F8FAFC] text-sm mb-5 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            {isPublic ? "Back to profile" : "Back to analytics"}
+            {isPublic ? "Back to profile" : "Back to profile"}
           </Link>
 
           <div className="flex items-center gap-4 flex-wrap">
