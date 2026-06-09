@@ -42,6 +42,13 @@ export const TIER = {
     cardGlow: 'rgba(255,97,210,0.16)', cardBorder: 'rgba(255,97,210,0.5)',
     iconColor: '#0B0E14', labelColor: '#FF61D2', special: true, legendary: true,
   },
+  galaxy: {
+    label: 'Galaxy',
+    gradient: 'linear-gradient(145deg, #0d0221 0%, #1a0533 15%, #3b0764 30%, #7c3aed 45%, #c084fc 55%, #44FFFF 70%, #FF61D2 85%, #fbbf24 100%)',
+    ring: '#c084fc', glow: 'rgba(192,132,252,0.90)',
+    cardGlow: 'rgba(192,132,252,0.22)', cardBorder: 'rgba(192,132,252,0.65)',
+    iconColor: '#fff', labelColor: '#e9d5ff', special: true, legendary: true, galaxy: true,
+  },
 };
 
 // Per-category tier themes — category color dominates, tier sets intensity
