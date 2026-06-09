@@ -6,7 +6,8 @@ import {
     Lock,
     User,
     Shield,
-    AlertCircle
+    AlertCircle,
+    CheckCircle
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +25,7 @@ export function RegisterPage() {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [emailSent, setEmailSent] = useState(false);
 
     const { register } = useAuth();
     const navigate = useNavigate();
@@ -69,11 +71,14 @@ export function RegisterPage() {
         setLoading(true);
 
         try {
-            await register(formData);
+            const res = await register(formData);
 
-            toast.success('Account created successfully!');
-
-            navigate('/');
+            if (res.requiresVerification) {
+                setEmailSent(true);
+            } else {
+                toast.success('Account created successfully!');
+                navigate('/');
+            }
 
         } catch (err) {
             const msg = err.message || 'Registration failed';
@@ -83,6 +88,32 @@ export function RegisterPage() {
             setLoading(false);
         }
     };
+
+    if (emailSent) {
+        return (
+            <div className="min-h-[90vh] flex items-center justify-center px-4 py-8">
+                <div className="w-full max-w-md">
+                    <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-8 shadow-2xl text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-[#44FFFF]/10 rounded-full mb-4">
+                            <Mail className="w-8 h-8 text-[#44FFFF]" />
+                        </div>
+                        <h1 className="text-2xl font-bold font-heading text-[#F8FAFC] mb-2">Check your email</h1>
+                        <p className="text-[#94A3B8] mb-6 leading-relaxed">
+                            We sent a verification link to <strong className="text-[#44FFFF]">{formData.email}</strong>.<br />
+                            Click the button in the email to activate your account.
+                        </p>
+                        <div className="bg-[#44FFFF]/5 border border-[#44FFFF]/20 rounded-xl p-4 mb-6">
+                            <CheckCircle className="w-5 h-5 text-[#44FFFF] inline mr-2" />
+                            <span className="text-[#94A3B8] text-sm">The link expires in 24 hours</span>
+                        </div>
+                        <Link to="/login" className="text-[#BFBCFC] hover:text-[#AFA9FF] font-medium transition-colors text-sm">
+                            Already verified? Log in →
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-[90vh] flex items-center justify-center px-4 py-8 md:py-12">

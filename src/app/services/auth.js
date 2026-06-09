@@ -133,15 +133,17 @@ export async function register({
     }
  
     const data = await res.json();
- 
-    setToken(data.token, remember);
-    setStoredUser({
-        email,
-        username: data.username || username,
-        id: data.id,
-        isAdmin: data.isAdmin || false
-    }, remember);
- 
+
+    if (!data.requiresVerification) {
+        setToken(data.token, remember);
+        setStoredUser({
+            email,
+            username: data.username || username,
+            id: data.id,
+            isAdmin: data.isAdmin || false
+        }, remember);
+    }
+
     return data;
 }
  

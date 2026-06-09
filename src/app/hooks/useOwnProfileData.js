@@ -21,6 +21,7 @@ export function useOwnProfileData() {
   const [watchlistLoading, setWatchlistLoading] = useState(true);
   const [badges, setBadges] = useState([]);
   const [selectedBadges, setSelectedBadges] = useState([]);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
 
   useEffect(() => {
     const fetch_ = async () => {
@@ -140,6 +141,7 @@ export function useOwnProfileData() {
         setBadges(d.badges || []);
         const ids = d.selectedBadgeIds || [];
         setSelectedBadges((d.badges || []).filter(b => ids.includes(b.id)));
+        setEmailConfirmed(d.emailConfirmed ?? false);
       } catch {}
     };
     fetch_();
@@ -200,7 +202,7 @@ export function useOwnProfileData() {
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, watchlistPreview, watchlistLoading,
-    badges, selectedBadges,
+    badges, selectedBadges, emailConfirmed,
     addFavorite, removeFavorite, swapFavorites,
   };
 }
