@@ -402,7 +402,7 @@ function PublicProfileView({ id }) {
             <div className="flex items-center">
               {[
                 { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
-                { label: "THIS YEAR", value: pub.watchedThisYear ?? 0 },
+                { label: "THIS YEAR", value: pub.watchedThisYear ?? 0, to: `/user/${id}/diary` },
                 { label: "LISTS", value: "—" },
                 { label: "FRIENDS", value: pub.friendCount ?? 0 },
               ].map(({ label, value, to }, i, arr) => (

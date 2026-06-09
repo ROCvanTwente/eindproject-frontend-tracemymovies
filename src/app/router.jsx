@@ -193,6 +193,10 @@ export const router = createBrowserRouter([
                 element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
             },
             {
+                path: 'user/:userId/diary',
+                element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
+            },
+            {
                 path: '500',
                 element: _jsx(ServerErrorPage, {}),
             },

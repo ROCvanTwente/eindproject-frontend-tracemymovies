@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router";
-import { BookOpen, ArrowLeft, Star, Heart, RotateCw, AlignLeft, ChevronLeft, ChevronRight, Film, Pencil, MoreHorizontal } from "lucide-react";
+import { Link, useParams } from "react-router";
+import { BookOpen, ArrowLeft, Star, Heart, RotateCw, AlignLeft, ChevronLeft, ChevronRight, Film, Pencil, MoreHorizontal, Eye } from "lucide-react";
 import { EditLogModal } from "../components/EditLogModal";
 import { WatchLogModal } from "../components/WatchLogModal";
+import { toast } from "sonner";
 
 const getToken = () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -36,6 +37,8 @@ function StarRating({ rating }) {
 }
 
 export function DiaryPage() {
+  const { userId } = useParams();
+  const isPublic = !!userId;
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [data, setData] = useState(null);
@@ -43,9 +46,12 @@ export function DiaryPage() {
   const [selected, setSelected] = useState(null);
   const [editEntry, setEditEntry] = useState(null);
   const [hoverMap, setHoverMap] = useState({});
+  const [myStatus, setMyStatus] = useState(null);
   const [dotsMenuOpen, setDotsMenuOpen] = useState(false);
   const [dotsMenuPos, setDotsMenuPos] = useState({ top: 0, left: 0 });
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [logModalConfig, setLogModalConfig] = useState({});
+  const [menuHoverRating, setMenuHoverRating] = useState(0);
   const rightPanelRef = useRef(null);
   const dotsButtonRef = useRef(null);
 
@@ -84,12 +90,28 @@ export function DiaryPage() {
     }
   };
 
+  // Fetch current user's status for the selected film (public view only)
+  useEffect(() => {
+    if (!isPublic || !selected) { setMyStatus(null); return; }
+    const token = getToken();
+    if (!token) return;
+    fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setMyStatus)
+      .catch(console.error);
+  }, [selected?.movieId, isPublic]);
+
   useEffect(() => {
     setLoading(true);
     setSelected(null);
     const token = getToken();
     if (!token) { setLoading(false); return; }
-    fetch(`${API}/UserActivity/YearLog?year=${year}`, {
+    const url = isPublic
+      ? `${API}/PublicProfile/${userId}/YearLog?year=${year}`
+      : `${API}/UserActivity/YearLog?year=${year}`;
+    fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -99,7 +121,7 @@ export function DiaryPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [year]);
+  }, [year, userId, isPublic]);
 
   const grouped = data?.entries
     ? (() => {
@@ -123,8 +145,11 @@ export function DiaryPage() {
     if (!token) return;
     const prevData = data;
     const prevSelected = selected;
+    const entries = data?.entries ?? [];
+    const idx = entries.findIndex((e) => e.logId === logId);
+    const next = entries[idx + 1] ?? entries[idx - 1] ?? null;
     setData((prev) => ({ ...prev, entries: prev.entries.filter((e) => e.logId !== logId), totalCount: prev.totalCount - 1 }));
-    setSelected((prev) => prev?.logId === logId ? null : prev);
+    setSelected((prev) => prev?.logId === logId ? next : prev);
     try {
       const res = await fetch(`${API}/Log/Delete/${logId}`, {
         method: "DELETE",
@@ -137,6 +162,66 @@ export function DiaryPage() {
     }
   };
 
+  const handleToggleWatched = async () => {
+    const token = getToken();
+    if (!token || !selected) return;
+    if (myStatus?.isWatched && myStatus?.hasLogEntries) {
+      toast.error("Can't unwatch — you have activity on this film.");
+      return;
+    }
+    const next = !myStatus?.isWatched;
+    setMyStatus((prev) => ({ ...prev, isWatched: next }));
+    try {
+      if (next) {
+        await fetch(`${API}/database/LogWatchActivity`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ MovieId: selected.movieId }),
+        });
+      } else {
+        await fetch(`${API}/database/RemoveWatchActivity/${selected.movieId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    } catch {
+      setMyStatus((prev) => ({ ...prev, isWatched: !next }));
+    }
+  };
+
+  const handleToggleLiked = async () => {
+    const token = getToken();
+    if (!token || !selected) return;
+    const next = !myStatus?.isFavorite;
+    setMyStatus((prev) => ({ ...prev, isFavorite: next }));
+    try {
+      const res = await fetch(`${API}/database/ToggleLikeStatus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ MovieId: selected.movieId, IsLiked: next }),
+      });
+      if (!res.ok) setMyStatus((prev) => ({ ...prev, isFavorite: !next }));
+    } catch {
+      setMyStatus((prev) => ({ ...prev, isFavorite: !next }));
+    }
+  };
+
+  const handleSetMenuRating = async (n) => {
+    const token = getToken();
+    if (!token || !selected) return;
+    const newRating = n === myStatus?.filmRating ? 0 : n;
+    setMyStatus((prev) => ({ ...prev, filmRating: newRating }));
+    try {
+      await fetch(`${API}/database/SetFilmRating`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ MovieId: selected.movieId, Rating: newRating }),
+      });
+    } catch {
+      setMyStatus((prev) => ({ ...prev, filmRating: myStatus?.filmRating ?? 0 }));
+    }
+  };
+
   const openDotsMenu = (e) => {
     e.stopPropagation();
     const rect = dotsButtonRef.current?.getBoundingClientRect();
@@ -146,6 +231,7 @@ export function DiaryPage() {
       const left = Math.max(8, rect.right - menuWidth);
       setDotsMenuPos({ top, left });
     }
+    setMenuHoverRating(0);
     setDotsMenuOpen(true);
   };
 
@@ -153,6 +239,18 @@ export function DiaryPage() {
     setLogModalOpen(false);
     const token = getToken();
     if (!token) return;
+    if (isPublic) {
+      // Only refresh myStatus so the dots menu updates — don't touch the public diary
+      if (selected) {
+        fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => r.ok ? r.json() : null)
+          .then(setMyStatus)
+          .catch(console.error);
+      }
+      return;
+    }
     fetch(`${API}/UserActivity/YearLog?year=${year}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -199,11 +297,11 @@ export function DiaryPage() {
 
         <div className="relative container mx-auto px-4 max-w-7xl py-6">
           <Link
-            to="/analytics"
+            to={isPublic ? `/user/${userId}` : "/analytics"}
             className="inline-flex items-center gap-1.5 text-[#94A3B8] hover:text-[#F8FAFC] text-sm mb-5 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            Back to analytics
+            {isPublic ? "Back to profile" : "Back to analytics"}
           </Link>
 
           <div className="flex items-center gap-4 flex-wrap">
@@ -215,7 +313,7 @@ export function DiaryPage() {
                 Film Diary
               </p>
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
-                Your Logs
+                {isPublic ? `${data?.username ?? "…"}'s Logs` : "Your Logs"}
               </h1>
             </div>
 
@@ -270,7 +368,7 @@ export function DiaryPage() {
             </div>
             <p className="text-[#F8FAFC] font-semibold text-lg mb-1">No logs in {year}</p>
             <p className="text-[#94A3B8] text-sm">
-              {year === currentYear
+              {!isPublic && year === currentYear
                 ? "Start logging films to see your diary here."
                 : "Nothing was logged this year."}
             </p>
@@ -326,7 +424,7 @@ export function DiaryPage() {
                             onClick={(e) => e.stopPropagation()}
                             className="relative w-12 flex-shrink-0 aspect-[2/3]"
                           >
-                            <div className={`w-full h-full rounded-lg overflow-hidden bg-[#151921] border transition-all duration-200 ${isSelected ? "border-[#44FFFF]/50" : "border-transparent group-hover:border-[#44FFFF]/40"}`}>
+                            <div className={`w-full h-full rounded-md overflow-hidden bg-[#151921] border transition-all duration-200 ${isSelected ? "border-[#44FFFF]/50" : "border-transparent group-hover:border-[#44FFFF]/40"}`}>
                               {entry.poster ? (
                                 <img
                                   src={entry.poster}
@@ -340,7 +438,7 @@ export function DiaryPage() {
                                 </div>
                               )}
                             </div>
-                            <div className={`absolute inset-0 rounded-lg ring-2 ring-[#44FFFF]/40 pointer-events-none transition-opacity duration-200 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+                            <div className={`absolute inset-0 rounded-md ring-2 ring-[#44FFFF]/40 pointer-events-none transition-opacity duration-200 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
                           </Link>
 
                           {/* Title + year */}
@@ -363,12 +461,16 @@ export function DiaryPage() {
 
                           {/* Rating + status icons */}
                           <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                            {/* Stars — always shown, clickable */}
+                            {/* Stars */}
                             <span className="flex items-center gap-0.5">
                               {Array.from({ length: 10 }).map((_, i) => {
                                 const starNum = i + 1;
-                                const active = hoverMap[entry.logId] ?? entry.userRating ?? 0;
-                                return (
+                                const active = isPublic
+                                  ? (entry.userRating ?? 0)
+                                  : (hoverMap[entry.logId] ?? entry.userRating ?? 0);
+                                return isPublic ? (
+                                  <Star key={i} className={`w-6 h-6 flex-shrink-0 ${starNum <= active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#44FFFF]/12"}`} />
+                                ) : (
                                   <button
                                     key={i}
                                     type="button"
@@ -382,27 +484,33 @@ export function DiaryPage() {
                                 );
                               })}
                               <span className="text-xs text-[#44FFFF]/80 font-bold ml-1 tabular-nums w-4 text-left">
-                                {hoverMap[entry.logId] ?? (entry.userRating > 0 ? entry.userRating : "")}
+                                {isPublic
+                                  ? (entry.userRating > 0 ? entry.userRating : "")
+                                  : (hoverMap[entry.logId] ?? (entry.userRating > 0 ? entry.userRating : ""))}
                               </span>
                             </span>
 
-                            {/* Heart — always shown, clickable */}
-                            <button
-                              type="button"
-                              onClick={() => patchLog(entry, { isLiked: !entry.isLiked })}
-                              className="transition-transform hover:scale-110"
-                            >
-                              <Heart className={`w-6 h-6 transition-colors ${entry.isLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/20 hover:text-[#FF61D2]/60"}`} />
-                            </button>
+                            {/* Heart */}
+                            {isPublic ? (
+                              <Heart className={`w-6 h-6 ${entry.isLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/20"}`} />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => patchLog(entry, { isLiked: !entry.isLiked })}
+                                className="transition-transform hover:scale-110"
+                              >
+                                <Heart className={`w-6 h-6 transition-colors ${entry.isLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/20 hover:text-[#FF61D2]/60"}`} />
+                              </button>
+                            )}
 
                             {entry.isRewatch && <RotateCw className="w-6 h-6 text-[#44FFFF]" />}
                             {entry.hasReview && (
                               <Link
                                 to={`/log/${entry.logId}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="hover:text-[#BFBCFC] transition-colors"
+                                className="group/review relative flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[#BFBCFC]/10"
                               >
-                                <AlignLeft className="w-6 h-6 text-[#BFBCFC]/60" />
+                                <AlignLeft className="w-5 h-5 text-[#BFBCFC]/50 group-hover/review:text-[#BFBCFC] transition-colors" />
                               </Link>
                             )}
                           </div>
@@ -425,7 +533,7 @@ export function DiaryPage() {
                   <div className="flex gap-4 p-5 pb-4">
                     <Link
                       to={`/log/${selected.logId}`}
-                      className="w-32 flex-shrink-0 aspect-[2/3] rounded-xl overflow-hidden bg-[#0B0E14] border border-white/5 hover:border-[#44FFFF]/40 transition-colors block"
+                      className="w-32 flex-shrink-0 aspect-[2/3] rounded-lg overflow-hidden bg-[#0B0E14] border border-white/5 hover:border-[#44FFFF]/40 transition-colors block"
                     >
                       {selected.poster ? (
                         <img
@@ -465,9 +573,9 @@ export function DiaryPage() {
                       </div>
 
                       {/* Badges */}
-                      {(selected.isLiked || selected.filmIsLiked || selected.isRewatch) && (
+                      {(selected.isLiked || selected.isRewatch) && (
                         <div className="flex items-center gap-1.5 flex-wrap mt-2">
-                          {(selected.isLiked || selected.filmIsLiked) && (
+                          {selected.isLiked && (
                             <span className="flex items-center gap-1 bg-[#FF61D2]/10 border border-[#FF61D2]/20 rounded-md px-2 py-0.5 text-[#FF61D2] text-[11px] font-medium">
                               <Heart className="w-2.5 h-2.5 fill-[#FF61D2]" />
                               Liked
@@ -492,7 +600,7 @@ export function DiaryPage() {
                         <div className="flex items-center gap-1.5 mb-2">
                           <AlignLeft className="w-3.5 h-3.5 text-[#BFBCFC]/40" />
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#BFBCFC]/40">
-                            Your review
+                            {isPublic ? "Their review" : "Your review"}
                           </span>
                         </div>
                         <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-4">
@@ -512,13 +620,31 @@ export function DiaryPage() {
                     >
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => setEditEntry(selected)}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-[#151921] hover:bg-[#1A2030] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/22 rounded-xl px-4 py-2.5 text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-semibold transition-all"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
-                    </button>
+                    {isPublic ? (
+                      <>
+                        <button
+                          onClick={handleToggleWatched}
+                          className={`flex-1 flex items-center justify-center gap-1.5 border rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${myStatus?.isWatched ? "bg-[#44FFFF]/10 border-[#44FFFF]/25 text-[#44FFFF] hover:bg-[#44FFFF]/15" : "bg-[#151921] hover:bg-[#1A2030] border-[#BFBCFC]/10 hover:border-[#BFBCFC]/22 text-[#94A3B8] hover:text-[#F8FAFC]"}`}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          {myStatus?.isWatched ? "Watched" : "Watch"}
+                        </button>
+                        <button
+                          onClick={handleToggleLiked}
+                          className={`flex items-center justify-center border rounded-xl px-3 py-2.5 transition-all ${myStatus?.isFavorite ? "bg-[#FF61D2]/10 border-[#FF61D2]/25 text-[#FF61D2] hover:bg-[#FF61D2]/15" : "bg-[#151921] hover:bg-[#1A2030] border-[#BFBCFC]/10 hover:border-[#BFBCFC]/22 text-[#94A3B8] hover:text-[#FF61D2]"}`}
+                        >
+                          <Heart className={`w-4 h-4 ${myStatus?.isFavorite ? "fill-[#FF61D2]" : ""}`} />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setEditEntry(selected)}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#151921] hover:bg-[#1A2030] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/22 rounded-xl px-4 py-2.5 text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-semibold transition-all"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -537,44 +663,116 @@ export function DiaryPage() {
       {/* Dots menu */}
       {dotsMenuOpen && selected && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setDotsMenuOpen(false)} />
+          <div className="fixed inset-0 z-40" onClick={() => { setDotsMenuOpen(false); setMenuHoverRating(0); }} />
           <div
             className="fixed z-50 w-48 bg-[#0F1318] border border-[#BFBCFC]/25 rounded-lg shadow-2xl overflow-hidden"
             style={{ top: dotsMenuPos.top, left: dotsMenuPos.left, transform: "translateY(-100%)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="py-0.5">
-              <button
-                onClick={() => { setDotsMenuOpen(false); setLogModalOpen(true); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
-              >
-                Log again...
-              </button>
-              {!selected.hasReview && (
-                <button
-                  onClick={() => { setDotsMenuOpen(false); setEditEntry(selected); }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
-                >
-                  Add review...
-                </button>
+              {isPublic ? (
+                // Public: options for current user's relationship with this film
+                <>
+                  {/* Star rating — 5 boven 5 */}
+                  <div className="px-3 py-3 border-b border-[#BFBCFC]/15">
+                    <div className="flex flex-col items-center gap-1">
+                      {[[1,2,3,4,5],[6,7,8,9,10]].map((row, ri) => (
+                        <div key={ri} className="flex items-center gap-0.5">
+                          {row.map((n) => (
+                            <button
+                              key={n}
+                              onClick={() => handleSetMenuRating(n)}
+                              onMouseEnter={() => setMenuHoverRating(n)}
+                              onMouseLeave={() => setMenuHoverRating(0)}
+                              className="p-0.5 transition-transform hover:scale-110"
+                            >
+                              <Star className={`w-5 h-5 transition-colors ${n <= (menuHoverRating || myStatus?.filmRating || 0) ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                    {(menuHoverRating || myStatus?.filmRating) > 0 && (
+                      <p className="text-center text-[#94A3B8] text-[10px] mt-2">
+                        {menuHoverRating || myStatus?.filmRating}/10
+                      </p>
+                    )}
+                  </div>
+
+                  {!myStatus?.hasLogEntries ? (
+                    <button
+                      onClick={() => {
+                        setLogModalConfig({ isRewatch: false, hasLogged: false, logId: null, reviewText: "", date: "" });
+                        setDotsMenuOpen(false); setLogModalOpen(true);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                    >
+                      Review or log film...
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setLogModalConfig({ isRewatch: true, hasLogged: true, logId: null, reviewText: "", date: "" });
+                          setDotsMenuOpen(false); setLogModalOpen(true);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                      >
+                        Log again...
+                      </button>
+                      {!myStatus?.latestReviewText && (
+                        <button
+                          onClick={() => {
+                            setLogModalConfig({ isRewatch: false, hasLogged: true, logId: myStatus?.latestLogId ?? null, reviewText: "", date: myStatus?.latestWatchedDate ?? "" });
+                            setDotsMenuOpen(false); setLogModalOpen(true);
+                          }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                        >
+                          Add review...
+                        </button>
+                      )}
+                    </>
+                  )}
+                  <button className="w-full text-left px-4 py-2.5 text-sm text-[#94A3B8]/35 cursor-default">
+                    Add to lists...
+                  </button>
+                </>
+              ) : (
+                // Own diary: log again, add review, delete
+                <>
+                  <button
+                    onClick={() => { setDotsMenuOpen(false); setLogModalOpen(true); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                  >
+                    Log again...
+                  </button>
+                  {!selected.hasReview && (
+                    <button
+                      onClick={() => { setDotsMenuOpen(false); setEditEntry(selected); }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                    >
+                      Add review...
+                    </button>
+                  )}
+                  <button className="w-full text-left px-4 py-2.5 text-sm text-[#94A3B8]/35 cursor-default">
+                    Add to lists...
+                  </button>
+                  <div className="border-t border-[#BFBCFC]/10 my-0.5" />
+                  <button
+                    onClick={() => { setDotsMenuOpen(false); handleDeleteLog(selected.logId); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-[#FF6B6B] hover:bg-[#FF6B6B]/10 transition-colors cursor-pointer"
+                  >
+                    Delete log
+                  </button>
+                </>
               )}
-              <button className="w-full text-left px-4 py-2.5 text-sm text-[#94A3B8]/35 cursor-default">
-                Add to lists...
-              </button>
-              <div className="border-t border-[#BFBCFC]/10 my-0.5" />
-              <button
-                onClick={() => { setDotsMenuOpen(false); handleDeleteLog(selected.logId); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-[#FF6B6B] hover:bg-[#FF6B6B]/10 transition-colors cursor-pointer"
-              >
-                Delete log
-              </button>
             </div>
           </div>
         </>,
         document.body
       )}
 
-      {/* Log again modal */}
+      {/* Log modal */}
       {logModalOpen && selected && (
         <WatchLogModal
           isOpen={logModalOpen}
@@ -584,13 +782,13 @@ export function DiaryPage() {
             title: selected.title ?? "",
             poster_path: selected.poster?.replace(/^https:\/\/image\.tmdb\.org\/t\/p\/w\d+/, "") ?? null,
           }}
-          preIsRewatch={true}
-          preHasWatchedBefore={true}
-          preIsLiked={selected.isLiked ?? false}
-          preRating={0}
-          preReviewText=""
-          preDate=""
-          preLogId={null}
+          preIsRewatch={isPublic ? (logModalConfig.isRewatch ?? false) : true}
+          preHasWatchedBefore={isPublic ? (logModalConfig.hasLogged ?? false) : true}
+          preIsLiked={isPublic ? (myStatus?.isFavorite ?? false) : (selected.isLiked ?? false)}
+          preRating={isPublic ? (myStatus?.filmRating ?? 0) : 0}
+          preReviewText={isPublic ? (logModalConfig.reviewText ?? "") : ""}
+          preDate={isPublic ? (logModalConfig.date ?? "") : ""}
+          preLogId={isPublic ? (logModalConfig.logId ?? null) : null}
           onSuccess={handleLogSuccess}
         />
       )}
