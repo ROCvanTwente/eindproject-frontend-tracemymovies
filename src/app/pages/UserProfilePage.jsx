@@ -71,7 +71,9 @@ function OwnProfileView() {
   };
 
   const handleAddFavourite = async (movie) => {
-    const result = await addFavorite(movie, targetSlot);
+    const firstEmpty = favoriteMovies.findIndex((m) => m === null);
+    const slot = firstEmpty !== -1 ? firstEmpty : targetSlot;
+    const result = await addFavorite(movie, slot);
     if (result.error) { setDuplicateError(result.error); return; }
     setSearchModalOpen(false);
     setDuplicateError("");
@@ -425,10 +427,11 @@ function PublicProfileView({ id }) {
                 <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                {Array.from({ length: 4 }).map((_, i) => {
-                  const movie = pub.favorites[i];
-                  return movie ? (
+              {(pub.favorites ?? []).filter(Boolean).length === 0 ? (
+                <p className="text-[#94A3B8] text-sm">This user hasn't added any favourite films yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  {(pub.favorites ?? []).filter(Boolean).map((movie) => (
                     <ProfilePosterCard
                       key={movie.id}
                       movieId={movie.id}
@@ -436,11 +439,9 @@ function PublicProfileView({ id }) {
                       title={movie.title}
                       to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.id}`}
                     />
-                  ) : (
-                    <div key={`empty-${i}`} className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]" />
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Recent Activity */}
