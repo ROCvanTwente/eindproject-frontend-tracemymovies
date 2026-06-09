@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Film, AlignLeft, Lock, Heart, RotateCcw, Star, User, Users, Bookmark } from 'lucide-react';
+import { Pin } from 'lucide-react';
 import { TIER, CATEGORY_TIERS } from '../utils/badgeTiers';
 
 const CATEGORY_META = {
@@ -195,34 +196,40 @@ function BadgeTooltip({ badge, t }) {
   );
 }
 
-function BadgeCard({ badge }) {
+function BadgeCard({ badge, isSelected, onToggleSelect }) {
   const t = getTier(badge);
   const pct = Math.min(100, Math.round((badge.progress / badge.threshold) * 100));
   const [hovered, setHovered] = useState(false);
+  const canSelect = badge.earned && onToggleSelect;
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => canSelect && onToggleSelect(badge.id)}
       style={{
         position: 'relative',
         background: badge.earned
           ? `radial-gradient(ellipse at 50% -10%, ${t.cardGlow} 0%, #0c1018 55%)`
           : '#0a0c13',
-        border: `1px solid ${badge.earned ? t.cardBorder : 'rgba(255,255,255,0.12)'}`,
+        border: isSelected
+          ? `2px solid #BFBCFC`
+          : `1px solid ${badge.earned ? t.cardBorder : 'rgba(255,255,255,0.12)'}`,
         borderRadius: 14,
         padding: '14px 8px 10px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
         opacity: badge.earned ? 1 : 0.92,
-        boxShadow: badge.earned
-          ? t.legendary
-            ? `0 0 28px ${t.cardGlow}, 0 0 50px rgba(191,188,252,0.08), 0 0 70px rgba(68,255,255,0.05)`
-            : t.special
-              ? `0 0 24px ${t.cardGlow}, 0 0 40px ${t.cardGlow}`
-              : `0 0 20px ${t.cardGlow}`
-          : 'none',
+        boxShadow: isSelected
+          ? `0 0 0 3px rgba(191,188,252,0.25), 0 0 20px ${t.cardGlow}`
+          : badge.earned
+            ? t.legendary
+              ? `0 0 28px ${t.cardGlow}, 0 0 50px rgba(191,188,252,0.08), 0 0 70px rgba(68,255,255,0.05)`
+              : t.special
+                ? `0 0 24px ${t.cardGlow}, 0 0 40px ${t.cardGlow}`
+                : `0 0 20px ${t.cardGlow}`
+            : 'none',
         transition: 'all 0.2s ease',
-        cursor: 'default',
+        cursor: canSelect ? 'pointer' : 'default',
       }}
     >
       {hovered && <BadgeTooltip badge={badge} t={t} />}
@@ -259,7 +266,7 @@ function BadgeCard({ badge }) {
         </div>
       )}
 
-      {badge.earned && (
+      {badge.earned && !isSelected && (
         <div style={{
           position: 'absolute', top: 7, right: 7,
           width: 15, height: 15, borderRadius: '50%',
@@ -270,6 +277,17 @@ function BadgeCard({ badge }) {
           <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
             <path d="M1.5 4L3.2 5.8L6.5 2.2" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
+        </div>
+      )}
+      {isSelected && (
+        <div style={{
+          position: 'absolute', top: 6, right: 6,
+          width: 17, height: 17, borderRadius: '50%',
+          background: '#BFBCFC', border: '1.5px solid #0a0c13',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1,
+        }}>
+          <Pin size={9} color="#0B0E14" strokeWidth={2.5} />
         </div>
       )}
     </div>
@@ -311,7 +329,7 @@ export function BadgeChip({ badge, size = 30 }) {
   );
 }
 
-function CategoryRow({ category, badges }) {
+function CategoryRow({ category, badges, selectedIds, onToggleSelect }) {
   const meta = CATEGORY_META[category] || CATEGORY_META.watched;
   const { Icon, label, color } = meta;
 
@@ -347,13 +365,20 @@ function CategoryRow({ category, badges }) {
 
       {/* Cards */}
       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2" style={{ overflow: 'visible' }}>
-        {sorted.map(b => <BadgeCard key={b.id} badge={b} />)}
+        {sorted.map(b => (
+          <BadgeCard
+            key={b.id}
+            badge={b}
+            isSelected={selectedIds?.includes(b.id)}
+            onToggleSelect={onToggleSelect}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-export function BadgesSection({ badges }) {
+export function BadgesSection({ badges, selectedIds = [], onToggleSelect = null }) {
   const byCategory = {};
   for (const b of badges) {
     if (!byCategory[b.category]) byCategory[b.category] = [];
@@ -365,7 +390,13 @@ export function BadgesSection({ badges }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32, overflow: 'visible' }}>
       {categories.map(cat => (
-        <CategoryRow key={cat} category={cat} badges={byCategory[cat]} />
+        <CategoryRow
+          key={cat}
+          category={cat}
+          badges={byCategory[cat]}
+          selectedIds={selectedIds}
+          onToggleSelect={onToggleSelect}
+        />
       ))}
     </div>
   );
