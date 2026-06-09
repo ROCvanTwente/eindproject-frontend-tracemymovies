@@ -50,8 +50,8 @@ export function BiometricHud({ stats }) {
       {metrics.map((metric, index) => {
         const Icon = metric.icon;
         return (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`flex items-center gap-4 group justify-center sm:justify-start pt-4 lg:pt-0 first:pt-0 ${
               index === 1 ? "md:pt-0" : ""
             } lg:pl-6 first:pl-0 transition-all duration-300`}
@@ -60,7 +60,7 @@ export function BiometricHud({ stats }) {
               <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
               <Icon className={`w-5 h-5 ${metric.color} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`} />
             </div>
-            
+
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-widest text-[#94A3B8]/50 font-bold mb-1 transition-colors group-hover:text-[#94A3B8]/70">
                 {metric.label}

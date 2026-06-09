@@ -131,7 +131,7 @@ function OwnProfileView() {
             <div className="flex items-center">
               {[
                 { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate("/watched") },
-                { label: "THIS YEAR", value: watchedThisYear },
+                { label: "THIS YEAR", value: watchedThisYear, onClick: () => navigate("/diary") },
                 { label: "LISTS", value: "—" },
                 { label: "FRIENDS", value: friends.length },
               ].map(({ label, value, onClick }, i, arr) => (
