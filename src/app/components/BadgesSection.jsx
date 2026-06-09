@@ -1,20 +1,20 @@
 import { useState } from 'react';
-import { Film, AlignLeft, Lock, Heart, RotateCcw, Star, User, Users, Bookmark } from 'lucide-react';
-import { Pin } from 'lucide-react';
+import { Film, AlignLeft, Lock, Heart, RotateCcw, Star, User, Users, Bookmark, Sparkles, Pin } from 'lucide-react';
 import { TIER, CATEGORY_TIERS } from '../utils/badgeTiers';
 
 const CATEGORY_META = {
-  watched:   { Icon: Film,      label: 'Films Watched',   color: '#BFBCFC' },
-  reviews:   { Icon: AlignLeft, label: 'Reviews',         color: '#f472b6' },
-  liked:     { Icon: Heart,     label: 'Liked',           color: '#fb7185' },
-  rewatch:   { Icon: RotateCcw, label: 'Rewatches',       color: '#34d399' },
-  special:   { Icon: Star,      label: 'Special',         color: '#fbbf24' },
-  profile:   { Icon: User,      label: 'Profile',         color: '#60a5fa' },
-  social:    { Icon: Users,     label: 'Social',          color: '#a78bfa' },
-  collector: { Icon: Bookmark,  label: 'Collector',       color: '#f97316' },
+  watched:    { Icon: Film,      label: 'Films Watched',   color: '#BFBCFC' },
+  reviews:    { Icon: AlignLeft, label: 'Reviews',         color: '#f472b6' },
+  liked:      { Icon: Heart,     label: 'Liked',           color: '#fb7185' },
+  rewatch:    { Icon: RotateCcw, label: 'Rewatches',       color: '#34d399' },
+  special:    { Icon: Star,      label: 'Special',         color: '#fbbf24' },
+  profile:    { Icon: User,      label: 'Profile',         color: '#60a5fa' },
+  social:     { Icon: Users,     label: 'Social',          color: '#a78bfa' },
+  collector:  { Icon: Bookmark,  label: 'Collector',       color: '#f97316' },
+  ultra_rare: { Icon: Sparkles,  label: 'Ultra Rare',      color: '#c084fc' },
 };
 
-const CATEGORY_ORDER = ['watched', 'reviews', 'liked', 'rewatch', 'special', 'profile', 'social', 'collector'];
+const CATEGORY_ORDER = ['watched', 'reviews', 'liked', 'rewatch', 'special', 'profile', 'social', 'collector', 'ultra_rare'];
 
 // Per-badge color overrides — beat the tier defaults for thematic badges
 export const BADGE_OVERRIDES = {
@@ -264,6 +264,16 @@ function BadgeCard({ badge, isSelected, onToggleSelect }) {
             animation: 'shimmer 3s ease-in-out infinite',
           }} />
         </div>
+      )}
+      {/* Galaxy rotating hue animation */}
+      {badge.earned && t.galaxy && (
+        <div style={{
+          position: 'absolute', inset: -1, borderRadius: 14, pointerEvents: 'none', zIndex: 0,
+          background: 'linear-gradient(145deg, #7c3aed, #c084fc, #44FFFF, #FF61D2, #fbbf24, #7c3aed)',
+          backgroundSize: '300% 300%',
+          animation: 'galaxyRotate 4s linear infinite',
+          opacity: 0.5,
+        }} />
       )}
 
       {badge.earned && !isSelected && (
