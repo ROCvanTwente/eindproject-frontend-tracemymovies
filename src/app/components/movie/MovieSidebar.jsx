@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Eye, Heart, Bookmark, Star, RefreshCw, Pencil, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Eye, Heart, Bookmark, Star, RefreshCw, Pencil } from "lucide-react";
 
 export function MovieSidebar({
   movie,
@@ -9,9 +8,6 @@ export function MovieSidebar({
   isInWatchlist,
   filmRating,
   watchCount,
-  isSavingWatch,
-  isSavingLike,
-  isSavingWatchlist,
   onToggleWatch,
   onToggleLike,
   onToggleWatchlist,
@@ -36,50 +32,31 @@ export function MovieSidebar({
         <button
           className="relative transition-all hover:scale-110 active:scale-95"
           onClick={onToggleWatch}
-          disabled={isSavingWatch}
         >
-          {isSavingWatch ? (
-            <Loader2 className="w-10 h-10 text-[#44FFFF] animate-spin" />
-          ) : (
-            <>
-              <Eye className={`w-10 h-10 ${(isWatched || filmRating > 0) ? "text-[#44FFFF] fill-[#44FFFF]/15" : "text-white/40"}`} />
-              {watchCount > 1 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#44FFFF] text-[#0B0E14] text-[9px] font-black rounded-full flex items-center justify-center px-0.5 leading-none">
-                  {watchCount}
-                </span>
-              )}
-            </>
+          <Eye className={`w-10 h-10 transition-colors ${(isWatched || filmRating > 0) ? "text-[#44FFFF] fill-[#44FFFF]/15" : "text-white/40"}`} />
+          {watchCount > 1 && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#44FFFF] text-[#0B0E14] text-[9px] font-black rounded-full flex items-center justify-center px-0.5 leading-none">
+              {watchCount}
+            </span>
           )}
         </button>
 
         <button
           className="cursor-pointer transition-all hover:scale-110 active:scale-95"
           onClick={() => {
-            if (isWatched || filmRating > 0 || watchCount > 0) {
-              toast.error("Can't add to watchlist — you've already watched this film.");
-              return;
+            if (!(isWatched || filmRating > 0 || watchCount > 0)) {
+              onToggleWatchlist?.();
             }
-            onToggleWatchlist?.();
           }}
-          disabled={isSavingWatchlist}
         >
-          {isSavingWatchlist ? (
-            <Loader2 className="w-10 h-10 text-[#BFBCFC] animate-spin" />
-          ) : (
-            <Bookmark className={`w-10 h-10 transition-all ${isInWatchlist ? "text-[#BFBCFC] fill-[#BFBCFC]" : "text-white/40"}`} />
-          )}
+          <Bookmark className={`w-10 h-10 transition-colors ${isInWatchlist ? "text-[#BFBCFC] fill-[#BFBCFC]" : "text-white/40"}`} />
         </button>
 
         <button
           className="cursor-pointer transition-all hover:scale-110 active:scale-95"
           onClick={onToggleLike}
-          disabled={isSavingLike}
         >
-          {isSavingLike ? (
-            <Loader2 className="w-10 h-10 text-[#FF61D2] animate-spin" />
-          ) : (
-            <Heart className={`w-10 h-10 transition-all ${isFavorite ? "text-[#FF61D2] fill-[#FF61D2]" : "text-white/40"}`} />
-          )}
+          <Heart className={`w-10 h-10 transition-colors ${isFavorite ? "text-[#FF61D2] fill-[#FF61D2]" : "text-white/40"}`} />
         </button>
       </div>
 

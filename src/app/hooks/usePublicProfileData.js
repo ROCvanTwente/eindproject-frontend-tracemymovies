@@ -10,6 +10,7 @@ export function usePublicProfileData(userId) {
   const [publicRecentReviewsLoading, setPublicRecentReviewsLoading] = useState(true);
   const [publicFriends, setPublicFriends] = useState([]);
   const [badges, setBadges] = useState([]);
+  const [selectedBadges, setSelectedBadges] = useState([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -61,10 +62,12 @@ export function usePublicProfileData(userId) {
         if (!res.ok) return;
         const d = await res.json();
         setBadges(d.badges || []);
+        const ids = d.selectedBadgeIds || [];
+        setSelectedBadges((d.badges || []).filter(b => ids.includes(b.id)));
       } catch {}
     };
     fetch_();
   }, [userId]);
 
-  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges };
+  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges };
 }

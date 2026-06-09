@@ -55,6 +55,12 @@ function Rays({ color }) {
   );
 }
 
+const SHIELD_MASK = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .88-1L12 3l7 2.12A1 1 0 0 1 20 6Z' fill='white'/%3E%3C/svg%3E\")";
+const shieldMask = { WebkitMaskImage: SHIELD_MASK, maskImage: SHIELD_MASK, WebkitMaskSize: '100% 100%', maskSize: '100% 100%' };
+
+// Shield SVG path in 24×24 viewBox for stroke rings
+const SHIELD_SVG = "M12,22 C12,22 20,18 20,12 V5 L12,2 L4,5 V12 C4,18 12,22 12,22 Z";
+
 function BadgeEmblem({ badge, t }) {
   const Icon = CATEGORY_ICON[badge.category] || Film;
   return (
@@ -63,29 +69,42 @@ function BadgeEmblem({ badge, t }) {
         animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.15, 1] }}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         style={{
-          position: 'absolute', inset: -16, borderRadius: '50%',
+          position: 'absolute', inset: -16,
           background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)`,
           filter: 'blur(10px)',
         }}
       />
-      <motion.div
+      {/* Spinning dashed shield ring */}
+      <motion.svg
+        width={108} height={108}
+        viewBox="0 0 24 24"
+        style={{ position: 'absolute', inset: -4 }}
         animate={{ rotate: 360 }}
         transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-        style={{
-          position: 'absolute', inset: -4, borderRadius: '50%',
-          border: `2px dashed ${t.ring}`,
-          opacity: 0.4,
-        }}
-      />
-      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `2px solid ${t.ring}`, opacity: 0.6 }} />
+      >
+        <path d={SHIELD_SVG} fill="none" stroke={t.ring} strokeWidth="0.6" strokeDasharray="2 0.8" opacity={0.4} />
+      </motion.svg>
+      {/* Static solid shield ring */}
+      <svg width={100} height={100} viewBox="0 0 24 24" style={{ position: 'absolute', inset: 0 }}>
+        <path d={SHIELD_SVG} fill="none" stroke={t.ring} strokeWidth="0.55" opacity={0.6} />
+      </svg>
+      {/* Inner shield gradient fill */}
       <div style={{
-        position: 'absolute', inset: 4, borderRadius: '50%',
+        position: 'absolute', inset: 4,
+        ...shieldMask,
         background: t.gradient,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `inset 0 3px 8px rgba(255,255,255,0.2), inset 0 -3px 8px rgba(0,0,0,0.4), 0 0 30px ${t.glow}`,
       }}>
         <Icon size={36} color={t.iconColor} strokeWidth={2} />
       </div>
+      {/* Gloss highlight */}
+      <div style={{
+        position: 'absolute', inset: 4,
+        ...shieldMask,
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.08) 35%, transparent 60%)',
+        pointerEvents: 'none',
+        zIndex: 1,
+      }} />
     </div>
   );
 }

@@ -1,8 +1,10 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router";
-import { Shield } from "lucide-react";
+import { Shield, Star } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { BadgesSection } from "../components/BadgesSection";
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 export function BadgesPage() {
   const { id } = useParams();
@@ -12,6 +14,8 @@ export function BadgesPage() {
   const [badges, setBadges] = useState([]);
   const [username, setUsername] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   const token = useMemo(
     () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token"),
@@ -22,19 +26,45 @@ export function BadgesPage() {
     const load = async () => {
       try {
         const url = isOwnProfile
-          ? `${import.meta.env.VITE_API_BASE_URL}/Badge/me`
-          : `${import.meta.env.VITE_API_BASE_URL}/Badge/${id}`;
+          ? `${API}/Badge/me`
+          : `${API}/Badge/${id}`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
         const data = await res.json();
         setBadges(data.badges || []);
         if (!isOwnProfile && data.username) setUsername(data.username);
+        if (isOwnProfile) setSelectedIds(data.selectedBadgeIds || []);
       } catch {} finally {
         setLoading(false);
       }
     };
     if (token) load();
   }, [token, id, isOwnProfile]);
+
+  const toggleSelect = useCallback(async (badgeId) => {
+    if (!isOwnProfile) return;
+
+    let newSelected;
+    if (selectedIds.includes(badgeId)) {
+      newSelected = selectedIds.filter(id => id !== badgeId);
+    } else if (selectedIds.length < 2) {
+      newSelected = [...selectedIds, badgeId];
+    } else {
+      // Replace the first selected with the new one
+      newSelected = [selectedIds[1], badgeId];
+    }
+
+    setSelectedIds(newSelected);
+    setSaving(true);
+    try {
+      await fetch(`${API}/Badge/select`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ badge1: newSelected[0] || null, badge2: newSelected[1] || null }),
+      });
+    } catch {}
+    finally { setSaving(false); }
+  }, [selectedIds, isOwnProfile, token]);
 
   const earned = badges.filter(b => b.earned).length;
   const displayName = isOwnProfile ? (user?.username ?? "Your") : (username ?? "");
@@ -79,6 +109,16 @@ export function BadgesPage() {
               </div>
             )}
           </div>
+
+          {isOwnProfile && earned > 0 && (
+            <div className="mt-5 flex items-center gap-2.5 bg-[#BFBCFC]/5 border border-[#BFBCFC]/15 rounded-xl px-4 py-3">
+              <Star className="w-4 h-4 text-[#BFBCFC] flex-shrink-0" />
+              <p className="text-[#94A3B8] text-xs">
+                Click on an earned badge to set it as <span className="text-[#BFBCFC] font-semibold">featured</span>. You can choose up to <span className="text-[#BFBCFC] font-semibold">2</span> — they will appear next to your name.
+                {saving && <span className="ml-2 text-[#44FFFF]">Saving...</span>}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -94,7 +134,11 @@ export function BadgesPage() {
             </p>
           </div>
         ) : (
-          <BadgesSection badges={badges} />
+          <BadgesSection
+            badges={badges}
+            selectedIds={isOwnProfile ? selectedIds : []}
+            onToggleSelect={isOwnProfile ? toggleSelect : null}
+          />
         )}
       </div>
     </div>

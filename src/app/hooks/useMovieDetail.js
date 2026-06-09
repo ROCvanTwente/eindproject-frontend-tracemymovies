@@ -144,9 +144,13 @@ export function useMovieDetail(id, token) {
             return;
         }
 
-        // Can't unwatch via this button if diary log entries exist
-        if (isWatched && hasLogEntries) {
-            toast.error(`'${movie?.title}' cannot be removed, there is activity on it.`);
+        if (isWatched && filmRating > 0) {
+            toast.error("Remove your rating first before unwatching.");
+            return;
+        }
+
+        if (isWatched && (hasLogEntries || watchCount > 0)) {
+            toast.error(`Can't unwatch — you have activity on this film.`);
             return;
         }
 
@@ -162,7 +166,6 @@ export function useMovieDetail(id, token) {
                 if (response.ok) {
                     setIsWatched(false);
                     triggerRefresh();
-                    toast.success("Removed from watched movies");
                 }
             } else {
                 const response = await fetch(SAVE_WATCH_URL, {
@@ -177,11 +180,10 @@ export function useMovieDetail(id, token) {
                 if (response.ok) {
                     setIsWatched(true);
                     triggerRefresh();
-                    toast.success("Marked as watched");
                 }
             }
         } catch (err) {
-            toast.error("Something went wrong.");
+            // silently fail
         } finally {
             setIsSavingWatch(false);
         }
@@ -212,14 +214,9 @@ export function useMovieDetail(id, token) {
             if (response.ok) {
                 setIsFavorite(nextLikeState);
                 triggerRefresh();
-                toast.success(
-                    nextLikeState ? "Added to favorites" : "Removed from favorites"
-                );
-            } else {
-                toast.error("Something went wrong.");
             }
         } catch (err) {
-            toast.error("A network error occurred.");
+            // silently fail
         } finally {
             setIsSavingLike(false);
         }
@@ -249,14 +246,9 @@ export function useMovieDetail(id, token) {
 
             if (response.ok) {
                 setIsInWatchlist(nextWatchlistState);
-                toast.success(
-                    nextWatchlistState ? "Added to watchlist" : "Removed from watchlist"
-                );
-            } else {
-                toast.error("Something went wrong.");
             }
         } catch (err) {
-            toast.error("A network error occurred.");
+            // silently fail
         } finally {
             setIsSavingWatchlist(false);
         }

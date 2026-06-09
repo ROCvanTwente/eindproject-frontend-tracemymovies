@@ -65,19 +65,28 @@ export function ReviewItem({
         })
             .then(r => r.ok ? r.json() : null)
             .then(data => {
-                const earnedAll = (data?.badges ?? []).filter(b => b.earned);
-                const byCategory = {};
-                for (const b of earnedAll) {
-                    const cur = byCategory[b.category];
-                    if (!cur || (TIER_PRIORITY[b.tier] ?? 0) > (TIER_PRIORITY[cur.tier] ?? 0)) {
-                        byCategory[b.category] = b;
+                const selectedIds = data?.selectedBadgeIds ?? [];
+                const allBadges = data?.badges ?? [];
+
+                let result;
+                if (selectedIds.length > 0) {
+                    result = allBadges.filter(b => selectedIds.includes(b.id));
+                } else {
+                    const earnedAll = allBadges.filter(b => b.earned);
+                    const byCategory = {};
+                    for (const b of earnedAll) {
+                        const cur = byCategory[b.category];
+                        if (!cur || (TIER_PRIORITY[b.tier] ?? 0) > (TIER_PRIORITY[cur.tier] ?? 0)) {
+                            byCategory[b.category] = b;
+                        }
                     }
+                    result = Object.values(byCategory)
+                        .sort((a, b) => (TIER_PRIORITY[b.tier] ?? 0) - (TIER_PRIORITY[a.tier] ?? 0))
+                        .slice(0, 2);
                 }
-                const earned = Object.values(byCategory)
-                    .sort((a, b) => (TIER_PRIORITY[b.tier] ?? 0) - (TIER_PRIORITY[a.tier] ?? 0))
-                    .slice(0, 2);
-                _badgeCache[userId] = earned;
-                setTopBadges(earned);
+
+                _badgeCache[userId] = result;
+                setTopBadges(result);
             })
             .catch(() => { _badgeCache[userId] = []; setTopBadges([]); });
     }, [userId]);
