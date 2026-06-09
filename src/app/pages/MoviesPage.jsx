@@ -102,7 +102,7 @@ export function MoviesPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-[#151921]/80 rounded-xl w-fit">
+          <div className="flex w-full justify-center gap-1 p-1 bg-[#151921]/80 rounded-xl w-fit">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}

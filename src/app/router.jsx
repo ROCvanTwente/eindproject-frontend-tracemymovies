@@ -172,10 +172,6 @@ export const router = createBrowserRouter([
                 element: _jsx(ServerErrorPage, {}),
             },
             {
-                path: 'chat',
-                element: _jsx(Chat, {})
-            },
-            {
                 path: '*',
                 element: _jsx(NotFoundPage, {}),
             },

@@ -116,6 +116,7 @@ export function useMovieDetail(id, token) {
     }, [token, id, fetchUserStatus, refreshKey]);
 
     const trailerVideo = useMemo(() => {
+        console.log(movie)
         return (
             movie?.videos?.results?.find(
                 (v) => v.type === "Trailer" && v.site === "YouTube"
