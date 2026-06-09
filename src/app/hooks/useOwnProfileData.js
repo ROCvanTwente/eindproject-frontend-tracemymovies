@@ -21,6 +21,7 @@ export function useOwnProfileData() {
   const [watchlistLoading, setWatchlistLoading] = useState(true);
   const [badges, setBadges] = useState([]);
   const [selectedBadges, setSelectedBadges] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetch_ = async () => {
@@ -140,6 +141,7 @@ export function useOwnProfileData() {
         setBadges(d.badges || []);
         const ids = d.selectedBadgeIds || [];
         setSelectedBadges((d.badges || []).filter(b => ids.includes(b.id)));
+        setIsAdmin(d.isAdmin ?? false);
       } catch {}
     };
     fetch_();
@@ -200,7 +202,7 @@ export function useOwnProfileData() {
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, watchlistPreview, watchlistLoading,
-    badges, selectedBadges,
+    badges, selectedBadges, isAdmin,
     addFavorite, removeFavorite, swapFavorites,
   };
 }

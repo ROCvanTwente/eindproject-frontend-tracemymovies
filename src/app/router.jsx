@@ -18,6 +18,9 @@ import { RegisterPage } from './pages/RegisterPage';
 import { LoginPage } from './pages/LoginPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { EmergencyResetPage } from './pages/EmergencyResetPage';
+import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
@@ -81,6 +84,18 @@ export const router = createBrowserRouter([
             {
                 path: 'reset-password',
                 element: _jsx(ResetPasswordPage, {}),
+            },
+            {
+                path: 'verify-email',
+                element: _jsx(VerifyEmailPage, {}),
+            },
+            {
+                path: 'emergency-reset',
+                element: _jsx(EmergencyResetPage, {}),
+            },
+            {
+                path: 'confirm-email-change',
+                element: _jsx(ConfirmEmailChangePage, {}),
             },
 
             // ── PROTECTED ROUTES ──

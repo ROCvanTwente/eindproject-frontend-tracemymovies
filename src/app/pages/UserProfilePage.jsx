@@ -32,7 +32,7 @@ function OwnProfileView() {
     watchedMoviesCount, watchedThisYear,
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
-    friends, badges, selectedBadges,
+    friends, badges, selectedBadges, isAdmin,
     addFavorite, removeFavorite, swapFavorites,
   } = useOwnProfileData();
 
@@ -79,15 +79,7 @@ function OwnProfileView() {
     setDuplicateError("");
   };
 
-  const displayBadges = selectedBadges?.length > 0
-    ? selectedBadges
-    : (() => {
-        const getHighest = (cat) => {
-          const earned = badges.filter(b => b.category === cat && b.earned);
-          return earned.length ? earned.reduce((max, b) => b.threshold > max.threshold ? b : max, earned[0]) : null;
-        };
-        return [getHighest("watched"), getHighest("reviews")].filter(Boolean);
-      })();
+  const displayBadges = selectedBadges ?? [];
 
   const displayName = user?.username || user?.email || "User";
   const avatarLetter = displayName.charAt(0).toUpperCase();
@@ -113,6 +105,14 @@ function OwnProfileView() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap mb-2">
                 <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">{displayName}</h1>
+                {isAdmin && (
+                                <span
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 text-red-300 border border-red-500/60"
+                                    style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25) 0%, rgba(239,68,68,0.15) 100%)', boxShadow: '0 0 10px rgba(239,68,68,0.5), 0 0 20px rgba(239,68,68,0.25), inset 0 0 8px rgba(239,68,68,0.1)' }}
+                                >
+                                    <Shield className="w-3 h-3 text-red-400" />Admin
+                                </span>
+                            )}
                 {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
                 <Link to="/profile" className="ml-4 flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap">
                   <Pencil className="w-3 h-3" />
@@ -332,17 +332,9 @@ function PublicProfileView({ id }) {
   const navigate = useNavigate();
   const { isUserOnline } = useSignalR();
   const { user } = useAuth();
-  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges } = usePublicProfileData(id);
+  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin } = usePublicProfileData(id);
 
-  const displayBadges = selectedBadges?.length > 0
-    ? selectedBadges
-    : (() => {
-        const getHighest = (cat) => {
-          const earned = badges.filter(b => b.category === cat && b.earned);
-          return earned.length ? earned.reduce((max, b) => b.threshold > max.threshold ? b : max, earned[0]) : null;
-        };
-        return [getHighest("watched"), getHighest("reviews")].filter(Boolean);
-      })();
+  const displayBadges = selectedBadges ?? [];
 
   if (publicLoading) {
     return (
@@ -388,6 +380,14 @@ function PublicProfileView({ id }) {
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC]">{pub.username}</h1>
+                {isAdmin && (
+                                <span
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 text-red-300 border border-red-500/60"
+                                    style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25) 0%, rgba(239,68,68,0.15) 100%)', boxShadow: '0 0 10px rgba(239,68,68,0.5), 0 0 20px rgba(239,68,68,0.25), inset 0 0 8px rgba(239,68,68,0.1)' }}
+                                >
+                                    <Shield className="w-3 h-3 text-red-400" />Admin
+                                </span>
+                            )}
                 {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
               </div>
               {pub.bio && <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{pub.bio}</p>}
