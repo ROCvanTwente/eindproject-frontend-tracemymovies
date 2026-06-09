@@ -49,6 +49,13 @@ export const TIER = {
     cardGlow: 'rgba(192,132,252,0.22)', cardBorder: 'rgba(192,132,252,0.65)',
     iconColor: '#fff', labelColor: '#e9d5ff', special: true, legendary: true, galaxy: true,
   },
+  mythic: {
+    label: 'Mythic',
+    gradient: 'linear-gradient(145deg, #fff 0%, #fde68a 15%, #FF61D2 35%, #c084fc 50%, #44FFFF 65%, #fbbf24 80%, #fff 100%)',
+    ring: '#fff', glow: 'rgba(255,255,255,0.95)',
+    cardGlow: 'rgba(255,255,255,0.20)', cardBorder: 'rgba(255,255,255,0.80)',
+    iconColor: '#0B0E14', labelColor: '#fff', special: true, legendary: true, galaxy: true, mythic: true,
+  },
 };
 
 // Per-category tier themes — category color dominates, tier sets intensity

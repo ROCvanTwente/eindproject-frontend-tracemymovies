@@ -18,6 +18,67 @@ const CATEGORY_ORDER = ['watched', 'reviews', 'liked', 'rewatch', 'special', 'pr
 
 // Per-badge color overrides — beat the tier defaults for thematic badges
 export const BADGE_OVERRIDES = {
+  // ── MYTHIC 1000 EINDBADGES ────────────────────────────────────────────
+  cinema_1000: {
+    gradient:  'linear-gradient(145deg, #0a0a1a 0%, #1a1a4e 20%, #3730a3 40%, #818cf8 60%, #c7d2fe 80%, #fff 100%)',
+    ring:       '#818cf8',
+    glow:       'rgba(129,140,248,1.0)',
+    cardGlow:   'rgba(129,140,248,0.30)',
+    cardBorder: 'rgba(129,140,248,0.90)',
+    iconColor:  '#fff',
+    labelColor: '#e0e7ff',
+    special: true, legendary: true, galaxy: true, mythic: true,
+  },
+  voice_1000: {
+    gradient:  'linear-gradient(145deg, #022c22 0%, #065f46 20%, #10b981 45%, #6ee7b7 65%, #fde68a 85%, #fff 100%)',
+    ring:       '#10b981',
+    glow:       'rgba(16,185,129,1.0)',
+    cardGlow:   'rgba(16,185,129,0.28)',
+    cardBorder: 'rgba(16,185,129,0.90)',
+    iconColor:  '#fff',
+    labelColor: '#a7f3d0',
+    special: true, legendary: true, galaxy: true, mythic: true,
+  },
+  heart_1000: {
+    gradient:  'linear-gradient(145deg, #4c0519 0%, #9f1239 20%, #e11d48 40%, #fb7185 60%, #fda4af 80%, #fff 100%)',
+    ring:       '#fb7185',
+    glow:       'rgba(251,113,133,1.0)',
+    cardGlow:   'rgba(251,113,133,0.28)',
+    cardBorder: 'rgba(251,113,133,0.90)',
+    iconColor:  '#fff',
+    labelColor: '#fecdd3',
+    special: true, legendary: true, galaxy: true, mythic: true,
+  },
+  rewatch_1000: {
+    gradient:  'linear-gradient(145deg, #431407 0%, #c2410c 20%, #f97316 45%, #fdba74 65%, #fef3c7 85%, #fff 100%)',
+    ring:       '#f97316',
+    glow:       'rgba(249,115,22,1.0)',
+    cardGlow:   'rgba(249,115,22,0.28)',
+    cardBorder: 'rgba(249,115,22,0.90)',
+    iconColor:  '#fff',
+    labelColor: '#fed7aa',
+    special: true, legendary: true, galaxy: true, mythic: true,
+  },
+  social_1000: {
+    gradient:  'linear-gradient(145deg, #2e1065 0%, #6d28d9 20%, #a855f7 45%, #e879f9 65%, #fae8ff 85%, #fff 100%)',
+    ring:       '#a855f7',
+    glow:       'rgba(168,85,247,1.0)',
+    cardGlow:   'rgba(168,85,247,0.28)',
+    cardBorder: 'rgba(168,85,247,0.90)',
+    iconColor:  '#fff',
+    labelColor: '#f0abfc',
+    special: true, legendary: true, galaxy: true, mythic: true,
+  },
+  fav_1000: {
+    gradient:  'linear-gradient(145deg, #1c1005 0%, #78350f 20%, #d97706 40%, #fbbf24 60%, #fef08a 80%, #fff 100%)',
+    ring:       '#fbbf24',
+    glow:       'rgba(251,191,36,1.0)',
+    cardGlow:   'rgba(251,191,36,0.28)',
+    cardBorder: 'rgba(251,191,36,0.90)',
+    iconColor:  '#451a03',
+    labelColor: '#fef9c3',
+    special: true, legendary: true, galaxy: true, mythic: true,
+  },
   // ── SPECIAL ──────────────────────────────────────────
   special_harsh: {
     gradient:   'linear-gradient(145deg, #ef4444 0%, #7f1d1d 100%)',
@@ -275,6 +336,14 @@ function BadgeCard({ badge, isSelected, onToggleSelect }) {
           opacity: 0.5,
         }} />
       )}
+      {/* Mythic extra pulse glow */}
+      {badge.earned && t.mythic && (
+        <div style={{
+          position: 'absolute', inset: -4, borderRadius: 18, pointerEvents: 'none', zIndex: 0,
+          background: `radial-gradient(circle, ${t.glow} 0%, transparent 70%)`,
+          animation: 'mythicPulse 2s ease-in-out infinite',
+        }} />
+      )}
 
       {badge.earned && !isSelected && (
         <div style={{
@@ -374,7 +443,7 @@ function CategoryRow({ category, badges, selectedIds, onToggleSelect }) {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2" style={{ overflow: 'visible' }}>
+      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2" style={{ overflow: 'visible' }}>
         {sorted.map(b => (
           <BadgeCard
             key={b.id}
