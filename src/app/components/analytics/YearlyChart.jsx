@@ -1,16 +1,27 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export function YearlyChart({ yearlyData }) {
-  // Generates baseline tracking points across continuous lifecycle nodes
-  const completeTimeline = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"].map((yr) => {
-    const match = yearlyData?.find((d) => String(d.year) === yr);
-    return {
-      year: yr,
-      movies: match ? match.movies : 0,
-    };
-  });
+  const rawTimeline = yearlyData || [];
 
-  // Mathematically isolates top velocity spikes for data tag highlighting
+  // 1. Dynamically extract all valid years from incoming payload
+  const incomingYears = rawTimeline.map((d) => parseInt(d.year)).filter(Boolean);
+  
+  // 2. Determine bounds: from the absolute oldest recorded year up to the current calendar year
+  const currentYear = new Date().getFullYear();
+  const minYear = incomingYears.length > 0 ? Math.min(...incomingYears) : currentYear;
+  const maxYear = currentYear; // Ensures timeline extends dynamically to the present year
+
+  // 3. Generate a continuous sequence of years and merge real records (defaulting missing years to 0)
+  const completeTimeline = [];
+  for (let y = minYear; y <= maxYear; y++) {
+    const existingRecord = rawTimeline.find((d) => parseInt(d.year) === y);
+    completeTimeline.push({
+      year: y.toString(),
+      movies: existingRecord ? existingRecord.movies : 0,
+    });
+  }
+
+  // 4. Mathematically isolate the top velocity spikes from the fully filled sequence
   const peakYear = completeTimeline.reduce(
     (max, x) => (x.movies > max.movies ? x : max),
     { year: "N/A", movies: 0 }
@@ -24,10 +35,10 @@ export function YearlyChart({ yearlyData }) {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
             <h2 className="text-xl font-bold font-heading text-white tracking-wide">
-              Cinematic Frequency Timeline
+              Films Per Year
             </h2>
           </div>
-          <p className="text-xs text-muted-foreground/80">Continuous vector tracking from 2020 to 2026</p>
+          <p className="text-xs text-muted-foreground/80">Watching history from {minYear} to {maxYear}</p>
         </div>
         
         {/* Metric Data Pill Array */}
@@ -40,7 +51,7 @@ export function YearlyChart({ yearlyData }) {
           </div>
           <div className="px-3 py-0.5">
             <p className="text-[10px] text-muted-foreground/80 uppercase font-bold tracking-wider">Timeline Spans</p>
-            <p className="text-sm font-black text-white/90">2020 — 2026</p>
+            <p className="text-sm font-black text-white/90">{minYear} — {maxYear}</p>
           </div>
         </div>
       </div>
