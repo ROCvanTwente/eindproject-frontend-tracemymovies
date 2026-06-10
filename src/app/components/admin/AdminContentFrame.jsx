@@ -2,8 +2,13 @@
 import { Users, Film, Eye, ArrowUp, RefreshCw, Calendar, Tag, Star, Image, FileText, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
+import { ModerationQueue } from './ModerationQueue';
 
 export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, userGrowthData, topMovies, movieUpdates }) {
+  if (currentView === 'moderation') {
+    return <ModerationQueue />;
+  }
+
   if (currentView !== 'dashboard') {
     return (
       <div className="text-[#94A3B8] p-8 text-center bg-[#151921] border border-[#BFBCFC]/15 rounded-xl">

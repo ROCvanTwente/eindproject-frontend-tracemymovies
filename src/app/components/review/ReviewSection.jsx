@@ -6,6 +6,7 @@ import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteR
 import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
 import { ReviewModal } from "./ReviewModal";
+import { ReportReviewModal } from "./ReportReviewModal";
 
 export function ReviewSection({ movieId, movieTitle }) {
     const auth = useAuth();
@@ -147,6 +148,8 @@ export function ReviewSection({ movieId, movieTitle }) {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportTarget, setReportTarget] = useState(null);
     
 
     const openDeleteModal = (review, reviewKey) => {
@@ -159,6 +162,17 @@ export function ReviewSection({ movieId, movieTitle }) {
         setEditTarget(review);
         setEditModalOpen(true);
         setOpenMenuKey(null);
+    };
+
+    const openReportModal = (review) => {
+        setReportTarget(review);
+        setReportModalOpen(true);
+        setOpenMenuKey(null);
+    };
+
+    const closeReportModal = () => {
+        setReportModalOpen(false);
+        setReportTarget(null);
     };
 
     const closeDeleteModal = () => {
@@ -310,32 +324,6 @@ export function ReviewSection({ movieId, movieTitle }) {
         // close any open menu for this review
         setOpenMenuKey((prev) => (prev === reviewKey ? null : prev));
         return true;
-    };
-
-    const handleReportReview = async (review, reviewKey) => {
-        const reviewId = review.id ?? review.reviewId;
-        if (!reviewId) {
-            toast.error("Kon review-id niet vinden.");
-            return;
-        }
-
-        const reason = window.prompt("Waarom wil je deze review rapporteren?");
-        if (reason === null) return;
-
-        const trimmedReason = reason.trim();
-        if (!trimmedReason) {
-            toast.error("Geef een reden op.");
-            return;
-        }
-
-        const result = await reportReview(reviewId, trimmedReason, token);
-        if (!result) {
-            toast.error("Kon review niet rapporteren.");
-            return;
-        }
-
-        setOpenMenuKey((prev) => (prev === reviewKey ? null : prev));
-        toast.success("Review gerapporteerd.");
     };
 
     const handleSubmitReview = async () => {
@@ -560,11 +548,11 @@ export function ReviewSection({ movieId, movieTitle }) {
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => toast(`Komt binnenkort — ik wil dit later doen.`, { duration: 4000 })}
-                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#94A3B8] bg-[#0B0E14] cursor-default"
+                                                    onClick={() => openReportModal(review)}
+                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#94A3B8] hover:bg-[#1E2230] transition-colors"
                                                 >
                                                     <Flag className="w-4 h-4 text-[#94A3B8]" />
-                                                    Report (Komt binnenkort)
+                                                    Report
                                                 </button>
                                             </div>
                                         )}
@@ -598,6 +586,12 @@ export function ReviewSection({ movieId, movieTitle }) {
                                     setEditModalOpen(false);
                                     toast.success("Review bijgewerkt.");
                                 }}
+                            />
+
+                            <ReportReviewModal
+                                isOpen={reportModalOpen}
+                                onClose={closeReportModal}
+                                reviewId={reportTarget?.id ?? reportTarget?.reviewId}
                             />
 
                             
