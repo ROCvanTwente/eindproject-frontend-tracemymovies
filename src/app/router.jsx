@@ -33,6 +33,7 @@ import { WatchlistPage } from './pages/WatchlistPage';
 import { BadgesPage } from './pages/BadgesPage';
 import { ActorPage } from './pages/ActorPage';
 import { ReviewsPage } from './pages/ReviewsPage';
+import { DiaryPage } from './pages/DiaryPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -186,6 +187,14 @@ export const router = createBrowserRouter([
             {
                 path: 'user/:userId/watchlist',
                 element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
+                path: 'diary',
+                element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
+            },
+            {
+                path: 'user/:userId/diary',
+                element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
             },
             {
                 path: '500',
