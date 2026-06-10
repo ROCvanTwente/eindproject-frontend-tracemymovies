@@ -1,30 +1,34 @@
+import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-export function YearlyChart({ yearlyData }) {
-  const rawTimeline = yearlyData || [];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  // 1. Dynamically extract all valid years from incoming payload
-  const incomingYears = rawTimeline.map((d) => parseInt(d.year)).filter(Boolean);
-  
-  // 2. Determine bounds: from the absolute oldest recorded year up to the current calendar year
-  const currentYear = new Date().getFullYear();
-  const minYear = incomingYears.length > 0 ? Math.min(...incomingYears) : currentYear;
-  const maxYear = currentYear; // Ensures timeline extends dynamically to the present year
+export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
+  const [viewMode, setViewMode] = useState("yearly"); // "yearly" | "monthly"
+  const currentYearString = new Date().getFullYear().toString();
+  const [selectedYear, setSelectedYear] = useState(currentYearString);
 
-  // 3. Generate a continuous sequence of years and merge real records (defaulting missing years to 0)
-  const completeTimeline = [];
-  for (let y = minYear; y <= maxYear; y++) {
-    const existingRecord = rawTimeline.find((d) => parseInt(d.year) === y);
-    completeTimeline.push({
-      year: y.toString(),
-      movies: existingRecord ? existingRecord.movies : 0,
-    });
+  // 1. Process standard layout limits
+  const yearsArray = yearlyData.map((d) => parseInt(d.year)).filter(Boolean);
+  const minYear = yearsArray.length > 0 ? Math.min(...yearsArray) : new Date().getFullYear();
+  const maxYear = new Date().getFullYear();
+
+  // 2. Select and shape active chart collection data maps
+  let activeChartData = [];
+  if (viewMode === "yearly") {
+    activeChartData = yearlyData;
+  } else {
+    const rawMonths = monthlyData[selectedYear] || [];
+    activeChartData = rawMonths.map((item) => ({
+      ...item,
+      displayLabel: MONTH_NAMES[parseInt(item.month) - 1] || item.month
+    }));
   }
 
-  // 4. Mathematically isolate the top velocity spikes from the fully filled sequence
-  const peakYear = completeTimeline.reduce(
+  // 3. Peak values calculations map
+  const peakMetric = activeChartData.reduce(
     (max, x) => (x.movies > max.movies ? x : max),
-    { year: "N/A", movies: 0 }
+    { movies: 0 }
   );
 
   return (
@@ -35,23 +39,74 @@ export function YearlyChart({ yearlyData }) {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
             <h2 className="text-xl font-bold font-heading text-white tracking-wide">
-              Films Per Year
+              {viewMode === "yearly" ? "Films Per Year" : `Films in ${selectedYear}`}
             </h2>
           </div>
-          <p className="text-xs text-muted-foreground/80">Watching history from {minYear} to {maxYear}</p>
+          <p className="text-xs text-muted-foreground/80">
+            {viewMode === "yearly" ? `Watching history from ${minYear} to ${maxYear}` : `Monthly metrics breakdown for calendar year ${selectedYear}`}
+          </p>
         </div>
-        
-        {/* Metric Data Pill Array */}
-        <div className="flex items-center gap-4 bg-background/80 border border-white/4 p-2.5 rounded-xl self-start md:self-auto shadow-inner">
-          <div className="px-3 py-0.5 border-r border-white/6">
-            <p className="text-[10px] text-muted-foreground/80 uppercase font-bold tracking-wider">Peak Volume</p>
-            <p className="text-sm font-black text-accent">
-              {peakYear.movies} films <span className="text-xs font-normal text-white/40">({peakYear.year})</span>
-            </p>
+
+        {/* Dynamic Controls Toggles Layout Block */}
+        <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+          {/* View Toggles */}
+          <div className="flex bg-background/60 p-1 border border-white/5 rounded-xl">
+            <button
+              onClick={() => setViewMode("yearly")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                viewMode === "yearly" ? "bg-accent text-background shadow-md" : "text-muted-foreground hover:text-white"
+              }`}
+            >
+              Yearly
+            </button>
+            <button
+              onClick={() => {
+                setViewMode("monthly");
+                if (!monthlyData[selectedYear] && yearlyData.length > 0) {
+                  setSelectedYear(yearlyData[yearlyData.length - 1].year);
+                }
+              }}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                viewMode === "monthly" ? "bg-accent text-background shadow-md" : "text-muted-foreground hover:text-white"
+              }`}
+            >
+              Monthly
+            </button>
           </div>
-          <div className="px-3 py-0.5">
-            <p className="text-[10px] text-muted-foreground/80 uppercase font-bold tracking-wider">Timeline Spans</p>
-            <p className="text-sm font-black text-white/90">{minYear} — {maxYear}</p>
+
+          {/* Year Picker Dropdown - Fixed with focus border styles, custom arrow wrapper, and hover protection */}
+          {viewMode === "monthly" && (
+            <div className="relative">
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="appearance-none bg-background border border-white/10 text-white rounded-xl text-xs pl-3 pr-8 py-2 outline-none focus:border-accent hover:border-accent/50 font-bold cursor-pointer transition-colors"
+              >
+                {yearlyData.map((d) => (
+                  <option key={d.year} value={d.year} className="bg-[#151921] text-white checked:bg-accent/20">
+                    {d.year}
+                  </option>
+                ))}
+              </select>
+              {/* Custom SVG arrow container to stay black on hover backgrounds */}
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-muted-foreground">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          )}
+
+          {/* Metric Data Pill Array */}
+          <div className="flex items-center gap-4 bg-background/80 border border-white/4 p-2 rounded-xl shadow-inner">
+            <div className="px-3 py-0.5">
+              <p className="text-[10px] text-muted-foreground/80 uppercase font-bold tracking-wider">
+                {viewMode === "yearly" ? "Peak Volume" : "Max Monthly Log"}
+              </p>
+              <p className="text-sm font-black text-accent">
+                {peakMetric.movies} films
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -59,9 +114,8 @@ export function YearlyChart({ yearlyData }) {
       {/* Line Graph Canvas Container Area */}
       <div className="w-full h-75 relative px-2">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={completeTimeline} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
+          <LineChart data={activeChartData} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
             <defs>
-              {/* Electric Neon Accent Blur Filter Map */}
               <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
                 <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#44FFFF" floodOpacity="0.6" />
               </filter>
@@ -70,7 +124,7 @@ export function YearlyChart({ yearlyData }) {
             <CartesianGrid strokeDasharray="8 8" stroke="var(--color-muted)" opacity={0.2} vertical={false} />
             
             <XAxis 
-              dataKey="year" 
+              dataKey={viewMode === "yearly" ? "year" : "displayLabel"} 
               stroke="var(--color-muted-foreground)" 
               fontSize={11}
               fontWeight={700}
@@ -109,7 +163,7 @@ export function YearlyChart({ yearlyData }) {
               dot={{ stroke: '#07090e', strokeWidth: 2.5, fill: 'var(--color-accent)', r: 5 }}
               activeDot={{ stroke: 'var(--color-accent)', strokeWidth: 2, fill: '#07090e', r: 7 }}
               connectNulls={true}
-              animationDuration={1200}
+              isAnimationActive={false} // Prevents breaking line transitions between view modes
             />
           </LineChart>
         </ResponsiveContainer>

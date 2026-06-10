@@ -83,7 +83,10 @@ export function AnalyticsPage() {
        
         {/* Borderless Floating Footer Card */}
         <section className="bg-[#151921]/20 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
-          <YearlyChart yearlyData={analyticsData?.yearlyData || []} />
+          <YearlyChart 
+            yearlyData={analyticsData?.yearlyData || []} 
+            monthlyData={analyticsData?.monthlyData || {}} 
+          />
         </section>
       </div>
     </div>
