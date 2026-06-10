@@ -28,6 +28,7 @@ function Chat() {
             })
             .catch((err) => console.error(err));
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setConnection(newConnection);
 
         return () => {

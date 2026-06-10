@@ -7,7 +7,6 @@ export function ForgotPasswordPage() {
     const [submitted, setSubmitted] = useState(false);
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Reset password for:', email);
         setSubmitted(true);
     };
     return (_jsx("div", { className: "min-h-[90vh] flex items-center justify-center px-4 py-12", children: _jsx("div", { className: "w-full max-w-md", children: _jsxs("div", { className: "bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-8 shadow-2xl", children: [_jsxs("div", { className: "text-center mb-8", children: [_jsx("div", { className: "inline-flex items-center justify-center w-16 h-16 bg-[#44FFFF]/10 rounded-full mb-4", children: _jsx(Mail, { className: "w-8 h-8 text-[#44FFFF]" }) }), _jsx("h1", { className: "text-3xl font-bold font-heading text-[#F8FAFC] mb-2", children: "Reset Your Password" }), _jsx("p", { className: "text-[#94A3B8]", children: submitted

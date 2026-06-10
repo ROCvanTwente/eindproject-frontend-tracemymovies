@@ -164,6 +164,7 @@ export async function validateToken() {
  
         return {
             ...stored,
+            userId: profile.id,
             username: profile.userName,
             email: profile.email,
             profilePicture: profile.profileImageBase64

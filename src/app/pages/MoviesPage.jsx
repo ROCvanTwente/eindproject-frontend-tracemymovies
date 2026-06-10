@@ -26,14 +26,12 @@ export function MoviesPage() {
   const [yearFilter, setYearFilter] = useState(null);
 
   useEffect(() => {
-    console.log(page);
     fetchData();
   }, [page]);
 
   useEffect(() => {
     setPage(0);
     fetchData();
-    console.log(yearFilter);
   }, [activeTab, searchQuery, yearFilter]);
 
   const fetchData = useCallback(() => {
@@ -55,7 +53,7 @@ export function MoviesPage() {
         signal: controller.signal,
       })
       .then((r) => r.ok ? r.json() : [])
-      .then((data) => { console.log(data); setMovies(Array.isArray(data.moviesData) ? data.moviesData : []); setTotalPage(data.totalPages) })
+      .then((data) => { setMovies(Array.isArray(data.moviesData) ? data.moviesData : []); setTotalPage(data.totalPages) })
       .catch((err) => {
         if (err.name !== "AbortError") {
           console.error(err);
