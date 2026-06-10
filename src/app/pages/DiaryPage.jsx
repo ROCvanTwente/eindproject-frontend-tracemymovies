@@ -424,7 +424,7 @@ export function DiaryPage() {
                             onClick={(e) => e.stopPropagation()}
                             className="relative w-12 flex-shrink-0 aspect-[2/3]"
                           >
-                            <div className={`w-full h-full rounded-md overflow-hidden bg-[#151921] border transition-all duration-200 ${isSelected ? "border-[#44FFFF]/50" : "border-transparent group-hover:border-[#44FFFF]/40"}`}>
+                            <div className="w-full h-full rounded-md overflow-hidden bg-[#151921] border border-transparent group-hover:border-[#44FFFF]/40 transition-all duration-200">
                               {entry.poster ? (
                                 <img
                                   src={entry.poster}
@@ -438,7 +438,7 @@ export function DiaryPage() {
                                 </div>
                               )}
                             </div>
-                            <div className={`absolute inset-0 rounded-md ring-2 ring-[#44FFFF]/40 pointer-events-none transition-opacity duration-200 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+                            <div className="absolute inset-0 rounded-md ring-2 ring-[#44FFFF]/40 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                           </Link>
 
                           {/* Title + year */}
