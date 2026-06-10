@@ -38,13 +38,13 @@ export function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0B0E14] flex">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#0B0E14] flex">
       {/* Structural Components */}
       <AdminSidebar currentView={currentView} setCurrentView={setCurrentView} />
 
-      <div className="ml-64 flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
-        <header className="bg-[#151921] border-b border-[#BFBCFC]/10 sticky top-0 z-30">
+        <header className="bg-[#151921] border-b border-[#BFBCFC]/10 sticky top-16 z-30">
           <div className="px-8 py-4 flex items-center justify-between">
             <div className="flex-1 max-w-xl">
               <div className="relative">
@@ -83,6 +83,9 @@ export function AdminPage() {
             userGrowthData={activeChartDataset}
             topMovies={topMovies}
             movieUpdates={movieUpdates}
+            setEditRoleUser={setEditRoleUser}
+            setBanUser={setBanUser}
+            setEditGenresMovie={setEditGenresMovie}
           />
         </main>
       </div>

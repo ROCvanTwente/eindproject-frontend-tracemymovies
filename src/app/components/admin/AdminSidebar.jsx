@@ -13,7 +13,7 @@ const navigationItems = [
 
 export function AdminSidebar({ currentView, setCurrentView }) {
   return (
-    <aside className="w-64 bg-[#151921] border-r border-[#BFBCFC]/10 fixed left-0 top-0 bottom-0 flex flex-col z-40">
+    <aside className="w-64 flex-shrink-0 bg-[#151921] border-r border-[#BFBCFC]/10 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto flex flex-col z-40">
       <div className="p-6 border-b border-[#BFBCFC]/10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-lg flex items-center justify-center">

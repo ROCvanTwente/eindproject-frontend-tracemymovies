@@ -38,13 +38,7 @@ export function EditUserRoleModal({ isOpen, onClose, userName, currentRole, onSa
           <button onClick={onClose} className="px-4 py-2 text-sm text-[#94A3B8] hover:text-[#F8FAFC] transition-colors">
             Cancel
           </button>
-          <button 
-            onClick={() => { 
-              onSave(role); 
-              onClose(); 
-            }} 
-            className="px-5 py-2 text-sm bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] font-semibold rounded-lg shadow-lg shadow-[#BFBCFC]/20 transition-all"
-          >
+          <button onClick={() => { onSave(role); onClose(); }} className="px-5 py-2 text-sm bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] font-semibold rounded-lg shadow-lg shadow-[#BFBCFC]/20 transition-all">
             Save Changes
           </button>
         </div>
