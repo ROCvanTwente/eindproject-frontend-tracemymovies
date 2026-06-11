@@ -13,6 +13,7 @@ export function useOwnProfileData() {
   const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
   const [watchedThisYear, setWatchedThisYear] = useState(0);
   const [listsCount, setListsCount] = useState(0);
+  const [recentLists, setRecentLists] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [recentReviews, setRecentReviews] = useState([]);
@@ -99,6 +100,7 @@ export function useOwnProfileData() {
         if (!res.ok) return;
         const d = await res.json();
         setListsCount(Array.isArray(d) ? d.length : 0);
+        setRecentLists(Array.isArray(d) ? d.slice(0, 3) : []);
       } catch (err) { console.error("Error fetching lists count:", err); }
     };
     fetch_();
@@ -213,7 +215,7 @@ export function useOwnProfileData() {
 
   return {
     favoriteMovies, favoritesLoading,
-    likedMoviesCount, watchedMoviesCount, watchedThisYear, listsCount,
+    likedMoviesCount, watchedMoviesCount, watchedThisYear, listsCount, recentLists,
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, watchlistPreview, watchlistLoading,

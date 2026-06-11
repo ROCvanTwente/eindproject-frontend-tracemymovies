@@ -183,14 +183,14 @@ export function ListDetailPage() {
                       {list.watchedCount ?? 0} of {movies.length}
                     </span>
                   </p>
-                  <span className="text-3xl font-bold font-heading text-[#F8FAFC] flex items-start gap-0.5">
+                  <span className="text-3xl font-bold font-heading text-[#BFBCFC] flex items-start gap-0.5">
                     {Math.round(((list.watchedCount ?? 0) / movies.length) * 100)}
                     <span className="text-base mt-1">%</span>
                   </span>
                 </div>
                 <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#4ADE80] rounded-full transition-all"
+                    className="h-full bg-[#44FFFF] rounded-full transition-all"
                     style={{ width: `${Math.round(((list.watchedCount ?? 0) / movies.length) * 100)}%` }}
                   />
                 </div>

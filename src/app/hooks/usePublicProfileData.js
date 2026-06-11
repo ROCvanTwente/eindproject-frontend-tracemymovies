@@ -13,6 +13,7 @@ export function usePublicProfileData(userId) {
   const [selectedBadges, setSelectedBadges] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [listsCount, setListsCount] = useState(0);
+  const [recentLists, setRecentLists] = useState([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -82,10 +83,11 @@ export function usePublicProfileData(userId) {
         if (!res.ok) return;
         const d = await res.json();
         setListsCount(Array.isArray(d) ? d.length : 0);
+        setRecentLists(Array.isArray(d) ? d.slice(0, 3) : []);
       } catch {}
     };
     fetch_();
   }, [userId]);
 
-  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount };
+  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount, recentLists };
 }
