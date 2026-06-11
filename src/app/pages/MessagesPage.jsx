@@ -85,6 +85,11 @@ export function MessagesPage() {
         if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
     }, [messages]);
 
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMessages([])
+    }, [selectedFriend])
+
     return (
         <div className="min-h-screen py-8">
             <div className="container mx-auto px-4 max-w-7xl">
@@ -201,7 +206,6 @@ export function MessagesPage() {
                                             key={message.messageId}
                                             className={`flex gap-2 items-end ${message.senderId === auth.user.userId ? 'justify-end' : 'justify-start'}`}
                                         >
-
                                             <Link
                                                 to={`/user/${message.senderId == auth.user.userId ? auth.user.userId : selectedFriend.userId}`}
                                                 className="flex-shrink-0 hover:opacity-80 transition-opacity"
