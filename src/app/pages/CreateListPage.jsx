@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router";
-import { ArrowLeft, Search, X, Film, List, Loader2, Trash2 } from "lucide-react";
+import { useParams, useNavigate } from "react-router";
+import { Search, X, Film, List, Loader2, Trash2 } from "lucide-react";
 import { DndProvider, useDrag, useDrop, useDragLayer } from "react-dnd";
-import { HTML5Backend, getEmptyImage } from "react-dnd-html5-backend";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 
 const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p";
 
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAAALAAAAAABAAEAAAICRAEAOw==";
+
 function DraggableFilmCard({ movie, index, isRanked, moveMovie, onDropEnd, onRemove }) {
   const ref = useRef(null);
   const posterRef = useRef(null);
+  const previewImgRef = useRef(null);
 
   const [{ isDragging }, drag, preview] = useDrag({
     type: "NEW_LIST_MOVIE",
@@ -23,23 +27,45 @@ function DraggableFilmCard({ movie, index, isRanked, moveMovie, onDropEnd, onRem
   });
 
   useEffect(() => {
-    preview(getEmptyImage(), { captureDraggingState: true });
+    if (previewImgRef.current) {
+      preview(previewImgRef.current, { captureDraggingState: true });
+    }
   }, [preview]);
 
   const [, drop] = useDrop({
     accept: "NEW_LIST_MOVIE",
-    hover: (item) => {
-      if (item.index !== index) {
-        moveMovie(item.index, index);
-        item.index = index;
-      }
+    hover: (item, monitor) => {
+      const dragIndex = item.index;
+      const hoverIndex = index;
+      if (dragIndex === hoverIndex || !ref.current) return;
+
+      const hoverRect = ref.current.getBoundingClientRect();
+      const hoverMiddleX = (hoverRect.right - hoverRect.left) / 2;
+      const hoverMiddleY = (hoverRect.bottom - hoverRect.top) / 2;
+
+      const clientOffset = monitor.getClientOffset();
+      const hoverClientX = clientOffset.x - hoverRect.left;
+      const hoverClientY = clientOffset.y - hoverRect.top;
+
+      // Only swap once the dragged poster has reached the middle of this card
+      if (dragIndex < hoverIndex && hoverClientX < hoverMiddleX && hoverClientY < hoverMiddleY) return;
+      if (dragIndex > hoverIndex && hoverClientX > hoverMiddleX && hoverClientY > hoverMiddleY) return;
+
+      moveMovie(dragIndex, hoverIndex);
+      item.index = hoverIndex;
     },
   });
 
   drag(drop(ref));
 
   return (
-    <div ref={ref} className={`group cursor-move ${isDragging ? "opacity-25" : ""}`}>
+    <div ref={ref} className={`group cursor-move ${isDragging ? "opacity-0" : ""}`}>
+      <img
+        ref={previewImgRef}
+        src={TRANSPARENT_PIXEL}
+        alt=""
+        style={{ position: "fixed", top: -1, left: -1, width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+      />
       <div ref={posterRef} className="relative rounded-lg overflow-hidden bg-[#151921]">
         <div className="aspect-[2/3]">
           {movie.poster ? (
@@ -371,14 +397,6 @@ export function CreateListPage() {
       <FilmDragLayer />
       <div className="min-h-screen py-8 md:py-12">
         <div className="container mx-auto px-4 max-w-6xl">
-          <Link
-            to={isEdit ? `/list/${id}` : "/my-lists"}
-            className="inline-flex items-center gap-2 text-[#BFBCFC] hover:text-[#AFA9FF] mb-6 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            {isEdit ? "Back to List" : "Back to Lists"}
-          </Link>
-
           <div className="flex items-center gap-4 border-b border-[#BFBCFC]/25 pb-4 mb-6">
             <h1 className="text-2xl md:text-4xl font-black leading-none tracking-tight">
               <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
@@ -396,6 +414,7 @@ export function CreateListPage() {
                 </label>
                 <input
                   type="text"
+                  
                   value={listName}
                   onChange={(e) => setListName(e.target.value)}
                   maxLength={100}
@@ -414,21 +433,27 @@ export function CreateListPage() {
                   <span className="text-[#F8FAFC] font-medium group-hover:text-[#BFBCFC] transition-colors">
                     Ranked list
                   </span>
-                  <p className="text-[#94A3B8] text-sm mt-0.5">
-                    Show position numbers and let you drag films into a custom order.
-                  </p>
                 </div>
               </label>
             </div>
 
-            <div className="flex flex-col">
-              <label className="block text-sm font-medium text-[#F8FAFC] mb-2">Description</label>
-              <textarea
-                value={listDescription}
-                onChange={(e) => setListDescription(e.target.value)}
-                className="w-full flex-1 min-h-[110px] bg-[#0B0E14] text-[#F8FAFC] px-3.5 py-2.5 rounded-lg border border-[#BFBCFC]/30 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none"
-              />
-            </div>
+<div className="flex flex-col">
+  <label className="block text-sm font-medium text-[#F8FAFC] mb-2">
+    Description
+  </label>
+
+  <textarea
+    placeholder="Thoughts..."
+    maxLength={10000}
+    value={listDescription}
+    onChange={(e) => setListDescription(e.target.value)}
+    className="w-full flex-1 min-h-[110px] bg-[#0B0E14] text-[#F8FAFC] px-3.5 py-2.5 rounded-lg border border-[#BFBCFC]/30 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none"
+  />
+
+  <div className="mt-1 text-xs text-[#94A3B8] text-right">
+    {listDescription.length}/10000 characters
+  </div>
+</div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-y border-[#BFBCFC]/25 py-3 mb-6">
@@ -436,6 +461,7 @@ export function CreateListPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 h-4" />
               <input
                 type="text"
+                
                 placeholder="Enter name of film..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

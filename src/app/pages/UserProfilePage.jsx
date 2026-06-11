@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   Heart, Star, List, Clock, AlignLeft, Plus, X,
@@ -14,6 +14,9 @@ import { ActivityPosterItem } from "../components/profile/ActivityPosterItem";
 import { ReviewCard } from "../components/profile/ReviewCard";
 import { useOwnProfileData } from "../hooks/useOwnProfileData";
 import { usePublicProfileData } from "../hooks/usePublicProfileData";
+
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAAALAAAAAABAAEAAAICRAEAOw==";
 
 export function UserProfilePage() {
   const { id } = useParams();
@@ -39,11 +42,21 @@ function OwnProfileView() {
   const [targetSlot, setTargetSlot] = useState(0);
   const [draggedSlot, setDraggedSlot] = useState(null);
   const [dragOverSlot, setDragOverSlot] = useState(null);
+  const [dragPos, setDragPos] = useState(null);
+  const transparentImgRef = useRef(null);
+  const dragInfoRef = useRef({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateError, setDuplicateError] = useState("");
+
+  useEffect(() => {
+    if (draggedSlot === null) return;
+    const handleDragOver = (e) => setDragPos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("dragover", handleDragOver);
+    return () => window.removeEventListener("dragover", handleDragOver);
+  }, [draggedSlot]);
 
   useEffect(() => {
     if (!searchModalOpen) return;
@@ -174,8 +187,21 @@ function OwnProfileView() {
                   };
                   return movie ? (
                     <div key={`slot-${i}`}
-                      className={`relative group transition-all duration-150 ${isDragging ? "opacity-40 scale-95" : ""} ${isDragOver && draggedSlot !== i ? "ring-2 ring-[#FF61D2]/60 rounded-xl scale-[1.02]" : ""}`}
-                      draggable onDragStart={() => setDraggedSlot(i)} onDragEnd={() => { setDraggedSlot(null); setDragOverSlot(null); }}
+                      className={`relative group transition-all duration-150 ${isDragging ? "opacity-0" : ""} ${isDragOver && draggedSlot !== i ? "ring-2 ring-[#FF61D2]/60 rounded-xl scale-[1.02]" : ""}`}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedSlot(i);
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        dragInfoRef.current = {
+                          width: rect.width,
+                          height: rect.height,
+                          offsetX: e.clientX - rect.left,
+                          offsetY: e.clientY - rect.top,
+                        };
+                        setDragPos({ x: e.clientX, y: e.clientY });
+                        if (transparentImgRef.current) e.dataTransfer.setDragImage(transparentImgRef.current, 0, 0);
+                      }}
+                      onDragEnd={() => { setDraggedSlot(null); setDragOverSlot(null); setDragPos(null); }}
                       {...dropProps}
                     >
                       <ProfilePosterCard movieId={movie.id} poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} title={movie.title} />
@@ -201,6 +227,35 @@ function OwnProfileView() {
                   );
                 })}
               </div>
+
+              <img
+                ref={transparentImgRef}
+                src={TRANSPARENT_PIXEL}
+                alt=""
+                style={{ position: "fixed", top: -1, left: -1, width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+              />
+
+              {draggedSlot !== null && dragPos && favoriteMovies[draggedSlot] && (
+                <div className="fixed inset-0 z-[100] pointer-events-none">
+                  <div
+                    style={{
+                      position: "fixed",
+                      top: 0,
+                      left: 0,
+                      width: dragInfoRef.current.width,
+                      height: dragInfoRef.current.height,
+                      transform: `translate(${dragPos.x - dragInfoRef.current.offsetX}px, ${dragPos.y - dragInfoRef.current.offsetY}px)`,
+                    }}
+                    className="rounded-lg overflow-hidden shadow-2xl shadow-black/60 ring-2 ring-[#BFBCFC]"
+                  >
+                    <img
+                      src={`https://image.tmdb.org/t/p/w500${favoriteMovies[draggedSlot].poster_path}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Recent Activity */}
@@ -529,6 +584,7 @@ function PublicProfileView({ id }) {
                   { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: `/user/${id}/diary`, icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: `/user/${id}/analytics`, icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                  { to: `/user/${id}/lists`, icon: <List className="w-3.5 h-3.5" />, label: "Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
                   { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                 ].map(({ to, icon, label, color, bg }) => (
