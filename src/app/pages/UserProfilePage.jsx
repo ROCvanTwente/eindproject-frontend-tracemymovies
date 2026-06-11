@@ -29,7 +29,7 @@ function OwnProfileView() {
 
   const {
     favoriteMovies, favoritesLoading,
-    watchedMoviesCount, watchedThisYear,
+    watchedMoviesCount, watchedThisYear, listsCount,
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, badges, selectedBadges, isAdmin,
@@ -132,7 +132,7 @@ function OwnProfileView() {
               {[
                 { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate("/watched") },
                 { label: "THIS YEAR", value: watchedThisYear, onClick: () => navigate("/diary") },
-                { label: "LISTS", value: "—" },
+                { label: "LISTS", value: listsCount, onClick: () => navigate("/my-lists") },
                 { label: "FRIENDS", value: friends.length },
               ].map(({ label, value, onClick }, i, arr) => (
                 <div key={label} className="flex items-center">
@@ -333,7 +333,7 @@ function PublicProfileView({ id }) {
   const navigate = useNavigate();
   const { isUserOnline } = useSignalR();
   const { user } = useAuth();
-  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin } = usePublicProfileData(id);
+  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount } = usePublicProfileData(id);
 
   const displayBadges = selectedBadges ?? [];
 
@@ -404,7 +404,7 @@ function PublicProfileView({ id }) {
               {[
                 { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
                 { label: "THIS YEAR", value: pub.watchedThisYear ?? 0, to: `/user/${id}/diary` },
-                { label: "LISTS", value: "—" },
+                { label: "LISTS", value: listsCount, to: `/user/${id}/lists` },
                 { label: "FRIENDS", value: pub.friendCount ?? 0 },
               ].map(({ label, value, to }, i, arr) => (
                 <div key={label} className="flex items-center">

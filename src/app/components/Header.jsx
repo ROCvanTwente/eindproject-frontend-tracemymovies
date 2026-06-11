@@ -402,8 +402,8 @@ export function Header() {
                       </div>
 
                       {[
-                        { to: "/my-profile", label: "Profiel" },
-                        { to: "/my-lists", label: "My Lists" },
+                        { to: "/my-profile", label: "Profile" },
+                        { to: "/my-lists", label: "Lists" },
                         { to: "/watchlist", label: "Watchlist" },
                         { to: "/profile", label: "Account" },
                         { to: "/messages", label: "Messages" },

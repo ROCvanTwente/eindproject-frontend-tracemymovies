@@ -12,6 +12,7 @@ export function useOwnProfileData() {
   const [likedMoviesCount, setLikedMoviesCount] = useState(0);
   const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
   const [watchedThisYear, setWatchedThisYear] = useState(0);
+  const [listsCount, setListsCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [recentReviews, setRecentReviews] = useState([]);
@@ -85,6 +86,20 @@ export function useOwnProfileData() {
         const d = await res.json();
         setWatchedThisYear(d.count ?? 0);
       } catch {}
+    };
+    fetch_();
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const fetch_ = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${API}/Lists`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const d = await res.json();
+        setListsCount(Array.isArray(d) ? d.length : 0);
+      } catch (err) { console.error("Error fetching lists count:", err); }
     };
     fetch_();
   }, [refreshKey]);
@@ -198,7 +213,7 @@ export function useOwnProfileData() {
 
   return {
     favoriteMovies, favoritesLoading,
-    likedMoviesCount, watchedMoviesCount, watchedThisYear,
+    likedMoviesCount, watchedMoviesCount, watchedThisYear, listsCount,
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, watchlistPreview, watchlistLoading,
