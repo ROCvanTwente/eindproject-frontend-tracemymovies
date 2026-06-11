@@ -134,7 +134,7 @@ export function WatchlistPage() {
                   className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
                 />
               </div>
-              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["Your Rating"]} />
+              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["Your Rating", "List Order", "Reverse Order", "Average Rating", "Your Diary Date"]} />
               <MovieFilters
                 genre={genre} setGenre={setGenre}
                 decade={decade} setDecade={setDecade}

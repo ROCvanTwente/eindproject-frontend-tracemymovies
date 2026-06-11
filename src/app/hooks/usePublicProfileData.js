@@ -12,6 +12,7 @@ export function usePublicProfileData(userId) {
   const [badges, setBadges] = useState([]);
   const [selectedBadges, setSelectedBadges] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [listsCount, setListsCount] = useState(0);
 
   useEffect(() => {
     if (!userId) return;
@@ -71,5 +72,20 @@ export function usePublicProfileData(userId) {
     fetch_();
   }, [userId]);
 
-  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin };
+  useEffect(() => {
+    if (!userId) return;
+    const fetch_ = async () => {
+      try {
+        const token = getToken();
+        if (!token) return;
+        const res = await fetch(`${API}/PublicProfile/${userId}/Lists`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const d = await res.json();
+        setListsCount(Array.isArray(d) ? d.length : 0);
+      } catch {}
+    };
+    fetch_();
+  }, [userId]);
+
+  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount };
 }

@@ -1,53 +1,172 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from 'react';
-import { List, Plus, Edit, Trash2 } from 'lucide-react';
-import { Link } from 'react-router';
-import { CreateListModal } from '../components/CreateListModal';
+import { useEffect, useMemo, useState } from "react";
+import { List, Plus, Film } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+import { useAuth } from "../context/AuthContext";
+
+function ListPosterCollage({ posters = [] }) {
+  const slots = Array.from({ length: 4 }, (_, i) => posters[i] ?? null);
+
+  return (
+    <div className="flex h-32 md:h-36 gap-[2px] bg-[#0B0E14] overflow-hidden">
+      {slots.map((poster, i) => (
+        <div key={i} className="flex-1 min-w-0 h-full">
+          {poster ? (
+            <img src={poster} alt="" className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <div className="w-full h-full bg-[#151921] flex items-center justify-center">
+              <Film className="w-5 h-5 text-[#94A3B8]/15" />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function MyListsPage() {
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [editingList, setEditingList] = useState(null);
-    const mockLists = [
-        {
-            id: 1,
-            name: 'Christopher Nolan Filmography',
-            description: 'All films directed by Christopher Nolan',
-            movieCount: 12,
-            isRanked: true,
-            createdAt: '2024-03-15',
-            movies: [],
-        },
-        {
-            id: 2,
-            name: 'Sci-Fi Masterpieces',
-            description: 'The best science fiction films of all time',
-            movieCount: 25,
-            isRanked: false,
-            createdAt: '2024-02-20',
-            movies: [],
-        },
-        {
-            id: 3,
-            name: 'Top 10 Films of 2024',
-            description: 'My personal favorites from this year',
-            movieCount: 10,
-            isRanked: true,
-            createdAt: '2024-01-10',
-            movies: [],
-        },
-    ];
-    const handleEditList = (list) => {
-        setEditingList(list);
-        setShowCreateModal(true);
-    };
-    const handleCloseModal = () => {
-        setShowCreateModal(false);
-        setEditingList(null);
-    };
-    return (_jsx("div", { className: "min-h-screen py-6 md:py-8", children: _jsxs("div", { className: "container mx-auto px-4 max-w-7xl", children: [_jsxs("div", { className: "flex items-center justify-between mb-6 md:mb-8", children: [_jsxs("div", { children: [_jsx("h1", { className: "text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-2", children: "Custom Lists" }), _jsx("p", { className: "text-[#94A3B8] text-sm md:text-base", children: "Create and manage your custom movie collections" })] }), _jsxs("button", { onClick: () => setShowCreateModal(true), className: "bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-4 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all flex items-center gap-2 shadow-lg shadow-[#BFBCFC]/30 hover:scale-105", children: [_jsx(Plus, { className: "w-5 h-5" }), _jsx("span", { className: "hidden sm:inline", children: "Create List" })] })] }), mockLists.length > 0 ? (_jsx("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", children: mockLists.map((list) => (_jsxs(Link, { to: `/list/${list.id}`, className: "bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6 hover:border-[#BFBCFC]/30 transition-all hover:scale-105 group", children: [_jsxs("div", { className: "flex items-start justify-between mb-4", children: [_jsxs("div", { className: "flex items-center gap-3", children: [_jsx("div", { className: "w-12 h-12 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-xl flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30", children: _jsx(List, { className: "w-6 h-6 text-[#0B0E14]" }) }), _jsxs("div", { children: [_jsx("h3", { className: "text-lg font-bold text-[#F8FAFC] mb-1 group-hover:text-[#BFBCFC] transition-colors", children: list.name }), _jsxs("div", { className: "flex items-center gap-2 text-sm", children: [_jsxs("span", { className: "text-[#44FFFF] font-data font-medium", children: [list.movieCount, " films"] }), list.isRanked && (_jsx("span", { className: "text-[#94A3B8]", children: "\u2022 Ranked" }))] })] })] }), _jsxs("div", { className: "flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity", children: [_jsx("button", { onClick: (e) => {
-                                                    e.preventDefault();
-                                                    handleEditList(list);
-                                                }, className: "p-2 bg-[#151921] hover:bg-[#BFBCFC]/20 rounded-lg transition-all", title: "Edit list", children: _jsx(Edit, { className: "w-4 h-4 text-[#BFBCFC]" }) }), _jsx("button", { onClick: (e) => {
-                                                    e.preventDefault();
-                                                    // Delete list
-                                                }, className: "p-2 bg-[#151921] hover:bg-[#FF61D2]/20 rounded-lg transition-all", title: "Delete list", children: _jsx(Trash2, { className: "w-4 h-4 text-[#FF61D2]" }) })] })] }), _jsx("p", { className: "text-[#94A3B8] text-sm line-clamp-2 mb-3", children: list.description }), _jsxs("p", { className: "text-[#94A3B8] text-xs", children: ["Created ", list.createdAt] })] }, list.id))) })) : (_jsxs("div", { className: "text-center py-20", children: [_jsx(List, { className: "w-24 h-24 text-[#BFBCFC]/20 mx-auto mb-4" }), _jsx("h3", { className: "text-2xl font-heading font-bold text-[#F8FAFC] mb-2", children: "No lists yet" }), _jsx("p", { className: "text-[#94A3B8] mb-6", children: "Create your first custom list to organize your favorite movies" }), _jsxs("button", { onClick: () => setShowCreateModal(true), className: "bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all inline-flex items-center gap-2", children: [_jsx(Plus, { className: "w-5 h-5" }), "Create Your First List"] })] })), _jsx(CreateListModal, { isOpen: showCreateModal, onClose: handleCloseModal, editList: editingList })] }) }));
+  const { userId } = useParams();
+  const isPublic = !!userId;
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const [lists, setLists] = useState([]);
+  const [ownerUsername, setOwnerUsername] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const token = useMemo(
+    () =>
+      auth?.token ||
+      auth?.user?.token ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("authToken") ||
+      sessionStorage.getItem("auth_token") ||
+      sessionStorage.getItem("token"),
+    [auth]
+  );
+
+  const fetchLists = async () => {
+    try {
+      setLoading(true);
+      const url = isPublic
+        ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Lists`
+        : `${import.meta.env.VITE_API_BASE_URL}/Lists`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to load lists");
+      setLists(await res.json());
+      if (isPublic) {
+        const profRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (profRes.ok) { const d = await profRes.json(); setOwnerUsername(d.username); }
+      }
+    } catch {
+      toast.error(isPublic ? "Could not load this user's lists" : "Could not load your lists");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchLists();
+  }, [token, userId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative w-20 h-20 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20 flex items-center justify-center">
+              <List className="w-8 h-8 text-[#BFBCFC] animate-pulse" />
+            </div>
+            <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
+          </div>
+          <p className="text-[#94A3B8] text-sm">{isPublic ? "Loading lists..." : "Loading your lists..."}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen py-6 md:py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <div className="flex items-center justify-between mb-6 md:mb-8">
+          <div>
+            <h1 className="text-2xl md:text-4xl font-black leading-none tracking-tight">
+              {isPublic && <span className="text-[#F8FAFC]">{ownerUsername ?? "..."}'s </span>}
+              <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
+                {isPublic ? "Lists" : "Your Lists"}
+              </span>
+            </h1>
+          </div>
+          {!isPublic && (
+            <button
+              onClick={() => navigate("/list/new")}
+              className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-4 md:px-6 py-2 md:py-3 rounded-xl border-2 border-[#BFBCFC] font-medium transition-all flex items-center gap-2 shadow-lg shadow-[#BFBCFC]/30 hover:scale-105"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="hidden sm:inline">Start a New List</span>
+            </button>
+          )}
+        </div>
+
+        {lists.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {lists.map((list) => (
+              <Link
+                key={list.listId}
+                to={isPublic ? `/user/${userId}/list/${list.listId}` : `/list/${list.listId}`}
+                className="group block bg-[#151921]/70 backdrop-blur-xl overflow-hidden rounded-lg transition-all hover:scale-[1.02]"
+              >
+                <ListPosterCollage posters={list.previewPosters} />
+
+                <div className="p-4">
+                  <h3 className="text-lg font-bold text-[#F8FAFC] group-hover:text-[#BFBCFC] transition-colors truncate mb-1">
+                    {list.listName}
+                  </h3>
+
+                  {list.listDescription && (
+                    <p className="text-[#94A3B8] text-sm line-clamp-2 mb-2">
+                      {list.listDescription}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-[#44FFFF] font-data font-medium">
+                      {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
+                    </span>
+                    {list.isRanked && <span className="text-[#94A3B8]">• Ranked</span>}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <Film className="w-24 h-24 text-[#BFBCFC]/20 mx-auto mb-4" />
+            <h3 className="text-2xl font-heading font-bold text-[#F8FAFC] mb-2">No lists yet</h3>
+            {isPublic ? (
+              <p className="text-[#94A3B8] mb-6">
+                {ownerUsername ?? "This user"} hasn't created any lists yet.
+              </p>
+            ) : (
+              <>
+                <p className="text-[#94A3B8] mb-6">
+                  Create your first custom list to organize your favorite movies
+                </p>
+                <button
+                  onClick={() => navigate("/list/new")}
+                  className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all inline-flex items-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Your First List
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

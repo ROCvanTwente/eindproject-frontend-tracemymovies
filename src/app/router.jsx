@@ -7,6 +7,7 @@ import { MoviesPage } from './pages/MoviesPage';
 import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MyListsPage } from './pages/MyListsPage';
 import { ListDetailPage } from './pages/ListDetailPage';
+import { CreateListPage } from './pages/CreateListPage';
 import { TheQueuePage } from './pages/TheQueuePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
@@ -118,8 +119,24 @@ export const router = createBrowserRouter([
                 element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
             },
             {
+                path: 'user/:userId/lists',
+                element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
+            },
+            {
+                path: 'user/:userId/list/:id',
+                element: _jsx(ProtectedRoute, { children: _jsx(ListDetailPage, {}) }),
+            },
+            {
+                path: 'list/new',
+                element: _jsx(ProtectedRoute, { children: _jsx(CreateListPage, {}) }),
+            },
+            {
                 path: 'list/:id',
                 element: _jsx(ProtectedRoute, { children: _jsx(ListDetailPage, {}) }),
+            },
+            {
+                path: 'list/:id/edit',
+                element: _jsx(ProtectedRoute, { children: _jsx(CreateListPage, {}) }),
             },
             {
                 path: 'the-queue',
