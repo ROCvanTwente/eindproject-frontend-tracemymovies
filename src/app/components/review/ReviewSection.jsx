@@ -546,14 +546,20 @@ export function ReviewSection({ movieId, movieTitle }) {
                                                     ) : null;
                                                 })()}
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openReportModal(review)}
-                                                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#94A3B8] hover:bg-[#1E2230] transition-colors"
-                                                >
-                                                    <Flag className="w-4 h-4 text-[#94A3B8]" />
-                                                    Report
-                                                </button>
+                                                {(() => {
+                                                    const reviewOwnerId = getReviewOwnerId(review);
+                                                    const isOwner = currentUserId != null && reviewOwnerId != null && String(reviewOwnerId) === String(currentUserId);
+                                                    return !isOwner ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openReportModal(review)}
+                                                            className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-[#94A3B8] hover:bg-[#1E2230] transition-colors"
+                                                        >
+                                                            <Flag className="w-4 h-4 text-[#94A3B8]" />
+                                                            Report
+                                                        </button>
+                                                    ) : null;
+                                                })()}
                                             </div>
                                         )}
                                     </div>
@@ -591,7 +597,7 @@ export function ReviewSection({ movieId, movieTitle }) {
                             <ReportReviewModal
                                 isOpen={reportModalOpen}
                                 onClose={closeReportModal}
-                                reviewId={reportTarget?.id ?? reportTarget?.reviewId}
+                                review={reportTarget}
                             />
 
                             

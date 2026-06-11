@@ -81,7 +81,7 @@ export function ModerationQueue() {
     if (!modSearch.trim()) return true;
     const q = modSearch.toLowerCase();
     const text = r.originalText?.toLowerCase() || '';
-    const authorName = r.author?.userName?.toLowerCase() || '';
+    const authorName = (r.author?.userName || r.userName || r.reporterName || r.authorUserId || r.userId || '').toLowerCase();
     const reasonLabels = r.reasons?.map(rs => rs.label).join(", ").toLowerCase() || '';
     return text.includes(q) || authorName.includes(q) || reasonLabels.includes(q);
   });
@@ -133,7 +133,14 @@ export function ModerationQueue() {
             const reportId = report.reportId;
             const reviewId = report.targetId;
             const reviewText = report.originalText || 'No review content available.';
-            const author = report.author?.userName || 'Unknown User';
+            
+            // Kijk eerst of we een echte naam krijgen, anders vallen we terug op het ID
+            const authorName = report.author?.userName || report.userName || report.reporterName;
+            const authorId = report.authorUserId || report.userId;
+            const displayAuthor = authorName 
+              ? `@${authorName}` 
+              : (authorId ? `ID: ${authorId}` : 'Unknown User');
+              
             const reasonList = report.reasons && report.reasons.length > 0 
               ? report.reasons.map(r => `${r.label} (${r.count}x)`).join(', ') 
               : 'No reason provided';
@@ -157,7 +164,7 @@ export function ModerationQueue() {
                         <span className="text-sm font-bold text-[#F8FAFC]">{targetTypeTitle}</span>
                         <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border bg-orange-400/15 text-orange-300 border-orange-400/30">Reported</span>
                       </div>
-                      <p className="text-sm text-[#94A3B8]">Review by <span className="text-[#BFBCFC] font-semibold">@{author}</span></p>
+                      <p className="text-sm text-[#94A3B8]">Reported by <span className="text-[#BFBCFC] font-semibold">{displayAuthor}</span></p>
                     </div>
                   </div>
                   {/* Threat Panel */}
