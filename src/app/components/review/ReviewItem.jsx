@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Star, AlertCircle, MoreVertical, Trash, Edit, Flag, Eye } from "lucide-react";
+import { Star, AlertCircle, MoreVertical, Trash, Edit, Flag, Eye, Shield } from "lucide-react";
 import { ExpandableReviewText } from "./ExpandableReviewText";
 import { BadgeChip } from "../BadgesSection";
 import { getToken } from "../../services/auth";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
-const TIER_PRIORITY = { legendary: 6, diamond: 5, platinum: 4, gold: 3, silver: 2, bronze: 1 };
 
 // Module-level cache — avoids re-fetching the same user across re-renders
 const _badgeCache = {};
+const _adminCache = {};
 
 function UserAvatar({ profileImageBase64, author }) {
     const imgSrc = profileImageBase64
@@ -38,6 +38,7 @@ export function ReviewItem({
 }) {
     const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
     const [topBadges, setTopBadges] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const author = review.user?.userName || (review.userId ? `User #${review.userId}` : "Anonymous");
     const content = review.review || "";
@@ -55,6 +56,7 @@ export function ReviewItem({
         if (!userId) return;
         if (_badgeCache[userId] !== undefined) {
             setTopBadges(_badgeCache[userId]);
+            setIsAdmin(_adminCache[userId] ?? false);
             return;
         }
         const token = getToken();
@@ -68,25 +70,12 @@ export function ReviewItem({
                 const selectedIds = data?.selectedBadgeIds ?? [];
                 const allBadges = data?.badges ?? [];
 
-                let result;
-                if (selectedIds.length > 0) {
-                    result = allBadges.filter(b => selectedIds.includes(b.id));
-                } else {
-                    const earnedAll = allBadges.filter(b => b.earned);
-                    const byCategory = {};
-                    for (const b of earnedAll) {
-                        const cur = byCategory[b.category];
-                        if (!cur || (TIER_PRIORITY[b.tier] ?? 0) > (TIER_PRIORITY[cur.tier] ?? 0)) {
-                            byCategory[b.category] = b;
-                        }
-                    }
-                    result = Object.values(byCategory)
-                        .sort((a, b) => (TIER_PRIORITY[b.tier] ?? 0) - (TIER_PRIORITY[a.tier] ?? 0))
-                        .slice(0, 2);
-                }
+                const result = allBadges.filter(b => selectedIds.includes(b.id));
 
                 _badgeCache[userId] = result;
+                _adminCache[userId] = data?.isAdmin ?? false;
                 setTopBadges(result);
+                setIsAdmin(data?.isAdmin ?? false);
             })
             .catch(() => { _badgeCache[userId] = []; setTopBadges([]); });
     }, [userId]);
@@ -99,6 +88,14 @@ export function ReviewItem({
                     <div>
                         <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-[#F8FAFC] font-medium">{author}</p>
+                            {isAdmin && (
+                                <span
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 text-red-300 border border-red-500/60"
+                                    style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25) 0%, rgba(239,68,68,0.15) 100%)', boxShadow: '0 0 10px rgba(239,68,68,0.5), 0 0 20px rgba(239,68,68,0.25), inset 0 0 8px rgba(239,68,68,0.1)' }}
+                                >
+                                    <Shield className="w-3 h-3 text-red-400" />Admin
+                                </span>
+                            )}
                             {topBadges && topBadges.length > 0 && (
                                 <div className="flex items-center gap-1">
                                     {topBadges.map(b => <BadgeChip key={b.id} badge={b} size={22} />)}

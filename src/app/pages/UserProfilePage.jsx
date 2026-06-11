@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   Heart, Star, List, Clock, AlignLeft, Plus, X,
-  MapPin, Pencil, Bookmark, Shield,
+  MapPin, Pencil, Bookmark, Shield, BookOpen,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSignalR } from "../context/SignalRContext";
@@ -32,7 +32,7 @@ function OwnProfileView() {
     watchedMoviesCount, watchedThisYear,
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
-    friends, badges, selectedBadges,
+    friends, badges, selectedBadges, isAdmin,
     addFavorite, removeFavorite, swapFavorites,
   } = useOwnProfileData();
 
@@ -71,21 +71,15 @@ function OwnProfileView() {
   };
 
   const handleAddFavourite = async (movie) => {
-    const result = await addFavorite(movie, targetSlot);
+    const firstEmpty = favoriteMovies.findIndex((m) => m === null);
+    const slot = firstEmpty !== -1 ? firstEmpty : targetSlot;
+    const result = await addFavorite(movie, slot);
     if (result.error) { setDuplicateError(result.error); return; }
     setSearchModalOpen(false);
     setDuplicateError("");
   };
 
-  const displayBadges = selectedBadges?.length > 0
-    ? selectedBadges
-    : (() => {
-        const getHighest = (cat) => {
-          const earned = badges.filter(b => b.category === cat && b.earned);
-          return earned.length ? earned.reduce((max, b) => b.threshold > max.threshold ? b : max, earned[0]) : null;
-        };
-        return [getHighest("watched"), getHighest("reviews")].filter(Boolean);
-      })();
+  const displayBadges = selectedBadges ?? [];
 
   const displayName = user?.username || user?.email || "User";
   const avatarLetter = displayName.charAt(0).toUpperCase();
@@ -111,6 +105,14 @@ function OwnProfileView() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap mb-2">
                 <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">{displayName}</h1>
+                {isAdmin && (
+                                <span
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 text-red-300 border border-red-500/60"
+                                    style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25) 0%, rgba(239,68,68,0.15) 100%)', boxShadow: '0 0 10px rgba(239,68,68,0.5), 0 0 20px rgba(239,68,68,0.25), inset 0 0 8px rgba(239,68,68,0.1)' }}
+                                >
+                                    <Shield className="w-3 h-3 text-red-400" />Admin
+                                </span>
+                            )}
                 {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
                 <Link to="/profile" className="ml-4 flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap">
                   <Pencil className="w-3 h-3" />
@@ -129,7 +131,7 @@ function OwnProfileView() {
             <div className="flex items-center">
               {[
                 { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate("/watched") },
-                { label: "THIS YEAR", value: watchedThisYear },
+                { label: "THIS YEAR", value: watchedThisYear, onClick: () => navigate("/diary") },
                 { label: "LISTS", value: "—" },
                 { label: "FRIENDS", value: friends.length },
               ].map(({ label, value, onClick }, i, arr) => (
@@ -274,6 +276,7 @@ function OwnProfileView() {
               <div className="p-2">
                 {[
                   { to: "/watchlist", icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  { to: "/diary", icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: "/analytics", icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
                   { to: "/my-lists", icon: <List className="w-3.5 h-3.5" />, label: "My Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: "/likedmoviespage", icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
@@ -330,17 +333,9 @@ function PublicProfileView({ id }) {
   const navigate = useNavigate();
   const { isUserOnline } = useSignalR();
   const { user } = useAuth();
-  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges } = usePublicProfileData(id);
+  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin } = usePublicProfileData(id);
 
-  const displayBadges = selectedBadges?.length > 0
-    ? selectedBadges
-    : (() => {
-        const getHighest = (cat) => {
-          const earned = badges.filter(b => b.category === cat && b.earned);
-          return earned.length ? earned.reduce((max, b) => b.threshold > max.threshold ? b : max, earned[0]) : null;
-        };
-        return [getHighest("watched"), getHighest("reviews")].filter(Boolean);
-      })();
+  const displayBadges = selectedBadges ?? [];
 
   if (publicLoading) {
     return (
@@ -386,6 +381,14 @@ function PublicProfileView({ id }) {
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC]">{pub.username}</h1>
+                {isAdmin && (
+                                <span
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 text-red-300 border border-red-500/60"
+                                    style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25) 0%, rgba(239,68,68,0.15) 100%)', boxShadow: '0 0 10px rgba(239,68,68,0.5), 0 0 20px rgba(239,68,68,0.25), inset 0 0 8px rgba(239,68,68,0.1)' }}
+                                >
+                                    <Shield className="w-3 h-3 text-red-400" />Admin
+                                </span>
+                            )}
                 {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
               </div>
               {pub.bio && <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{pub.bio}</p>}
@@ -400,7 +403,7 @@ function PublicProfileView({ id }) {
             <div className="flex items-center">
               {[
                 { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
-                { label: "THIS YEAR", value: pub.watchedThisYear ?? 0 },
+                { label: "THIS YEAR", value: pub.watchedThisYear ?? 0, to: `/user/${id}/diary` },
                 { label: "LISTS", value: "—" },
                 { label: "FRIENDS", value: pub.friendCount ?? 0 },
               ].map(({ label, value, to }, i, arr) => (
@@ -425,10 +428,11 @@ function PublicProfileView({ id }) {
                 <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                {Array.from({ length: 4 }).map((_, i) => {
-                  const movie = pub.favorites[i];
-                  return movie ? (
+              {(pub.favorites ?? []).filter(Boolean).length === 0 ? (
+                <p className="text-[#94A3B8] text-sm">This user hasn't added any favourite films yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  {(pub.favorites ?? []).filter(Boolean).map((movie) => (
                     <ProfilePosterCard
                       key={movie.id}
                       movieId={movie.id}
@@ -436,11 +440,9 @@ function PublicProfileView({ id }) {
                       title={movie.title}
                       to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.id}`}
                     />
-                  ) : (
-                    <div key={`empty-${i}`} className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]" />
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Recent Activity */}
@@ -525,6 +527,7 @@ function PublicProfileView({ id }) {
               <div className="p-2">
                 {[
                   { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  { to: `/user/${id}/diary`, icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: `/user/${id}/analytics`, icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
                   { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
                   { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },

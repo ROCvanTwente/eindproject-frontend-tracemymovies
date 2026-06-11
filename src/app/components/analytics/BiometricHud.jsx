@@ -51,7 +51,7 @@ export function BiometricHud({ stats }) {
             <div className="w-12 h-12 rounded-xl bg-white/[0.02] flex items-center justify-center transition-all duration-300 group-hover:bg-white/[0.05] relative overflow-hidden">
               <Icon className={`w-5 h-5 ${metric.color} transition-transform duration-500 group-hover:scale-110`} />
             </div>
-            
+
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-widest text-[#94A3B8]/40 font-bold mb-0.5">
                 {metric.label}

@@ -17,6 +17,10 @@ import { GlobalMovieDNAPage } from './pages/GlobalMovieDNAPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { LoginPage } from './pages/LoginPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { EmergencyResetPage } from './pages/EmergencyResetPage';
+import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
@@ -29,6 +33,7 @@ import { WatchlistPage } from './pages/WatchlistPage';
 import { BadgesPage } from './pages/BadgesPage';
 import { ActorPage } from './pages/ActorPage';
 import { ReviewsPage } from './pages/ReviewsPage';
+import { DiaryPage } from './pages/DiaryPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -76,6 +81,22 @@ export const router = createBrowserRouter([
             {
                 path: 'forgot-password',
                 element: _jsx(ForgotPasswordPage, {}),
+            },
+            {
+                path: 'reset-password',
+                element: _jsx(ResetPasswordPage, {}),
+            },
+            {
+                path: 'verify-email',
+                element: _jsx(VerifyEmailPage, {}),
+            },
+            {
+                path: 'emergency-reset',
+                element: _jsx(EmergencyResetPage, {}),
+            },
+            {
+                path: 'confirm-email-change',
+                element: _jsx(ConfirmEmailChangePage, {}),
             },
 
             // ── PROTECTED ROUTES ──
@@ -166,6 +187,14 @@ export const router = createBrowserRouter([
             {
                 path: 'user/:userId/watchlist',
                 element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
+                path: 'diary',
+                element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
+            },
+            {
+                path: 'user/:userId/diary',
+                element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
             },
             {
                 path: '500',
