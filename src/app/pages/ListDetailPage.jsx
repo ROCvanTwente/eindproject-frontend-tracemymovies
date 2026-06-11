@@ -215,6 +215,7 @@ export function ListDetailPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
                   <input
                     type="text"
+                    placeholder="Enter name of film..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
