@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { ArrowLeft, Search, X, Film, List, Loader2, Trash2 } from "lucide-react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { DndProvider, useDrag, useDrop, useDragLayer } from "react-dnd";
+import { HTML5Backend, getEmptyImage } from "react-dnd-html5-backend";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 
@@ -10,13 +10,21 @@ const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p";
 
 function DraggableFilmCard({ movie, index, isRanked, moveMovie, onDropEnd, onRemove }) {
   const ref = useRef(null);
+  const posterRef = useRef(null);
 
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag, preview] = useDrag({
     type: "NEW_LIST_MOVIE",
-    item: { index },
+    item: () => {
+      const rect = posterRef.current?.getBoundingClientRect();
+      return { index, movie, width: rect?.width, height: rect?.height };
+    },
     collect: (monitor) => ({ isDragging: monitor.isDragging() }),
     end: () => onDropEnd?.(),
   });
+
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
 
   const [, drop] = useDrop({
     accept: "NEW_LIST_MOVIE",
@@ -31,8 +39,8 @@ function DraggableFilmCard({ movie, index, isRanked, moveMovie, onDropEnd, onRem
   drag(drop(ref));
 
   return (
-    <div ref={ref} className={`group cursor-move ${isDragging ? "opacity-40" : ""}`}>
-      <div className="relative rounded-lg overflow-hidden bg-[#151921]">
+    <div ref={ref} className={`group cursor-move ${isDragging ? "opacity-25" : ""}`}>
+      <div ref={posterRef} className="relative rounded-lg overflow-hidden bg-[#151921]">
         <div className="aspect-[2/3]">
           {movie.poster ? (
             <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover" loading="lazy" />
@@ -57,6 +65,42 @@ function DraggableFilmCard({ movie, index, isRanked, moveMovie, onDropEnd, onRem
       {isRanked && (
         <p className="text-center text-[#BFBCFC] font-bold font-heading text-sm">{index + 1}</p>
       )}
+    </div>
+  );
+}
+
+function getDragLayerStyles(initialOffset, currentOffset) {
+  if (!initialOffset || !currentOffset) return { display: "none" };
+  const { x, y } = currentOffset;
+  return { transform: `translate(${x}px, ${y}px)` };
+}
+
+function FilmDragLayer() {
+  const { isDragging, item, initialOffset, currentOffset } = useDragLayer((monitor) => ({
+    item: monitor.getItem(),
+    isDragging: monitor.isDragging(),
+    initialOffset: monitor.getInitialSourceClientOffset(),
+    currentOffset: monitor.getSourceClientOffset(),
+  }));
+
+  if (!isDragging || !item) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] pointer-events-none">
+      <div style={getDragLayerStyles(initialOffset, currentOffset)}>
+        <div
+          style={{ width: item.width, height: item.height }}
+          className="rounded-lg overflow-hidden shadow-2xl shadow-black/60 ring-2 ring-[#BFBCFC]"
+        >
+          {item.movie?.poster ? (
+            <img src={item.movie.poster} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-[#151921]">
+              <Film className="w-8 h-8 text-[#94A3B8]/20" />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -324,6 +368,7 @@ export function CreateListPage() {
 
   return (
     <DndProvider backend={HTML5Backend}>
+      <FilmDragLayer />
       <div className="min-h-screen py-8 md:py-12">
         <div className="container mx-auto px-4 max-w-6xl">
           <Link
