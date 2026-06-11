@@ -88,26 +88,8 @@ export function WatchlistPage() {
 
       {/* ── HEADER ── */}
       <div className="relative overflow-hidden">
-        {movies.length > 0 && (
-          <>
-            <div className="absolute inset-0 flex">
-              {movies.slice(0, 7).map((m) => (
-                <div
-                  key={m.movieId}
-                  className="flex-1 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${m.poster})` }}
-                />
-              ))}
-            </div>
-            <div className="absolute inset-0 bg-[#0B0E14]/80 backdrop-blur-3xl" />
-          </>
-        )}
-        {movies.length === 0 && (
-          <>
-            <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#BFBCFC]/8 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#44FFFF]/4 rounded-full blur-3xl pointer-events-none" />
-          </>
-        )}
+        <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#BFBCFC]/6 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#44FFFF]/3 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0B0E14] to-transparent" />
 
         <div className="relative container mx-auto px-4 max-w-7xl py-6 md:py-8">
