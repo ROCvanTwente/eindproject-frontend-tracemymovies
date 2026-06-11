@@ -258,7 +258,7 @@ export function ProfilePage() {
                         setFormData((prev) => ({ ...prev, username: updatedUser.userName, email: updatedUser.email }));
                         setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
                         closeReAuth();
-                        toast.info(`Check your current email inbox to confirm the change to ${data.pendingEmail}.`, { duration: 6000 });
+                        toast.info(`Step 1: Check your current email to confirm the request. Step 2: Your new email (${data.pendingEmail}) will also need to confirm.`, { duration: 9000 });
                     } else {
                     updateUser({
                         username: updatedUser.userName,

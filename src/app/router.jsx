@@ -21,6 +21,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { EmergencyResetPage } from './pages/EmergencyResetPage';
 import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
+import { ConfirmEmailChangeRequestPage } from './pages/ConfirmEmailChangeRequestPage';
 import { ConfirmDeletePage } from './pages/ConfirmDeletePage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -94,6 +95,10 @@ export const router = createBrowserRouter([
             {
                 path: 'emergency-reset',
                 element: _jsx(EmergencyResetPage, {}),
+            },
+            {
+                path: 'confirm-email-change-request',
+                element: _jsx(ConfirmEmailChangeRequestPage, {}),
             },
             {
                 path: 'confirm-email-change',
