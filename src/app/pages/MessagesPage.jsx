@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from "../context/AuthContext";
@@ -14,7 +14,7 @@ export function MessagesPage() {
     const [connection, setConnection] = useState(null);
     const [messages, setMessages] = useState([]);
 
-    const handleSendMessage = async (e) => {
+    const handleSendMessage = useCallback(async (e) => {
         e.preventDefault();
         if (!messageText.trim())
             return;
@@ -29,7 +29,28 @@ export function MessagesPage() {
         } finally {
             setMessageText('');
         }
-    };
+    });
+
+    const getCorrectImgMessage = useCallback((senderId) => {
+        console.log(selectedFriend)
+        if (senderId == auth.user.userId && auth.user.profilePicture) {
+            return <img
+                className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center"
+                src={auth.user.profilePicture}
+                alt={auth.user.userName}
+            />
+        } else if (senderId == selectedFriend.userId && selectedFriend.profileImageBase64) {
+            return <img
+                className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center"
+                src={`data:image/png;base64,${selectedFriend.profileImageBase64}`}
+                alt={selectedFriend.userName}
+            />
+        } else {
+            return <div className="w-12 h-12 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                <span className="text-[#0B0E14] font-bold text-xl">{senderId == auth.user.userId ? auth.user.username[0] : selectedFriend.userName[0]}</span>
+            </div>
+        }
+    });
 
     const token = useMemo(() => {
         return (
@@ -86,8 +107,13 @@ export function MessagesPage() {
     }, [messages]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setMessages([])
+        const headers = { 'Authorization': `Bearer ${token}` };
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetMessages?friendId=${selectedFriend.userId}`, { headers })
+            .then((r) => r.ok ? r.json() : [])
+            .then((data) => {
+                setMessages(data);
+            })
+            .catch((err) => console.log(err));
     }, [selectedFriend])
 
     return (
@@ -139,11 +165,17 @@ export function MessagesPage() {
                                             className="relative flex-shrink-0 hover:opacity-80 transition-opacity"
                                             onClick={(e) => e.stopPropagation()}
                                         >
-                                            <img
-                                                className='w-12 h-12 rounded-full flex items-center justify-center'
-                                                src={`data:image/png;base64,${friend.profileImageBase64}`}
-                                                alt={friend.userId}
-                                            />
+                                            {friend.profileImageBase64 ? (
+                                                <img
+                                                    className='w-12 h-12 rounded-full flex items-center justify-center'
+                                                    src={`data:image/png;base64,${friend.profileImageBase64}`}
+                                                    alt={friend.userId}
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                                                    <span className="text-[#0B0E14] font-bold text-xl">{friend.userName[0]}</span>
+                                                </div>
+                                            )}
                                             {friend.isOnline ? (
                                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#151921]" />
                                             ) : (
@@ -176,11 +208,17 @@ export function MessagesPage() {
                                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                                     >
                                         <div className="relative">
-                                            <img
-                                                className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center"
-                                                src={`data:image/png;base64,${selectedFriend.profileImageBase64}`}
-                                                alt={selectedFriend.userId}
-                                            />
+                                            {selectedFriend.profileImageBase64 ? (
+                                                <img
+                                                    className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center"
+                                                    src={`data:image/png;base64,${selectedFriend.profileImageBase64}`}
+                                                    alt={selectedFriend.userId}
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                                                    <span className="text-[#0B0E14] font-bold text-xl">{selectedFriend.userName[0]}</span>
+                                                </div>
+                                            )}
                                             {selectedFriend.isOnline ? (
                                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#151921]" />
                                             ) : (
@@ -210,11 +248,7 @@ export function MessagesPage() {
                                                 to={`/user/${message.senderId == auth.user.userId ? auth.user.userId : selectedFriend.userId}`}
                                                 className="flex-shrink-0 hover:opacity-80 transition-opacity"
                                             >
-                                                <img
-                                                    className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center"
-                                                    src={message.senderId == auth.user.userId ? auth.user.profilePicture : `data:image/png;base64,${selectedFriend.profileImageBase64}`}
-                                                    alt={message.senderId == auth.user.userId ? auth.user.username : selectedFriend.userName}
-                                                />
+                                                {getCorrectImgMessage(message.senderId)}
                                             </Link>
 
                                             <div
