@@ -18,6 +18,36 @@ import { usePublicProfileData } from "../hooks/usePublicProfileData";
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAAALAAAAAABAAEAAAICRAEAOw==";
 
+function RecentListCard({ list, to }) {
+  const posters = (list.previewPosters ?? []).filter(Boolean).slice(0, 6);
+
+  return (
+    <Link to={to} className="group inline-block px-1 py-1 rounded-lg hover:bg-[#44FFFF]/6 transition-all">
+      <div className="flex items-center h-32">
+        {posters.length > 0 ? (
+          posters.map((poster, i) => (
+            <div
+              key={i}
+              className={`w-24 h-32 rounded-md overflow-hidden border-2 border-[#151921] shadow-lg shadow-black/40 ${i > 0 ? "-ml-12" : ""}`}
+              style={{ zIndex: i + 1 }}
+            >
+              <img src={poster} alt="" className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))
+        ) : (
+          <div className="w-24 h-32 rounded-md bg-[#0B0E14]" />
+        )}
+      </div>
+      <div className="flex items-center justify-between mt-1.5 px-0.5">
+        <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors truncate">{list.listName}</span>
+        <span className="text-[#94A3B8]/40 text-xs ml-2 flex-shrink-0">
+          {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export function UserProfilePage() {
   const { id } = useParams();
   if (!id) return <OwnProfileView />;
@@ -32,7 +62,7 @@ function OwnProfileView() {
 
   const {
     favoriteMovies, favoritesLoading,
-    watchedMoviesCount, watchedThisYear, listsCount,
+    watchedMoviesCount, watchedThisYear, listsCount, recentLists,
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, badges, selectedBadges, isAdmin,
@@ -350,17 +380,14 @@ function OwnProfileView() {
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
                 <Link to="/my-lists" className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All →</Link>
               </div>
-              <div className="p-2">
-                {[
-                  { name: "Top 10 Sci-Fi", count: 10 },
-                  { name: "Favourite Thrillers", count: 7 },
-                  { name: "Must Watch 2024", count: 15 },
-                ].map((list) => (
-                  <div key={list.name} className="group flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-[#44FFFF]/6 cursor-pointer transition-all">
-                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors truncate">{list.name}</span>
-                    <span className="text-[#94A3B8]/40 text-xs tabular-nums ml-2 flex-shrink-0">{list.count}</span>
-                  </div>
-                ))}
+              <div className="p-2 divide-y divide-white/5">
+                {recentLists.length > 0 ? (
+                  recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/list/${list.listId}`} />
+                  ))
+                ) : (
+                  <p className="text-[#94A3B8]/40 text-xs italic px-3 py-2.5">No lists yet.</p>
+                )}
               </div>
             </div>
           </div>
@@ -388,7 +415,7 @@ function PublicProfileView({ id }) {
   const navigate = useNavigate();
   const { isUserOnline } = useSignalR();
   const { user } = useAuth();
-  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount } = usePublicProfileData(id);
+  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount, recentLists } = usePublicProfileData(id);
 
   const displayBadges = selectedBadges ?? [];
 
@@ -599,10 +626,19 @@ function PublicProfileView({ id }) {
             <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to={`/user/${id}/lists`} className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All →</Link>
               </div>
-              <div className="px-4 py-3">
-                <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
-              </div>
+              {recentLists.length > 0 ? (
+                <div className="p-2 divide-y divide-white/5">
+                  {recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/user/${id}/list/${list.listId}`} />
+                  ))}
+                </div>
+              ) : (
+                <div className="px-4 py-3">
+                  <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
