@@ -1,38 +1,73 @@
 import { useState } from 'react';
 import { Clock } from 'lucide-react';
 
-const ERA_DATA = [
-  { id: 0, label: 'Vintage Classics', range: 'Pre-1980', color: '#BFBCFC', pct: 15, summary: 'Foundational cornerstones of cinema history and early narrative masterpieces.' },
-  { id: 1, label: 'Nostalgia Gold', range: '1980 - 2000', color: '#FF61D2', pct: 35, summary: 'Practical effects, legendary scripts, and indie revolutions.' },
-  { id: 2, label: 'Modern Blockbusters', range: '2000 - 2020', color: '#44FFFF', pct: 40, summary: 'Pristine digital workflows and sprawling complex franchises.' },
-  { id: 3, label: 'Streaming Era', range: '2020+', color: '#AFA9FF', pct: 10, summary: 'Hyper-modern aesthetics and contemporary experimental formats.' }
-];
+// Explicit color mapper based on movie timeline eras
+const getEraColor = (label, idx) => {
+  const lower = (label || '').toLowerCase();
+  
+  if (lower.includes('vintage classics')) return '#22ffe9';
+  if (lower.includes('nostalgia gold')) return '#bfbcfc';
+  if (lower.includes('modern blockbusters')) return '#ff69ff';
+  if (lower.includes('streaming era')) return '#00FFFF';
+  
+  // Fallback palette for any unexpected dynamic eras
+  const fallbackPalette = ['#FF61D2', '#3B82F6', '#EC4899', '#AFA9FF'];
+  return fallbackPalette[idx % fallbackPalette.length];
+};
 
-export function MovieTimeline() {
+export function MovieTimeline({ rawData }) {
   const [activeIdx, setActiveIdx] = useState(null);
 
-  return (
-    <div className="bg-[#151921]/70 backdrop-blur-xl rounded-2xl p-6 flex flex-col h-full select-none">
-      <div className="flex items-center gap-2 mb-2">
-        <Clock className="w-5 h-5 text-[#BFBCFC]" />
-        <h3 className="text-[#F8FAFC] font-bold font-heading text-lg">Movie Timeline</h3>
-      </div>
-      <p className="text-[#94A3B8] text-xs mb-6">A breakdown of the historical release eras you spend the most time exploring.</p>
+  // Safe parsing of dynamic backend data map
+  const timelineData = (rawData || []).map((item, idx) => {
+    const label = item.label || item.eraName || 'Unknown Era';
+    return {
+      id: item.id || idx,
+      label,
+      range: item.range || item.eraRange || '',
+      pct: item.pct || item.percentage || 0,
+      color: getEraColor(label, idx),
+    };
+  });
 
+  if (timelineData.length === 0) {
+    return (
+      <div className="w-full py-8 text-center text-[#94A3B8] text-sm font-medium border border-dashed border-white/5 rounded-xl">
+        No timeline breakdown metrics detected.
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full select-none flex flex-col h-full bg-transparent">
+      {/* Header Info */}
+      <div className="flex items-center gap-2 mb-2">
+        <Clock className="w-5 h-5 text-[#44FFFF] drop-shadow-[0_0_8px_rgba(68,255,255,0.5)]" />
+        <h3 className="text-[#F8FAFC] font-bold font-heading text-xl tracking-wide">Movie Timeline</h3>
+      </div>
+      <p className="text-[#94A3B8] text-xs mb-6">
+        A dynamic chronological dissection of your viewing habits mapped across historical release eras.
+      </p>
+
+      {/* Seamless Continuous Ribbon Block without any internal borders */}
       <div 
-        className="h-5 w-full rounded-full flex overflow-hidden border border-white/5 mb-6 transition-all duration-300"
+        className="h-8 w-full rounded-xl flex overflow-hidden border border-white/10 mb-8 bg-[#151921]/40 backdrop-blur-sm p-[3px] transition-all duration-300"
         onMouseLeave={() => setActiveIdx(null)}
       >
-        {ERA_DATA.map((item, idx) => {
+        {timelineData.map((item, idx) => {
           const isDimmed = activeIdx !== null && activeIdx !== idx;
+          const isCurrent = activeIdx === idx;
           return (
             <div
               key={item.id}
-              className="h-full cursor-pointer transition-all duration-300"
+              className="h-full first:rounded-l-lg last:rounded-r-lg cursor-pointer transition-all duration-300 relative"
               style={{ 
                 width: `${item.pct}%`, 
                 backgroundColor: item.color,
-                opacity: isDimmed ? 0.3 : 1
+                opacity: isDimmed ? 0.35 : 1,
+                boxShadow: isCurrent ? `0 0 25px ${item.color}bf` : 'none',
+                transform: isCurrent ? 'scaleY(1.08)' : 'scaleY(1)',
+                zIndex: isCurrent ? 10 : 1
               }}
               onMouseEnter={() => setActiveIdx(idx)}
             />
@@ -40,8 +75,9 @@ export function MovieTimeline() {
         })}
       </div>
 
-      <div className="space-y-2 flex-1 overflow-y-auto">
-        {ERA_DATA.map((item, idx) => {
+      {/* Grid distribution across the expanded space */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        {timelineData.map((item, idx) => {
           const isHighlighted = activeIdx === idx;
           const processingHover = activeIdx !== null;
 
@@ -50,25 +86,46 @@ export function MovieTimeline() {
               key={item.id}
               onMouseEnter={() => setActiveIdx(idx)}
               onMouseLeave={() => setActiveIdx(null)}
-              className="p-3 rounded-xl border transition-all duration-200 flex items-center justify-between gap-4"
+              className="p-4 rounded-xl border transition-all duration-300 flex flex-col justify-between gap-4 relative overflow-hidden group cursor-pointer"
               style={{
-                backgroundColor: isHighlighted ? 'rgba(21, 25, 33, 0.9)' : 'transparent',
-                borderColor: isHighlighted ? 'rgba(191, 188, 252, 0.25)' : 'transparent',
-                opacity: processingHover && !isHighlighted ? 0.4 : 1
+                backgroundColor: isHighlighted ? 'rgba(21, 25, 33, 0.7)' : 'rgba(21, 25, 33, 0.15)',
+                borderColor: isHighlighted ? `${item.color}60` : 'rgba(255, 255, 255, 0.03)',
+                boxShadow: isHighlighted ? `0 12px 30px -5px ${item.color}20` : 'none',
+                opacity: processingHover && !isHighlighted ? 0.4 : 1,
+                transform: isHighlighted ? 'translateY(-4px)' : 'translateY(0px)'
               }}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-                <div className="min-w-0">
-                  <h4 className="font-bold text-sm text-[#F8FAFC] truncate">
-                    {item.label} <span className="text-[#94A3B8] font-normal text-xs font-data ml-1">({item.range})</span>
+              {/* Decorative Subtle Background Glow Accent on Card Hover */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 pointer-events-none"
+                style={{ backgroundColor: item.color }}
+              />
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-2 h-2 rounded-full transition-transform duration-300 group-hover:scale-125" 
+                    style={{ 
+                      backgroundColor: item.color,
+                      boxShadow: `0 0 8px ${item.color}`
+                    }} 
+                  />
+                  <h4 className="font-bold text-sm text-[#F8FAFC] tracking-wide transition-colors duration-300">
+                    {item.label}
                   </h4>
-                  <p className="text-[#94A3B8] text-xs truncate max-w-md hidden sm:block">{item.summary}</p>
+                </div>
+                <div>
+                  <span className="inline-block text-[10px] uppercase font-semibold font-data tracking-wider opacity-70 px-1.5 py-0.5 rounded bg-white/5 text-[#94A3B8]">
+                    {item.range}
+                  </span>
                 </div>
               </div>
-              <span className="text-sm font-data font-bold flex-shrink-0" style={{ color: item.color }}>
-                {item.pct}%
-              </span>
+
+              <div className="flex items-baseline justify-end mt-1">
+                <span className="text-2xl font-data font-black tracking-tighter" style={{ color: item.color }}>
+                  {item.pct}%
+                </span>
+              </div>
             </div>
           );
         })}

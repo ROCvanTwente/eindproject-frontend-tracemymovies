@@ -38,13 +38,15 @@ export function AuthProvider({ children }) {
 async function register(formData) {
     const res = await registerService(formData);
 
-    setUser({
-        email: formData.email,
-        username: res.username || formData.username,
-        id: res.id ?? null,
-        token: res.token,
-        isAdmin: res.isAdmin ?? false
-    });
+    if (!res.requiresVerification) {
+        setUser({
+            email: formData.email,
+            username: res.username || formData.username,
+            id: res.id ?? null,
+            token: res.token,
+            isAdmin: res.isAdmin ?? false
+        });
+    }
 
     return res;
 }

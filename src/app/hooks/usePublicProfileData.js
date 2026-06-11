@@ -11,6 +11,7 @@ export function usePublicProfileData(userId) {
   const [publicFriends, setPublicFriends] = useState([]);
   const [badges, setBadges] = useState([]);
   const [selectedBadges, setSelectedBadges] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -64,10 +65,11 @@ export function usePublicProfileData(userId) {
         setBadges(d.badges || []);
         const ids = d.selectedBadgeIds || [];
         setSelectedBadges((d.badges || []).filter(b => ids.includes(b.id)));
+        setIsAdmin(d.isAdmin ?? false);
       } catch {}
     };
     fetch_();
   }, [userId]);
 
-  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges };
+  return { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin };
 }

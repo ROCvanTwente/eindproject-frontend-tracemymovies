@@ -245,6 +245,14 @@ export function ProfilePage() {
                     const data = await response.json();
                     const updatedUser = data.user;
                     const newPicture = profilePicture ?? user?.profilePicture;
+
+                    if (data.requiresEmailConfirmation) {
+                        updateUser({ username: updatedUser.userName, profilePicture: newPicture });
+                        setFormData((prev) => ({ ...prev, username: updatedUser.userName, email: updatedUser.email }));
+                        setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
+                        closeReAuth();
+                        toast.info(`Check your current email inbox to confirm the change to ${data.pendingEmail}.`, { duration: 6000 });
+                    } else {
                     updateUser({
                         username: updatedUser.userName,
                         email: updatedUser.email,
@@ -254,6 +262,7 @@ export function ProfilePage() {
                     setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
                     closeReAuth();
                     toast.success('Profile updated!');
+                    }
                 } else {
                     const err = await response.json().catch(() => null);
                     setReAuthError(err?.message || 'Update failed. Check your password.');

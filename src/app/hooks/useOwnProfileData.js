@@ -21,6 +21,7 @@ export function useOwnProfileData() {
   const [watchlistLoading, setWatchlistLoading] = useState(true);
   const [badges, setBadges] = useState([]);
   const [selectedBadges, setSelectedBadges] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetch_ = async () => {
@@ -140,6 +141,7 @@ export function useOwnProfileData() {
         setBadges(d.badges || []);
         const ids = d.selectedBadgeIds || [];
         setSelectedBadges((d.badges || []).filter(b => ids.includes(b.id)));
+        setIsAdmin(d.isAdmin ?? false);
       } catch {}
     };
     fetch_();
@@ -182,8 +184,9 @@ export function useOwnProfileData() {
   const removeFavorite = async (slotIndex) => {
     const newSlots = [...favoriteMovies];
     newSlots[slotIndex] = null;
-    setFavoriteMovies(newSlots);
-    await saveFavoriteSlots(newSlots);
+    const compacted = [...newSlots.filter(Boolean), null, null, null, null].slice(0, 4);
+    setFavoriteMovies(compacted);
+    await saveFavoriteSlots(compacted);
   };
 
   const swapFavorites = async (fromSlot, toSlot) => {
@@ -199,7 +202,7 @@ export function useOwnProfileData() {
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, watchlistPreview, watchlistLoading,
-    badges, selectedBadges,
+    badges, selectedBadges, isAdmin,
     addFavorite, removeFavorite, swapFavorites,
   };
 }

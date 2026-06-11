@@ -5,7 +5,6 @@ import { DirectorSynergy } from "../components/analytics/DirectorSynergy";
 import { YearlyChart } from "../components/analytics/YearlyChart";
 import { MoodRadar as TasteProfile } from "../components/analytics/MoodRadar";
 import { MovieTimeline } from "../components/analytics/MovieTimeline";
-import { PlatformStats } from "../components/analytics/PlatformStats";
  
 export function AnalyticsPage() {
   const [analyticsData, setAnalyticsData] = useState(null);
@@ -76,16 +75,18 @@ export function AnalyticsPage() {
             </div>
           </section>
  
-          {/* TIER 2: Time ribbon and Platform statistics */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
-            <MovieTimeline />
-            <PlatformStats />
+          {/* TIER 2: Extended Time Ribbon spanning the cleared space */}
+          <section className="w-full">
+            <MovieTimeline rawData={analyticsData?.movieTimeline} />
           </section>
         </div>
        
         {/* Borderless Floating Footer Card */}
         <section className="bg-[#151921]/20 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
-          <YearlyChart yearlyData={analyticsData?.yearlyData || []} />
+          <YearlyChart 
+            yearlyData={analyticsData?.yearlyData || []} 
+            monthlyData={analyticsData?.monthlyData || {}} 
+          />
         </section>
       </div>
     </div>
