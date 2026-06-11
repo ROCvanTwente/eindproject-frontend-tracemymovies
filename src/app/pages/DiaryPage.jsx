@@ -86,14 +86,24 @@ export function DiaryPage() {
           containsSpoilers: entry.containsSpoilers ?? false,
         }),
       });
+
+      // Rating/like change may have updated FilmRating/FilmLikes (if this is the latest log) — keep myStatus in sync
+      if (("userRating" in changes || "isLiked" in changes) && selected?.movieId === entry.movieId) {
+        fetch(`${API}/database/GetMovieStatus/${entry.movieId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => r.ok ? r.json() : null)
+          .then(setMyStatus)
+          .catch(console.error);
+      }
     } catch {
       updateEntry(entry.logId, { isLiked: entry.isLiked, userRating: entry.userRating });
     }
   };
 
-  // Fetch current user's status for the selected film (public view only)
+  // Fetch current user's status for the selected film
   useEffect(() => {
-    if (!isPublic || !selected) { setMyStatus(null); return; }
+    if (!selected) { setMyStatus(null); return; }
     const token = getToken();
     if (!token) return;
     fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
@@ -258,16 +268,18 @@ export function DiaryPage() {
     setLogModalOpen(false);
     const token = getToken();
     if (!token) return;
+
+    if (selected) {
+      fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then(setMyStatus)
+        .catch(console.error);
+    }
+
     if (isPublic) {
-      // Only refresh myStatus so the dots menu updates — don't touch the public diary
-      if (selected) {
-        fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((r) => r.ok ? r.json() : null)
-          .then(setMyStatus)
-          .catch(console.error);
-      }
+      // Don't touch the public diary — only myStatus needed refreshing
       return;
     }
     fetch(`${API}/UserActivity/YearLog?year=${year}`, {
@@ -290,6 +302,16 @@ export function DiaryPage() {
     // Re-fetch to get updated data
     const token = getToken();
     if (!token) return;
+
+    if (selected) {
+      fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then(setMyStatus)
+        .catch(console.error);
+    }
+
     fetch(`${API}/UserActivity/YearLog?year=${year}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -855,8 +877,8 @@ export function DiaryPage() {
           }}
           preIsRewatch={isPublic ? (logModalConfig.isRewatch ?? false) : true}
           preHasWatchedBefore={isPublic ? (logModalConfig.hasLogged ?? false) : true}
-          preIsLiked={isPublic ? (myStatus?.isFavorite ?? false) : (selected.isLiked ?? false)}
-          preRating={isPublic ? (myStatus?.filmRating ?? 0) : 0}
+          preIsLiked={myStatus?.isFavorite ?? false}
+          preRating={myStatus?.filmRating ?? 0}
           preReviewText={isPublic ? (logModalConfig.reviewText ?? "") : ""}
           preDate={isPublic ? (logModalConfig.date ?? "") : ""}
           preLogId={isPublic ? (logModalConfig.logId ?? null) : null}
