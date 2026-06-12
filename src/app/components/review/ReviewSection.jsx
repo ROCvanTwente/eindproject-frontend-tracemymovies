@@ -503,34 +503,6 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
                                         Contains Spoilers
                                 </div>
                             )}
-                            <DeleteReviewModal
-                                isOpen={deleteModalOpen}
-                                onClose={closeDeleteModal}
-                                reviewAuthor={deleteTarget?.review.user?.userName || deleteTarget?.review.userName || 'Anonymous'}
-                                reviewContent={deleteTarget?.review.review || deleteTarget?.review.content || deleteTarget?.review.reviewText || deleteTarget?.review.text || ''}
-                                reviewId={deleteTarget?.review.id ?? deleteTarget?.review.reviewId}
-                                onDeleted={async () => { await refreshReviews(); }}
-                            />
-
-                            <ReviewModal
-                                isOpen={editModalOpen}
-                                onClose={() => setEditModalOpen(false)}
-                                existingReview={editTarget}
-                                movieTitle={movieTitle}
-                                onSaved={async () => {
-                                    await refreshReviews();
-                                    setEditModalOpen(false);
-                                    toast.success("Review bijgewerkt.");
-                                }}
-                            />
-
-                            <ReportReviewModal
-                                isOpen={reportModalOpen}
-                                onClose={closeReportModal}
-                                review={reportTarget}
-                            />
-
-                            
 
                             {spoiler && !revealedSpoilers[reviewKey] ? (
                                 <div className="relative">
@@ -577,20 +549,10 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
                     }}
                 />
 
-                <ReportModal
+                <ReportReviewModal
                     isOpen={reportModalOpen}
-                    onClose={() => {
-                        setReportModalOpen(false);
-                        setReportTarget(null);
-                    }}
-                    reviewAuthor={reportTarget?.review.user?.userName || reportTarget?.review.userName || 'Anonymous'}
-                    reviewContent={reportTarget?.review.review || reportTarget?.review.content || reportTarget?.review.reviewText || reportTarget?.review.text || ''}
-                    reviewId={reportTarget?.review.id ?? reportTarget?.review.reviewId}
-                    onReport={(reason) => {
-                        toast.success("Review reported.");
-                        setReportModalOpen(false);
-                        setReportTarget(null);
-                    }}
+                    onClose={closeReportModal}
+                    review={reportTarget}
                 />
                 </>
             )}
