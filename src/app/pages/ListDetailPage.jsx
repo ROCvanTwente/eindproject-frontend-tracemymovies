@@ -7,6 +7,28 @@ import { useRefresh } from "../context/RefreshContext";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 
+function DescriptionText({ description }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!description) return null;
+  const isLong = description.length > 160;
+
+  return (
+    <div className="mb-2">
+      <p className={`text-[#94A3B8] leading-relaxed ${!expanded ? "line-clamp-3" : ""}`}>
+        {description}
+      </p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="text-[#BFBCFC] text-xs font-medium hover:text-[#AFA9FF] transition-colors mt-0.5"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function MovieCard({ movie, isRanked }) {
   return (
     <div>
@@ -154,9 +176,7 @@ export function ListDetailPage() {
             <h1 className="text-2xl md:text-4xl font-black leading-none tracking-tight mb-2 text-[#F8FAFC]">
               {list.listName}
             </h1>
-            {list.listDescription && (
-              <p className="text-[#94A3B8] mb-2">{list.listDescription}</p>
-            )}
+            <DescriptionText description={list.listDescription} />
             
             <span className="inline-flex items-center gap-1.5 text-[#F8FAFC] font-data font-medium text-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-[#44FFFF]" />

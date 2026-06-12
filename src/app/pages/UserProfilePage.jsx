@@ -18,6 +18,28 @@ import { usePublicProfileData } from "../hooks/usePublicProfileData";
 const TRANSPARENT_PIXEL =
   "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAAALAAAAAABAAEAAAICRAEAOw==";
 
+function BioText({ bio }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!bio) return null;
+  const isLong = bio.length > 160;
+
+  return (
+    <div className="mb-2 max-w-sm">
+      <p className={`text-[#94A3B8] text-sm leading-relaxed ${!expanded ? "line-clamp-3" : ""}`}>
+        {bio}
+      </p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="text-[#BFBCFC] text-xs font-medium hover:text-[#AFA9FF] transition-colors mt-0.5"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function RecentListCard({ list, to }) {
   const posters = (list.previewPosters ?? []).filter(Boolean).slice(0, 6);
 
@@ -162,7 +184,7 @@ function OwnProfileView() {
                   Edit Profile
                 </Link>
               </div>
-              {user?.bio && <p className="text-[#94A3B8] text-sm leading-relaxed mb-2 max-w-sm">{user.bio}</p>}
+              <BioText bio={user?.bio} />
               {user?.location && (
                 <div className="flex items-center gap-1.5 text-[#94A3B8] text-xs">
                   <MapPin className="w-3.5 h-3.5 text-[#BFBCFC]/50" />
@@ -473,7 +495,7 @@ function PublicProfileView({ id }) {
                             )}
                 {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
               </div>
-              {pub.bio && <p className="text-[#94A3B8] text-sm mb-2 max-w-sm leading-relaxed">{pub.bio}</p>}
+              <BioText bio={pub.bio} />
               {pub.location && (
                 <div className="flex items-center gap-1.5 text-[#94A3B8] text-sm">
                   <MapPin className="w-4 h-4" />
