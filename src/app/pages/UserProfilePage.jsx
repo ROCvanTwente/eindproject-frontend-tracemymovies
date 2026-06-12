@@ -18,6 +18,9 @@ import {
   RotateCw,
   AlignLeft,
   Shield,
+  Pencil,
+  Bookmark,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSignalR } from "../context/SignalRContext";
