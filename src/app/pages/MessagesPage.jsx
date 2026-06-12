@@ -9,8 +9,8 @@ export function MessagesPage() {
     const [messageText, setMessageText] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const auth = useAuth();
-    console.log(auth.user);//
     const [myFriends, setMyFriends] = useState([]);
+    const [filterMyFriends, setFilterMyFriends] = useState([]);
     const [connection, setConnection] = useState(null);
     const [messages, setMessages] = useState([]);
 
@@ -32,7 +32,6 @@ export function MessagesPage() {
     });
 
     const getCorrectImgMessage = useCallback((senderId) => {
-        console.log(selectedFriend)
         if (senderId == auth.user.userId && auth.user.profilePicture) {
             return <img
                 className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center"
@@ -61,16 +60,20 @@ export function MessagesPage() {
         );
     }, [auth]);
 
-
-    useEffect(() => {
+    const getMyFriends = useCallback(() => {
         const headers = { 'Authorization': `Bearer ${token}` };
         fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetMyFriends`, { headers })
             .then((r) => r.ok ? r.json() : [])
             .then((data) => {
                 setMyFriends(data);
-                console.log(data);
+                setFilterMyFriends(data);
             })
             .catch((err) => console.log(err));
+    });
+
+
+    useEffect(() => {
+        getMyFriends();
 
         const newConnection = new signalR.HubConnectionBuilder()
             .withUrl(`${import.meta.env.VITE_API_BASE_URL.replace("/api", "")}/hubs/chat`, {
@@ -114,7 +117,16 @@ export function MessagesPage() {
                 setMessages(data);
             })
             .catch((err) => console.log(err));
-    }, [selectedFriend])
+    }, [selectedFriend, token])
+
+    useEffect(() => {
+        if (searchQuery == '') {
+            setFilterMyFriends(myFriends)
+        } else {
+            let filterMyFriends = myFriends.filter((friend) => friend.userName.includes(searchQuery));
+            setFilterMyFriends(filterMyFriends);
+        }
+    }, [searchQuery])
 
     return (
         <div className="min-h-screen py-8">
@@ -123,10 +135,10 @@ export function MessagesPage() {
                 {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-3xl md:text-4xl font-bold font-heading text-[#F8FAFC] mb-2">
-                        Messages
+                        Chats
                     </h1>
                     <p className="text-[#94A3B8] text-sm md:text-base">
-                        Chat with your movie friends
+                        Chat with your friends
                     </p>
                 </div>
 
@@ -136,7 +148,7 @@ export function MessagesPage() {
                     {/* Left Column: Chat List */}
                     <div className="lg:col-span-1 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col">
                         <div className="p-4 border-b border-[#BFBCFC]/15">
-                            <div className="relative mb-4">
+                            <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 h-4" />
                                 <input
                                     type="text"
@@ -146,14 +158,10 @@ export function MessagesPage() {
                                     className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-10 pr-4 py-2 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] text-sm"
                                 />
                             </div>
-                            <button className="w-full bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2">
-                                <UserPlus className="w-4 h-4" />
-                                New Chat
-                            </button>
                         </div>
 
                         <div className="flex-1 overflow-y-auto">
-                            {myFriends.map((friend) => (
+                            {filterMyFriends.map((friend) => (
                                 <div
                                     key={friend.userId}
                                     className={`cursor-pointer relative w-full p-4 border-b border-[#BFBCFC]/10 hover:bg-[#BFBCFC]/5 transition-all ${selectedFriend === friend.userId ? 'bg-[#BFBCFC]/10' : ''}`}
@@ -227,14 +235,11 @@ export function MessagesPage() {
                                         </div>
                                         <div>
                                             <h2 className="text-[#F8FAFC] font-bold">{selectedFriend.userName}</h2>
-                                            <p className="text-[#44FFFF] text-xs">
+                                            <p className={`${selectedFriend.isOnline ? 'text-[#44FFFF]' : 'text-[#3b424f]'} text-xs`}>
                                                 {selectedFriend.isOnline ? 'Online' : 'Offline'}
                                             </p>
                                         </div>
                                     </Link>
-                                    <button className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] rounded-lg hover:bg-[#BFBCFC]/10 transition-all">
-                                        <MoreVertical className="w-5 h-5" />
-                                    </button>
                                 </div>
 
                                 {/* Messages List */}
