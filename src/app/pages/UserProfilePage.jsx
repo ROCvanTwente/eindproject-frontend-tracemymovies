@@ -90,7 +90,8 @@ function RecentListCard({ list, to }) {
 
 export function UserProfilePage() {
   const { id } = useParams();
-  if (!id) return <OwnProfileView />;
+  const { user } = useAuth();
+  if (!id || id === user?.id) return <OwnProfileView />;
   return <PublicProfileView id={id} />;
 }
 
@@ -645,35 +646,6 @@ function PublicProfileView({ id }) {
             <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
-              </div>
-              <div className="space-y-0.5">
-            {user?.isAdmin && (
-              <Link to="/admin" className="flex items-center gap-2.5 text-[#FF61D2] hover:text-[#FF4DC7] font-semibold transition-colors text-sm py-2 group">
-                <Shield className="w-3.5 h-3.5 group-hover:text-[#FF4DC7] transition-colors" />
-                Admin Dashboard
-              </Link>
-            )}
-                <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
-                  Movie DNA & Analytics
-                </Link>
-                <Link to="/my-lists" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <List className="w-3.5 h-3.5 group-hover:text-[#BFBCFC] transition-colors" />
-                  My Lists
-                </Link>
-                <Link to="/likedmoviespage" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Heart className="w-3.5 h-3.5 group-hover:text-[#FF61D2] transition-colors" />
-                  Liked Films
-                </Link>
-              </div>
-            </div>
-
-            {/* Recent Lists */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#44FFFF]/30 to-transparent" />
               </div>
               <div className="p-2">
                 {[
