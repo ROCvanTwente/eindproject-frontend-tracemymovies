@@ -133,15 +133,17 @@ export async function register({
     }
  
     const data = await res.json();
- 
-    setToken(data.token, remember);
-    setStoredUser({
-        email,
-        username: data.username || username,
-        id: data.id,
-        isAdmin: data.isAdmin || false
-    }, remember);
- 
+
+    if (!data.requiresVerification) {
+        setToken(data.token, remember);
+        setStoredUser({
+            email,
+            username: data.username || username,
+            id: data.id,
+            isAdmin: data.isAdmin || false
+        }, remember);
+    }
+
     return data;
 }
  
@@ -164,11 +166,16 @@ export async function validateToken() {
  
         return {
             ...stored,
+            userId: profile.id,
             username: profile.userName,
             email: profile.email,
             profilePicture: profile.profileImageBase64
                 ? `data:image/jpeg;base64,${profile.profileImageBase64}`
-                : null
+                : null,
+            location: profile.location ?? null,
+            bio: profile.bio ?? null,
+            isOnline: profile.isOnline ?? false,
+            lastSeen: profile.lastSeen ?? null,
         };
     } catch {
         return getStoredUser();

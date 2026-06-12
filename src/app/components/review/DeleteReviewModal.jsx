@@ -29,7 +29,7 @@ export function DeleteReviewModal({ isOpen, onClose, reviewAuthor, reviewContent
       onClose();
     } catch (e) {
       console.error("Delete failed:", e);
-      toast.error("Kon review niet verwijderen.");
+      toast.error("Could not delete review.");
     } finally {
       setConfirmText("");
       setIsDeleting(false);

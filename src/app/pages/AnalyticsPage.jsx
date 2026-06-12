@@ -5,16 +5,15 @@ import { DirectorSynergy } from "../components/analytics/DirectorSynergy";
 import { YearlyChart } from "../components/analytics/YearlyChart";
 import { MoodRadar as TasteProfile } from "../components/analytics/MoodRadar";
 import { MovieTimeline } from "../components/analytics/MovieTimeline";
-import { PlatformStats } from "../components/analytics/PlatformStats";
-
+ 
 export function AnalyticsPage() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(true);
-
+ 
   const getToken = () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
-
+ 
   useEffect(() => {
-    const fetchWatchlistShort = async () => {
+    const fetchAllData = async () => {
       try {
         const token = getToken();
         if (!token) return;
@@ -33,12 +32,14 @@ export function AnalyticsPage() {
           setAnalyticsData(aData);
         }
       } catch (error) {
-        console.error("Error fetching watchlist short:", error);
+        console.error("Error fetching movie DNA analytics:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchAllData();
   }, []);
-
+ 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0B0E14]">
@@ -50,21 +51,21 @@ export function AnalyticsPage() {
       </div>
     );
   }
-
+ 
   return (
     <div className="min-h-screen bg-[#0B0E14] text-[#F8FAFC] relative overflow-hidden selection:bg-[#44FFFF]/20 selection:text-[#44FFFF]">
       <div className="absolute top-[-10%] left-[-5%] w-[60vw] h-[60vw] rounded-full bg-[#44FFFF]/3 blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-5%] w-[60vw] h-[60vw] rounded-full bg-[#FF61D2]/3 blur-3xl pointer-events-none" />
-      
+     
       <div className="container mx-auto px-6 max-w-7xl relative z-10 py-12 space-y-12 animate-fade-in">
         <AnalyticsHeader />
-        
+       
         <section>
           <BiometricHud stats={analyticsData?.stats} />
         </section>
-
+ 
         <div className="space-y-12 pt-4">
-          {/* TIER 1: Connected directly to Live API Feed Properties */}
+          {/* TIER 1: Connected directly to Dynamic API Feeds */}
           <section className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 items-stretch">
             <div className="lg:col-span-3 min-h-[420px] w-full flex items-center justify-center">
               <TasteProfile rawData={analyticsData?.tasteProfile} />
@@ -73,15 +74,19 @@ export function AnalyticsPage() {
               <DirectorSynergy rawPairings={analyticsData?.directorSynergy} />
             </div>
           </section>
-
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
-            <MovieTimeline />
-            <PlatformStats />
+ 
+          {/* TIER 2: Extended Time Ribbon spanning the cleared space */}
+          <section className="w-full">
+            <MovieTimeline rawData={analyticsData?.movieTimeline} />
           </section>
         </div>
-        
+       
+        {/* Borderless Floating Footer Card */}
         <section className="bg-[#151921]/20 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
-          <YearlyChart yearlyData={analyticsData?.yearlyData || []} />
+          <YearlyChart 
+            yearlyData={analyticsData?.yearlyData || []} 
+            monthlyData={analyticsData?.monthlyData || {}} 
+          />
         </section>
       </div>
     </div>

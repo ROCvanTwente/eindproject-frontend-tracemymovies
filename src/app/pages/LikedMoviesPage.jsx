@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
 import { Heart, Search, Film, Star, AlignLeft } from "lucide-react";
+import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
 import { Link } from "react-router";
 
@@ -11,6 +12,7 @@ const LikedMoviesPage = () => {
   const { userId } = useParams();
   const isPublic = !!userId;
   const [likedMovies, setLikedMovies] = useState([]);
+  const [ownerUsername, setOwnerUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortValue, setSortValue] = useState(null);
@@ -48,6 +50,10 @@ const LikedMoviesPage = () => {
         if (!response.ok) throw new Error("Could not fetch liked films");
         const data = await response.json();
         setLikedMovies(data);
+        if (isPublic) {
+          const profRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+          if (profRes.ok) { const d = await profRes.json(); setOwnerUsername(d.username); }
+        }
       } catch (error) {
         console.error(error);
         toast.error("Error loading your likes");
@@ -58,7 +64,7 @@ const LikedMoviesPage = () => {
     if (token) fetchAllLikedMovies();
   }, [token, refreshKey, userId]);
 
-  const { genre, setGenre, decade, setDecade, rating, setRating, filtered: filterResult, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset } = useMovieFilters(likedMovies);
+  const { genre, setGenre, decade, setDecade, year, setYear, rating, setRating, filtered: filterResult, availableGenres, availableDecades, ratingOptions, hasActiveFilters, reset } = useMovieFilters(likedMovies);
 
   const filtered = useMemo(() => {
     let result = filterResult;
@@ -92,29 +98,8 @@ const LikedMoviesPage = () => {
       {/* ── CINEMATIC HEADER ── */}
       <div className="relative overflow-hidden">
 
-        {/* Backdrop: user's own liked posters blurred together */}
-        {likedMovies.length > 0 && (
-          <>
-            <div className="absolute inset-0 flex">
-              {likedMovies.slice(0, 7).map((m) => (
-                <div
-                  key={m._id}
-                  className="flex-1 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${m.poster})` }}
-                />
-              ))}
-            </div>
-            <div className="absolute inset-0 bg-[#0B0E14]/80 backdrop-blur-3xl" />
-          </>
-        )}
-
-        {/* Fallback blobs when no movies */}
-        {likedMovies.length === 0 && (
-          <>
-            <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#FF61D2]/8 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#BFBCFC]/6 rounded-full blur-3xl pointer-events-none" />
-          </>
-        )}
+        <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#FF61D2]/6 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#BFBCFC]/3 rounded-full blur-3xl pointer-events-none" />
 
         {/* Soft fade into page */}
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0B0E14] to-transparent" />
@@ -130,13 +115,10 @@ const LikedMoviesPage = () => {
 
             {/* Title */}
             <div className="flex-1">
-              <p className="text-[#FF61D2]/65 text-[9px] font-bold uppercase tracking-[0.25em] mb-0.5">
-                Your Collection
-              </p>
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
-                Liked{" "}
+                {isPublic && <span className="text-[#F8FAFC]">{ownerUsername ?? "..."}'s </span>}
                 <span className="bg-gradient-to-r from-[#FF61D2] via-[#cc7be0] to-[#BFBCFC] bg-clip-text text-transparent">
-                  Movies
+                  Likes
                 </span>
               </h1>
             </div>
@@ -159,37 +141,56 @@ const LikedMoviesPage = () => {
       {/* ── STICKY TOOLBAR ── */}
       {likedMovies.length > 0 && (
         <div className="sticky top-16 z-30 bg-[#0B0E14]/92 backdrop-blur-xl border-b border-[#BFBCFC]/8">
-          <div className="container mx-auto px-4 max-w-7xl py-3 flex items-center gap-3">
+          <div className="container mx-auto px-4 max-w-7xl pt-3 pb-2 flex flex-col gap-2">
 
-            {/* Search */}
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
-              <input
-                type="text"
-                placeholder="Search your likes..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#FF61D2]/35 transition-all"
+            {/* Row 1: search + sort + filters */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+                <input
+                  type="text"
+                  placeholder="Search your likes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#FF61D2]/35 transition-all"
+                />
+              </div>
+              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["List Order", "Reverse Order", "Average Rating"]} />
+              <MovieFilters
+                genre={genre} setGenre={setGenre}
+                decade={decade} setDecade={setDecade}
+                year={year} setYear={setYear}
+                rating={rating} setRating={setRating}
+                availableGenres={availableGenres}
+                availableDecades={availableDecades}
+                ratingOptions={ratingOptions}
+                hasActiveFilters={hasActiveFilters}
+                reset={reset}
+                hideYearRow
               />
+              {(search || hasActiveFilters) && (
+                <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
+                  {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                </p>
+              )}
             </div>
 
-            <SortDropdown value={sortValue} onChange={setSortValue} />
-
-            <MovieFilters
-              genre={genre} setGenre={setGenre}
-              decade={decade} setDecade={setDecade}
-              rating={rating} setRating={setRating}
-              availableGenres={availableGenres}
-              availableDecades={availableDecades}
-              ratingOptions={ratingOptions}
-              hasActiveFilters={hasActiveFilters}
-              reset={reset}
-            />
-
-            {(search || hasActiveFilters) && (
-              <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
-                {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-              </p>
+            {/* Row 2: year row below search bar */}
+            {decade && (
+              <div className="pb-1">
+                <MovieFilters
+                  genre={genre} setGenre={setGenre}
+                  decade={decade} setDecade={setDecade}
+                  year={year} setYear={setYear}
+                  rating={rating} setRating={setRating}
+                  availableGenres={availableGenres}
+                  availableDecades={availableDecades}
+                  ratingOptions={ratingOptions}
+                  hasActiveFilters={hasActiveFilters}
+                  reset={reset}
+                  yearRowOnly
+                />
+              </div>
             )}
           </div>
         </div>
@@ -201,16 +202,28 @@ const LikedMoviesPage = () => {
           <EmptyState />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <Search className="w-10 h-10 text-[#94A3B8]/25 mb-3" />
-            <p className="text-[#94A3B8] text-sm">
-              Nothing found for{" "}
-              <span className="text-[#F8FAFC] font-medium">"{search}"</span>
-            </p>
+            <Heart className="w-10 h-10 text-[#FF61D2]/20 mb-4" />
+            {(year || decade) && !search ? (
+              <>
+                <p className="text-[#F8FAFC] font-semibold text-base mb-1">
+                  Nothing here yet
+                </p>
+                <p className="text-[#94A3B8] text-sm max-w-xs">
+                  You didn't like anything released in{" "}
+                  <span className="text-[#FF61D2] font-medium">{year ?? decade}</span>.
+                </p>
+              </>
+            ) : (
+              <p className="text-[#94A3B8] text-sm">
+                Nothing found for{" "}
+                <span className="text-[#F8FAFC] font-medium">"{search}"</span>
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
-            {filtered.map((movie, index) => (
-              <MovieCard key={movie.movieId} movie={movie} index={index} />
+            {filtered.map((movie) => (
+              <MovieCard key={movie.movieId} movie={movie} />
             ))}
           </div>
         )}
@@ -220,53 +233,16 @@ const LikedMoviesPage = () => {
 };
 
 /* ── MOVIE CARD ── */
-const MovieCard = ({ movie, index }) => (
+const MovieCard = ({ movie }) => (
   <div className="flex flex-col gap-1.5">
-    <Link to={`/movie/${movie.movieId}`} className="group relative block">
-    <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border border-white/5 transition-all duration-300 group-hover:border-[#FF61D2]/35 group-hover:shadow-xl group-hover:shadow-[#FF61D2]/12">
-
-      {/* Poster */}
-      {movie.poster ? (
-        <img
-          src={movie.poster}
-          alt={movie.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Film className="w-8 h-8 text-[#94A3B8]/20" />
-        </div>
-      )}
-
-      {/* Number badge — top left */}
-      <div className="absolute top-2 left-2 min-w-[22px] h-[22px] px-1.5 bg-[#0B0E14]/80 backdrop-blur-sm rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <span className="text-[#94A3B8] text-[10px] font-bold leading-none">
-          #{index + 1}
-        </span>
-      </div>
-
-      {/* Heart badge — top right */}
-      <div className="absolute top-2 right-2 w-[22px] h-[22px] bg-[#0B0E14]/80 backdrop-blur-sm rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
-      </div>
-
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/25 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-      {/* Title — slides up from bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-2.5 translate-y-1.5 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-        {movie.title && (
-          <h3 className="text-[#F8FAFC] text-[11px] font-semibold leading-tight line-clamp-2">
-            {movie.title}
-          </h3>
-        )}
-      </div>
-
-      {/* Pink ring glow */}
-      <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/5 group-hover:ring-[#FF61D2]/22 transition-all duration-300 pointer-events-none" />
-    </div>
-  </Link>
+    <ProfilePosterCard
+      movieId={movie.movieId}
+      poster={movie.poster}
+      title={movie.title}
+      to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.movieId}`}
+      isLikedProp={true}
+      hasActivityProp={!!movie.latestLogId}
+    />
 
     {/* Icons below poster */}
     <div className="flex items-center gap-1 px-0.5 flex-wrap">
@@ -278,7 +254,7 @@ const MovieCard = ({ movie, index }) => (
         </div>
       )}
       <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />
-      {movie.hasReview && (
+      {movie.hasReview && movie.latestLogId && (
         <Link
           to={`/log/${movie.latestLogId}`}
           onClick={(e) => e.stopPropagation()}

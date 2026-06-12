@@ -1,14 +1,110 @@
-import { Star, Heart, Eye } from 'lucide-react';
+import { useState, useEffect, useMemo } from "react";
+import { Star, Heart, Eye, MoreHorizontal } from 'lucide-react';
+import { useAuth } from "../../context/AuthContext";
+import { useRefresh } from "../../context/RefreshContext";
+import { toast } from "sonner";
 
 export function MovieCarouselCard({ 
     movie, 
     index, 
     showRanking, 
     showReleaseDate, 
-    onMovieClick, 
-    onLike, 
-    onLog 
+    onMovieClick 
 }) {
+    const auth = useAuth();
+    const { triggerRefresh } = useRefresh();
+
+    // Retrieve auth token exactly like ProfilePosterCard
+    const token = useMemo(
+        () =>
+          auth?.token ||
+          auth?.user?.token ||
+          localStorage.getItem("auth_token") ||
+          sessionStorage.getItem("auth_token"),
+        [auth]
+    );
+
+    // Dynamic states for interactive buttons
+    const [isWatched, setIsWatched] = useState(false);
+    const [isLiked, setIsLiked] = useState(false);
+    const [hasActivity, setHasActivity] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    // Fetch live status for this specific card on mount
+    useEffect(() => {
+        const fetchStatus = async () => {
+          try {
+            const res = await fetch(
+              `${import.meta.env.VITE_API_BASE_URL}/database/GetMovieStatus/${movie.id}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            setIsWatched(data.isWatched);
+            setIsLiked(data.isFavorite);
+            setHasActivity(data.hasLogEntries);
+          } catch {}
+        };
+        if (token && movie.id) fetchStatus();
+    }, [movie.id, token]);
+
+    // Handle watch state updates with the API
+    const handleEyeClick = async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (saving) return;
+        setSaving(true);
+        try {
+          if (isWatched && hasActivity) {
+            toast.error(`'${movie.title}' can't be removed because there is activity on it.`);
+            return;
+          } else if (isWatched && !hasActivity) {
+            const res = await fetch(
+              `${import.meta.env.VITE_API_BASE_URL}/database/RemoveWatchActivity/${movie.id}`,
+              { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (res.ok) { setIsWatched(false); triggerRefresh(); }
+          } else {
+            const res = await fetch(
+              `${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ MovieId: movie.id }),
+              }
+            );
+            if (res.ok) { setIsWatched(true); triggerRefresh(); }
+          }
+        } catch {}
+        finally { setSaving(false); }
+    };
+
+    // Handle favorite state updates with the API
+    const handleHeartClick = async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (saving) return;
+        const nextLiked = !isLiked;
+        setIsLiked(nextLiked);
+        setSaving(true);
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/database/ToggleLikeStatus`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ MovieId: movie.id, IsLiked: nextLiked }),
+            }
+          );
+          if (!res.ok) setIsLiked(!nextLiked);
+          else triggerRefresh();
+        } catch {
+          setIsLiked(!nextLiked);
+        } finally {
+          setSaving(false);
+        }
+    };
+
     const imageUrl = movie.poster_path
         ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
         : 'https://via.placeholder.com/500x750/151921/BFBCFC?text=No+Poster';
@@ -32,9 +128,14 @@ export function MovieCarouselCard({
 
     return (
         <div className="px-2">
-            <div className="group cursor-pointer" onClick={(e) => onMovieClick(e, movie.id)}>
-                <div className="relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border border-[#BFBCFC]/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#BFBCFC]/30 hover:border-[#BFBCFC]/40">
-                    
+            <div className="group cursor-pointer relative" onClick={(e) => onMovieClick(e, movie.id)}>
+                <div 
+                    className={`relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border transition-all duration-200 ${
+                        isWatched
+                          ? "border-white/5 group-hover:border-[#44FFFF]/50"
+                          : "border-white/5 group-hover:border-white/30"
+                    }`}
+                >
                     {getRankingBadge()}
                     
                     {showReleaseDate && movie.release_date && (
@@ -46,47 +147,58 @@ export function MovieCarouselCard({
                     <img 
                         src={imageUrl} 
                         alt={movie.title} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                        className="w-full h-full object-cover" 
                     />
                     
-                    {/* Hover Info Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                            
-                            {movie.vote_average > 0 ? (
-                                <div className="flex items-center gap-1.5 text-[#44FFFF] text-sm mb-2 font-data font-medium">
-                                    <Star className="w-4 h-4" fill="currentColor" />
-                                    <span>{movie.vote_average.toFixed(1)}</span>
-                                </div>
-                            ) : (
-                                <div className="text-[#94A3B8] text-xs mb-2.5 font-data font-medium tracking-wide uppercase">
-                                    Not Yet Rated
-                                </div>
-                            )}
-                            
-                            <h3 className="text-[#F8FAFC] font-heading font-medium text-sm line-clamp-2 leading-tight mb-2">
-                                {movie.title}
-                            </h3>
-                            
-                            {/* Action Buttons */}
-                            <div className="flex items-center justify-center gap-4">
-                                <button 
-                                    onClick={(e) => onLike(e, movie.id)}
-                                    className="text-[#F8FAFC] hover:text-[#FF61D2] transition-all duration-200 hover:scale-125"
-                                >
-                                    <Heart className="w-6 h-6 hover:fill-current" />
-                                </button>
-                                <button 
-                                    onClick={(e) => onLog(e, movie.id)}
-                                    className="text-[#F8FAFC] hover:text-[#44FFFF] transition-all duration-200 hover:scale-125"
-                                >
-                                    <Eye className="w-6 h-6" />
-                                </button>
-                            </div>
-                        </div>
+                    {/* Hover Info & Action Overlay matching layout exactly */}
+                    <div className="absolute inset-0 bg-[#0B0E14]/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-end justify-center pb-3 gap-1.5">
+                        
+                        {/* Eye icon - Log Activity */}
+                        <button
+                          onClick={handleEyeClick}
+                          className={`relative w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-all ${
+                            isWatched
+                              ? "bg-[#44FFFF]/20 text-[#44FFFF] hover:bg-[#44FFFF]/30"
+                              : "bg-black/50 text-[#94A3B8] hover:text-[#44FFFF] hover:bg-[#44FFFF]/20"
+                          }`}
+                          title={isWatched ? (hasActivity ? "Has activity" : "Unwatch") : "Mark as watched"}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        {/* Heart icon - Like Movie */}
+                        <button
+                          onClick={handleHeartClick}
+                          className={`w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-all ${
+                            isLiked
+                              ? "bg-[#FF61D2]/20 text-[#FF61D2] hover:bg-[#FF61D2]/30"
+                              : "bg-black/50 text-[#94A3B8] hover:text-[#FF61D2] hover:bg-[#FF61D2]/20"
+                          }`}
+                          title={isLiked ? "Unlike" : "Like"}
+                        >
+                          <Heart className={`w-4 h-4 ${isLiked ? "fill-[#FF61D2]" : ""}`} />
+                        </button>
+
+                        {/* Three dots - Context Options / Navigation */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMovieClick(e, movie.id);
+                          }}
+                          className="w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-all bg-black/50 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/20"
+                          title="More options"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
                     </div>
 
                 </div>
+                {/* Dynamic ring outline overlay on hover from ProfilePosterCard */}
+                <div 
+                    className={`absolute inset-0 rounded-xl ring-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
+                        isWatched ? "ring-[#44FFFF]/40" : "ring-white/20"
+                    }`} 
+                />
             </div>
         </div>
     );

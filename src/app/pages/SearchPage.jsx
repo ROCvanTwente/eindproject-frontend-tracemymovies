@@ -311,14 +311,14 @@ export function SearchPage() {
                 <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
                     <AlertCircle className="w-10 h-10 text-red-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#F8FAFC] mb-3">Verbinding mislukt</h2>
-                <p className="text-[#94A3B8] mb-10 max-w-md">Kon geen resultaten ophalen. Controleer of de API actief is.</p>
+                <h2 className="text-2xl font-bold text-[#F8FAFC] mb-3">Connection failed</h2>
+                <p className="text-[#94A3B8] mb-10 max-w-md">Could not fetch results. Check if the API is running.</p>
                 <button
                     onClick={() => urlQuery ? fetchSearch(urlQuery) : fetchBrowse()}
                     className="flex items-center gap-3 bg-[#44FFFF] text-[#0B0E14] py-4 px-10 rounded-2xl font-bold hover:scale-105 transition-all"
                 >
                     <RefreshCw className="w-5 h-5" />
-                    Opnieuw proberen
+                    Try again
                 </button>
             </div>
         );

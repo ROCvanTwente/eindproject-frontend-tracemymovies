@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, Mail, Lock, Upload, Trash2, X, AlertCircle, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, Upload, Trash2, X, AlertCircle, Loader2, MapPin } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -15,6 +15,8 @@ export function ProfilePage() {
     const [formData, setFormData] = useState({
         username: user?.username || '',
         email: user?.email || '',
+        location: user?.location || '',
+        bio: user?.bio || '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
@@ -24,12 +26,52 @@ export function ProfilePage() {
         username: user?.username || '',
         email: user?.email || '',
         profilePicture: user?.profilePicture,
+        location: user?.location || '',
+        bio: user?.bio || '',
     });
 
     const [reAuthModal, setReAuthModal] = useState({ open: false, purpose: null });
     const [reAuthPassword, setReAuthPassword] = useState('');
     const [reAuthError, setReAuthError] = useState('');
     const [reAuthLoading, setReAuthLoading] = useState(false);
+
+    const [locationSuggestions, setLocationSuggestions] = useState([]);
+    const [locationLoading, setLocationLoading] = useState(false);
+    const locationRef = useRef(null);
+
+    // Close suggestions on outside click
+    useEffect(() => {
+        const handler = (e) => {
+            if (locationRef.current && !locationRef.current.contains(e.target))
+                setLocationSuggestions([]);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    // Debounced location search via Nominatim
+    useEffect(() => {
+        const q = formData.location?.trim();
+        if (!q || q.length < 2) { setLocationSuggestions([]); return; }
+        const timer = setTimeout(async () => {
+            setLocationLoading(true);
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
+                    { headers: { 'Accept-Language': 'en' } }
+                );
+                const data = await res.json();
+                setLocationSuggestions(data.map(item => {
+                    const a = item.address;
+                    const city = a.city || a.town || a.village || a.municipality || a.county || '';
+                    const country = a.country || '';
+                    return city && country ? `${city}, ${country}` : item.display_name.split(',').slice(0, 2).join(',').trim();
+                }).filter((v, i, arr) => arr.indexOf(v) === i));
+            } catch { setLocationSuggestions([]); }
+            finally { setLocationLoading(false); }
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [formData.location]);
 
     const syncedRef = useRef(false);
     useEffect(() => {
@@ -39,11 +81,15 @@ export function ProfilePage() {
             ...prev,
             username: user.username || '',
             email: user.email || '',
+            location: user.location || '',
+            bio: user.bio || '',
         }));
         setSavedData({
             username: user.username || '',
             email: user.email || '',
             profilePicture: user.profilePicture,
+            location: user.location || '',
+            bio: user.bio || '',
         });
         setProfilePicture(user.profilePicture);
     }, [user]);
@@ -74,6 +120,12 @@ export function ProfilePage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        if (file.size > 100 * 1024) {
+            toast.error('Afbeelding is te groot. Maximum is 100KB.');
+            e.target.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onloadend = async () => {
             const imageUrl = reader.result;
@@ -88,6 +140,8 @@ export function ProfilePage() {
                 body: JSON.stringify({
                     username: formData.username || user?.username,
                     email: formData.email || user?.email,
+                    location: formData.location || null,
+                    bio: formData.bio || null,
                     profileImageBase64: imageUrl.split(",")[1]
                 })
             });
@@ -95,36 +149,78 @@ export function ProfilePage() {
             if (response.ok) {
                 updateUser({ profilePicture: imageUrl });
                 setSavedData(prev => ({ ...prev, profilePicture: imageUrl }));
-                toast.success('Profielfoto opgeslagen!');
+                toast.success('Profile picture saved!');
             } else {
-                toast.error('Profielfoto opslaan mislukt');
+                toast.error('Failed to save profile picture');
             }
         };
         reader.readAsDataURL(file);
     };
 
-    const handleUpdateProfile = (e) => {
+    const handleUpdateProfile = async (e) => {
         e.preventDefault();
 
-        const hasChanges =
+        const usernameOrEmailChanged =
             formData.username !== savedData.username ||
             formData.email !== savedData.email;
 
-        if (!hasChanges) {
-            toast.warning("Je wijzigingen zijn al opgeslagen.");
+        const locationOrBioChanged =
+            (formData.location || '') !== (savedData.location || '') ||
+            (formData.bio || '') !== (savedData.bio || '');
+
+        if (!usernameOrEmailChanged && !locationOrBioChanged) {
+            toast.warning("No changes to save.");
             return;
         }
 
+        // Location/bio can be saved without password
+        if (locationOrBioChanged && !usernameOrEmailChanged) {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/profile`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({
+                        username: formData.username || user?.username,
+                        email: formData.email || user?.email,
+                        location: formData.location || null,
+                        bio: formData.bio || null,
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    updateUser({ location: formData.location, bio: formData.bio });
+                    setSavedData(prev => ({ ...prev, location: formData.location, bio: formData.bio }));
+                    toast.success('Profile updated!');
+                } else {
+                    toast.error('Update failed.');
+                }
+            } catch {
+                toast.error('Update failed.');
+            }
+            return;
+        }
+
+        // Username/email changes require password
         openReAuth('update');
     };
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const handleDeleteAccount = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    const handleDeleteConfirmed = () => {
+        setShowDeleteConfirm(false);
         openReAuth('delete');
     };
 
     const handleReAuthConfirm = async () => {
         if (!reAuthPassword) {
-            setReAuthError('Voer je wachtwoord in');
+            setReAuthError('Enter your password');
             return;
         }
 
@@ -144,6 +240,8 @@ export function ProfilePage() {
                         username: formData.username,
                         email: formData.email,
                         currentPassword: reAuthPassword,
+                        location: formData.location || null,
+                        bio: formData.bio || null,
                         profileImageBase64: pictureChanged
                             ? (profilePicture?.includes(",") ? profilePicture.split(",")[1] : profilePicture ?? null)
                             : null
@@ -153,18 +251,28 @@ export function ProfilePage() {
                 if (response.ok) {
                     const data = await response.json();
                     const updatedUser = data.user;
+                    const newPicture = profilePicture ?? user?.profilePicture;
+
+                    if (data.requiresEmailConfirmation) {
+                        updateUser({ username: updatedUser.userName, profilePicture: newPicture });
+                        setFormData((prev) => ({ ...prev, username: updatedUser.userName, email: updatedUser.email }));
+                        setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
+                        closeReAuth();
+                        toast.info(`Step 1: Check your current email to confirm the request. Step 2: Your new email (${data.pendingEmail}) will also need to confirm.`, { duration: 9000 });
+                    } else {
                     updateUser({
                         username: updatedUser.userName,
                         email: updatedUser.email,
-                        profilePicture: profilePicture ?? user?.profilePicture
+                        profilePicture: newPicture
                     });
                     setFormData((prev) => ({ ...prev, username: updatedUser.userName, email: updatedUser.email }));
                     setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
                     closeReAuth();
-                    toast.success('Profiel bijgewerkt!');
+                    toast.success('Profile updated!');
+                    }
                 } else {
                     const err = await response.json().catch(() => null);
-                    setReAuthError(err?.message || 'Bijwerken mislukt. Controleer je wachtwoord.');
+                    setReAuthError(err?.message || 'Update failed. Check your password.');
                 }
             } else if (reAuthModal.purpose === 'delete') {
                 const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/delete`, {
@@ -178,12 +286,10 @@ export function ProfilePage() {
 
                 if (response.ok) {
                     closeReAuth();
-                    logout();
-                    navigate('/');
-                    toast.success('Account verwijderd');
+                    toast.info('Check your email to confirm account deletion. The link expires in 5 minutes.', { duration: 7000 });
                 } else {
                     const err = await response.json().catch(() => null);
-                    setReAuthError(err?.message || 'Onjuist wachtwoord');
+                    setReAuthError(err?.message || 'Incorrect password');
                 }
             }
         } finally {
@@ -228,18 +334,18 @@ export function ProfilePage() {
 
     const modalConfig = reAuthModal.purpose === 'update'
         ? {
-            title: 'Bevestig wijzigingen',
-            description: 'Voer je huidige wachtwoord in om je profielwijzigingen op te slaan.',
-            confirmLabel: 'Opslaan',
+            title: 'Confirm changes',
+            description: 'Enter your current password to save your profile changes.',
+            confirmLabel: 'Save',
             confirmClass: 'bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14]',
             iconClass: 'text-[#BFBCFC]',
             iconBg: 'bg-[#BFBCFC]/10',
             Icon: Lock,
         }
         : {
-            title: 'Account verwijderen',
-            description: 'Dit kan niet ongedaan worden gemaakt. Voer je wachtwoord in om je account permanent te verwijderen.',
-            confirmLabel: 'Verwijderen',
+            title: 'Delete account',
+            description: 'This cannot be undone. Enter your password to permanently delete your account.',
+            confirmLabel: 'Delete',
             confirmClass: 'bg-[#FF61D2] hover:bg-[#FF4DC7] text-white',
             iconClass: 'text-[#FF61D2]',
             iconBg: 'bg-[#FF61D2]/10',
@@ -336,6 +442,63 @@ export function ProfilePage() {
                                     />
                                 </div>
 
+                                <div className="relative" ref={locationRef}>
+                                    <label className="block text-[#F8FAFC] mb-1.5 font-medium text-sm">
+                                        <MapPin className="w-3.5 h-3.5 inline mr-1.5" />
+                                        Location
+                                    </label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8] pointer-events-none" />
+                                        <input
+                                            type="text"
+                                            value={formData.location}
+                                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                            maxLength={100}
+                                            placeholder="Search your city..."
+                                            className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-9 pr-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm placeholder-[#94A3B8]/50"
+                                        />
+                                        {locationLoading && (
+                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8] animate-spin" />
+                                        )}
+                                    </div>
+
+                                    {locationSuggestions.length > 0 && (
+                                        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#151921] border border-[#BFBCFC]/20 rounded-xl shadow-2xl overflow-hidden">
+                                            {locationSuggestions.map((s, i) => (
+                                                <button
+                                                    key={i}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData({ ...formData, location: s });
+                                                        setLocationSuggestions([]);
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-[#BFBCFC]/8 transition-colors border-b border-[#BFBCFC]/8 last:border-none"
+                                                >
+                                                    <MapPin className="w-3.5 h-3.5 text-[#BFBCFC] flex-shrink-0" />
+                                                    <span className="text-[#F8FAFC]">{s}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-[#F8FAFC] mb-1.5 font-medium text-sm">
+                                        Bio
+                                    </label>
+                                    <textarea
+                                        value={formData.bio}
+                                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                        maxLength={70}
+                                        rows={3}
+                                        placeholder="Tell something about yourself..."
+                                        className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm placeholder-[#94A3B8]/50 resize-none"
+                                    />
+                                    <p className={`text-[10px] text-right mt-0.5 ${formData.bio.length >= 70 ? "text-red-400" : "text-[#94A3B8]/50"}`}>
+                                        {formData.bio.length}/70
+                                    </p>
+                                </div>
+
                                 <button
                                     type="submit"
                                     className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-4 py-2 rounded-lg font-medium transition-all hover:scale-105 shadow-lg shadow-[#BFBCFC]/30 text-sm"
@@ -424,6 +587,40 @@ export function ProfilePage() {
                 </div>
             </div>
 
+            {/* Delete Confirmation Dialog */}
+            {showDeleteConfirm && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-[#151921] border border-[#FF61D2]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="w-10 h-10 bg-[#FF61D2]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Trash2 className="w-5 h-5 text-[#FF61D2]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-[#F8FAFC] font-bold text-lg leading-tight">Delete account?</h3>
+                                    <p className="text-[#94A3B8] text-sm mt-1">This will send a confirmation email. Your account will only be deleted after you click the link.</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 px-4 py-2 rounded-lg border border-[#BFBCFC]/20 text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#BFBCFC]/40 transition-all text-sm font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDeleteConfirmed}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-[#FF61D2] hover:bg-[#FF4DC7] text-white font-bold transition-all shadow-lg shadow-[#FF61D2]/30 text-sm"
+                                >
+                                    Yes, continue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             {/* Re-Auth Modal */}
             {reAuthModal.open && (
                 <>
@@ -459,14 +656,14 @@ export function ProfilePage() {
                             <div className="mb-3">
                                 <label className="block text-[#F8FAFC] text-sm font-medium mb-1.5">
                                     <Lock className="w-3.5 h-3.5 inline mr-1.5" />
-                                    Huidig wachtwoord
+                                    Current password
                                 </label>
                                 <input
                                     type="password"
                                     value={reAuthPassword}
                                     onChange={(e) => { setReAuthPassword(e.target.value); setReAuthError(''); }}
                                     onKeyDown={(e) => e.key === 'Enter' && !reAuthLoading && handleReAuthConfirm()}
-                                    placeholder="Voer je wachtwoord in"
+                                    placeholder="Enter your password"
                                     autoFocus
                                     className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2.5 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                 />
@@ -487,7 +684,7 @@ export function ProfilePage() {
                                     disabled={reAuthLoading}
                                     className="flex-1 bg-[#0B0E14] border border-[#BFBCFC]/15 text-[#94A3B8] hover:text-[#F8FAFC] py-2.5 rounded-lg font-medium transition-all text-sm disabled:opacity-50"
                                 >
-                                    Annuleren
+                                    Cancel
                                 </button>
                                 <button
                                     onClick={handleReAuthConfirm}

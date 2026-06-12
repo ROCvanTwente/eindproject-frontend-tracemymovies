@@ -7,6 +7,7 @@ import { MoviesPage } from './pages/MoviesPage';
 import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MyListsPage } from './pages/MyListsPage';
 import { ListDetailPage } from './pages/ListDetailPage';
+import { CreateListPage } from './pages/CreateListPage';
 import { TheQueuePage } from './pages/TheQueuePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
@@ -17,14 +18,25 @@ import { GlobalMovieDNAPage } from './pages/GlobalMovieDNAPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { LoginPage } from './pages/LoginPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { EmergencyResetPage } from './pages/EmergencyResetPage';
+import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
+import { ConfirmEmailChangeRequestPage } from './pages/ConfirmEmailChangeRequestPage';
+import { ConfirmDeletePage } from './pages/ConfirmDeletePage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
-import  FriendPage from './pages/FriendPage';  
-import  LikedMoviesPage  from './pages/LikedMoviesPage';
+import FriendPage from './pages/FriendPage';
+import LikedMoviesPage from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { WatchedPage } from './pages/WatchedPage';
+import { WatchlistPage } from './pages/WatchlistPage';
+import { BadgesPage } from './pages/BadgesPage';
+import { ActorPage } from './pages/ActorPage';
+import { ReviewsPage } from './pages/ReviewsPage';
+import { DiaryPage } from './pages/DiaryPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -50,6 +62,10 @@ export const router = createBrowserRouter([
                 element: _jsx(MovieDetailPage, {}),
             },
             {
+                path: 'actor/:id',
+                element: _jsx(ActorPage, {}),
+            },
+            {
                 path: 'weekly-favorites',
                 element: _jsx(WeeklyFavoritesPage, {}),
             },
@@ -69,6 +85,30 @@ export const router = createBrowserRouter([
                 path: 'forgot-password',
                 element: _jsx(ForgotPasswordPage, {}),
             },
+            {
+                path: 'reset-password',
+                element: _jsx(ResetPasswordPage, {}),
+            },
+            {
+                path: 'verify-email',
+                element: _jsx(VerifyEmailPage, {}),
+            },
+            {
+                path: 'emergency-reset',
+                element: _jsx(EmergencyResetPage, {}),
+            },
+            {
+                path: 'confirm-email-change-request',
+                element: _jsx(ConfirmEmailChangeRequestPage, {}),
+            },
+            {
+                path: 'confirm-email-change',
+                element: _jsx(ConfirmEmailChangePage, {}),
+            },
+            {
+                path: 'confirm-delete',
+                element: _jsx(ConfirmDeletePage, {}),
+            },
 
             // ── PROTECTED ROUTES ──
             {
@@ -84,8 +124,24 @@ export const router = createBrowserRouter([
                 element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
             },
             {
+                path: 'user/:userId/lists',
+                element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
+            },
+            {
+                path: 'user/:userId/list/:id',
+                element: _jsx(ProtectedRoute, { children: _jsx(ListDetailPage, {}) }),
+            },
+            {
+                path: 'list/new',
+                element: _jsx(ProtectedRoute, { children: _jsx(CreateListPage, {}) }),
+            },
+            {
                 path: 'list/:id',
                 element: _jsx(ProtectedRoute, { children: _jsx(ListDetailPage, {}) }),
+            },
+            {
+                path: 'list/:id/edit',
+                element: _jsx(ProtectedRoute, { children: _jsx(CreateListPage, {}) }),
             },
             {
                 path: 'the-queue',
@@ -136,6 +192,38 @@ export const router = createBrowserRouter([
                 element: _jsx(ProtectedRoute, { children: _jsx(WatchedPage, {}) }),
             },
             {
+                path: 'watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
+                path: 'reviews',
+                element: _jsx(ProtectedRoute, { children: _jsx(ReviewsPage, {}) }),
+            },
+            {
+                path: 'user/:userId/reviews',
+                element: _jsx(ProtectedRoute, { children: _jsx(ReviewsPage, {}) }),
+            },
+            {
+                path: 'badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:id/badges',
+                element: _jsx(ProtectedRoute, { children: _jsx(BadgesPage, {}) }),
+            },
+            {
+                path: 'user/:userId/watchlist',
+                element: _jsx(ProtectedRoute, { children: _jsx(WatchlistPage, {}) }),
+            },
+            {
+                path: 'diary',
+                element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
+            },
+            {
+                path: 'user/:userId/diary',
+                element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
+            },
+            {
                 path: '500',
                 element: _jsx(ServerErrorPage, {}),
             },
@@ -146,7 +234,3 @@ export const router = createBrowserRouter([
         ],
     },
 ]);
-
-
-
-
