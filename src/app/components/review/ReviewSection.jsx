@@ -8,7 +8,6 @@ import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
 import { ReviewModal } from "./ReviewModal";
 import { ReportReviewModal } from "./ReportReviewModal";
-import { ReportModal } from "./ReportModal";
 import { ReviewForm } from "./ReviewForm";
 import { ReviewPagination } from "./ReviewPagination";
 
