@@ -162,12 +162,12 @@ export function Header() {
           <div className="flex items-center justify-between">
             {/* LEFT SIDE */}
             <nav className="flex items-center gap-4 md:gap-8">
-              <Link to="/" className="flex items-center">
-                <div className="sm px-3 py-2 rounded-xl transition-all">
+              <Link to="/" className="flex items-center flex-shrink-0">
+                <div className="px-3 py-2 rounded-xl transition-all">
                   <img
                     src="logo.png"
                     alt="TraceMyMovies"
-                    className="h-8 md:h-15 w-auto"
+                    className="h-10 md:h-12 w-auto"
                   />
                 </div>
               </Link>
