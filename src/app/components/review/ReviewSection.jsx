@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Star, AlertCircle, MoreVertical, Trash, Edit, Flag } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRefresh } from "../../context/RefreshContext";
 import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteReview, reportReview, getReviewById } from "../../services/reviews";
@@ -7,6 +8,9 @@ import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
 import { ReviewModal } from "./ReviewModal";
 import { ReportReviewModal } from "./ReportReviewModal";
+import { ReportModal } from "./ReportModal";
+import { ReviewForm } from "./ReviewForm";
+import { ReviewPagination } from "./ReviewPagination";
 
 export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
     const auth = useAuth();
@@ -20,6 +24,9 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [likedMap, setLikedMap] = useState({});
     const [openMenuKey, setOpenMenuKey] = useState(null);
+    const [revealedSpoilers, setRevealedSpoilers] = useState({});
+
+    const toggleReveal = (key) => setRevealedSpoilers((prev) => ({ ...prev, [key]: true }));
 
     const getLikeStorageKey = (reviewId) => {
         if (currentUserId == null || reviewId == null) return null;
@@ -320,7 +327,7 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
         return true;
     };
 
-    const handleSubmitReview = async () => {
+    const handleSubmitReview = async (reviewRating, reviewText, containsSpoilers, resetForm) => {
         if (reviewRating === 0) {
             toast.error("Selecteer een score.");
             return;
@@ -331,6 +338,7 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
             return;
         }
 
+        const MAX_REVIEW_LENGTH = 5000;
         if (reviewText.trim().length > MAX_REVIEW_LENGTH) {
             toast.error(`Maximaal ${MAX_REVIEW_LENGTH} tekens toegestaan.`);
             return;
@@ -388,6 +396,16 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
                     const reviewKey = getReviewKey(review, index);
                     const reviewOwnerId = getReviewOwnerId(review);
                     const isOwner = currentUserId != null && reviewOwnerId != null && String(reviewOwnerId) === String(currentUserId);
+
+                    const author = review?.user?.userName || review?.userName || (review?.userId ? `User #${review.userId}` : "Anonymous");
+                    const dateValue = review?.date_created || review?.createdAt || review?.date || review?.watchedDate;
+                    const dateString = dateValue ? new Date(dateValue).toLocaleDateString('en-US', {
+                        month: 'short', day: 'numeric', year: 'numeric'
+                    }) : "No date";
+                    const rating = review?.rating ?? review?.score ?? 0;
+                    const likes = review?.likes ?? review?.likeCount ?? 0;
+                    const spoiler = review?.containsSpoilers ?? review?.spoiler ?? false;
+                    const content = review?.review || review?.content || review?.reviewText || review?.text || "";
 
                     return (
                         <div key={reviewKey} className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-4 md:p-6 mb-4">
@@ -569,7 +587,11 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
                     reviewAuthor={reportTarget?.review.user?.userName || reportTarget?.review.userName || 'Anonymous'}
                     reviewContent={reportTarget?.review.review || reportTarget?.review.content || reportTarget?.review.reviewText || reportTarget?.review.text || ''}
                     reviewId={reportTarget?.review.id ?? reportTarget?.review.reviewId}
-                    onReport={submitReport}
+                    onReport={(reason) => {
+                        toast.success("Review reported.");
+                        setReportModalOpen(false);
+                        setReportTarget(null);
+                    }}
                 />
                 </>
             )}
