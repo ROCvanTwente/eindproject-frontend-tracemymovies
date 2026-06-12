@@ -18,7 +18,6 @@ export function MovieCarousel({ title, movies, showRanking = false, showReleaseD
             navigate('/login');
             return;
         }
-        console.log('Like movie:', movieId);
     };
 
     const handleLog = (e, movieId) => {
@@ -28,7 +27,6 @@ export function MovieCarousel({ title, movies, showRanking = false, showReleaseD
             navigate('/login');
             return;
         }
-        console.log('Log movie:', movieId);
     };
 
     const handleMovieClick = (e, movieId) => {

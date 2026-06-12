@@ -105,9 +105,8 @@ export function MoviesPage() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                  activeTab === id ? "bg-[#BFBCFC] text-[#0B0E14]" : "text-[#94A3B8] hover:text-[#F8FAFC]"
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${activeTab === id ? "bg-[#BFBCFC] text-[#0B0E14]" : "text-[#94A3B8] hover:text-[#F8FAFC]"
+                  }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{label} <span className="opacity-70">{sub}</span></span>
