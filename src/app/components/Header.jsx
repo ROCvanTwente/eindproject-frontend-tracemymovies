@@ -165,7 +165,7 @@ export function Header() {
               <Link to="/" className="flex items-center">
                 <div className="sm px-3 py-2 rounded-xl transition-all">
                   <img
-                    src="/src/logo.png"
+                    src="logo.png"
                     alt="TraceMyMovies"
                     className="h-8 md:h-10 w-auto"
                   />
