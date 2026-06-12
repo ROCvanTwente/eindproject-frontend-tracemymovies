@@ -178,8 +178,6 @@ export function Header() {
                   { to: "/movies", label: "Movies" },
                   ...(isAuthenticated ? [
                     { to: "/the-queue", label: "Lists" },
-                    { to: "/weekly-favorites", label: "Trends" },
-                    { to: "/global-dna", label: "Community" },
                   ] : []),
                 ].map(({ to, label, end }) => (
                   <NavLink

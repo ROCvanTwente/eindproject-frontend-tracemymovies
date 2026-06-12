@@ -13,8 +13,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { AdminPage } from './pages/AdminPage';
-import { WeeklyFavoritesPage } from './pages/WeeklyFavoritesPage';
-import { GlobalMovieDNAPage } from './pages/GlobalMovieDNAPage';
+// import { WeeklyFavoritesPage } from './pages/WeeklyFavoritesPage';
+// import { GlobalMovieDNAPage } from './pages/GlobalMovieDNAPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { LoginPage } from './pages/LoginPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -65,14 +65,14 @@ export const router = createBrowserRouter([
                 path: 'actor/:id',
                 element: _jsx(ActorPage, {}),
             },
-            {
-                path: 'weekly-favorites',
-                element: _jsx(WeeklyFavoritesPage, {}),
-            },
-            {
-                path: 'global-dna',
-                element: _jsx(GlobalMovieDNAPage, {}),
-            },
+            // {
+            //     path: 'weekly-favorites',
+            //     element: _jsx(WeeklyFavoritesPage, {}),
+            // },
+            // {
+            //     path: 'global-dna',
+            //     element: _jsx(GlobalMovieDNAPage, {}),
+            // },
             {
                 path: 'register',
                 element: _jsx(RegisterPage, {}),

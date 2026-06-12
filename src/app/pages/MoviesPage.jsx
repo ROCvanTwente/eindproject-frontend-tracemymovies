@@ -24,6 +24,7 @@ export function MoviesPage() {
   const [movies, setMovies] = useState([]);
   const controllerRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [yearFilter, setYearFilter] = useState(null);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export function MoviesPage() {
         if (data.totalCount != null) setTotalCount(data.totalCount);
       })
       .catch((err) => { if (err.name !== "AbortError") console.error(err); else setMovies([]); })
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); setInitialLoading(false); });
   });
 
   const {
@@ -68,6 +69,17 @@ export function MoviesPage() {
     availableGenres, availableDecades, ratingOptions,
     hasActiveFilters, reset,
   } = useMovieFilters(movies);
+
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20" />
+          <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0B0E14]">
