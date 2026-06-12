@@ -41,6 +41,7 @@ export function DiaryPage() {
   const isPublic = !!userId;
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -85,14 +86,24 @@ export function DiaryPage() {
           containsSpoilers: entry.containsSpoilers ?? false,
         }),
       });
+
+      // Rating/like change may have updated FilmRating/FilmLikes (if this is the latest log) — keep myStatus in sync
+      if (("userRating" in changes || "isLiked" in changes) && selected?.movieId === entry.movieId) {
+        fetch(`${API}/database/GetMovieStatus/${entry.movieId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => r.ok ? r.json() : null)
+          .then(setMyStatus)
+          .catch(console.error);
+      }
     } catch {
       updateEntry(entry.logId, { isLiked: entry.isLiked, userRating: entry.userRating });
     }
   };
 
-  // Fetch current user's status for the selected film (public view only)
+  // Fetch current user's status for the selected film
   useEffect(() => {
-    if (!isPublic || !selected) { setMyStatus(null); return; }
+    if (!selected) { setMyStatus(null); return; }
     const token = getToken();
     if (!token) return;
     fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
@@ -106,6 +117,7 @@ export function DiaryPage() {
   useEffect(() => {
     setLoading(true);
     setSelected(null);
+    setSelectedMonth(null);
     const token = getToken();
     if (!token) { setLoading(false); return; }
     const url = isPublic
@@ -123,17 +135,34 @@ export function DiaryPage() {
       .finally(() => setLoading(false));
   }, [year, userId, isPublic]);
 
+  const monthsWithEntries = data?.entries
+    ? new Set(data.entries.map((e) => new Date(e.loggedDate).getMonth()))
+    : new Set();
+
   const grouped = data?.entries
     ? (() => {
         const map = new Map();
         for (const entry of data.entries) {
           const month = new Date(entry.loggedDate).getMonth();
+          if (selectedMonth !== null && month !== selectedMonth) continue;
           if (!map.has(month)) map.set(month, []);
           map.get(month).push(entry);
         }
         return Array.from(map.entries()).sort((a, b) => b[0] - a[0]);
       })()
     : [];
+
+  const handleSelectMonth = (month) => {
+    const next = selectedMonth === month ? null : month;
+    setSelectedMonth(next);
+    const filtered = !data?.entries
+      ? []
+      : next === null
+      ? data.entries
+      : data.entries.filter((e) => new Date(e.loggedDate).getMonth() === next);
+    setSelected(filtered[0] ?? null);
+    rightPanelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSelect = (entry) => {
     setSelected(entry);
@@ -239,16 +268,18 @@ export function DiaryPage() {
     setLogModalOpen(false);
     const token = getToken();
     if (!token) return;
+
+    if (selected) {
+      fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then(setMyStatus)
+        .catch(console.error);
+    }
+
     if (isPublic) {
-      // Only refresh myStatus so the dots menu updates — don't touch the public diary
-      if (selected) {
-        fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then((r) => r.ok ? r.json() : null)
-          .then(setMyStatus)
-          .catch(console.error);
-      }
+      // Don't touch the public diary — only myStatus needed refreshing
       return;
     }
     fetch(`${API}/UserActivity/YearLog?year=${year}`, {
@@ -271,6 +302,16 @@ export function DiaryPage() {
     // Re-fetch to get updated data
     const token = getToken();
     if (!token) return;
+
+    if (selected) {
+      fetch(`${API}/database/GetMovieStatus/${selected.movieId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then(setMyStatus)
+        .catch(console.error);
+    }
+
     fetch(`${API}/UserActivity/YearLog?year=${year}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -313,7 +354,10 @@ export function DiaryPage() {
                 Film Diary
               </p>
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
-                {isPublic ? `${data?.username ?? "…"}'s Logs` : "Your Logs"}
+                {isPublic && <span className="text-[#F8FAFC]">{data?.username ?? "…"}'s </span>}
+                <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
+                  {isPublic ? "Logs" : "Your Logs"}
+                </span>
               </h1>
             </div>
 
@@ -349,6 +393,41 @@ export function DiaryPage() {
               </div>
             )}
           </div>
+
+          {/* Month filter */}
+          {data?.entries?.length > 0 && (
+            <div className="flex items-center gap-1.5 mt-4 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
+              <button
+                onClick={() => setSelectedMonth(null)}
+                className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-sm font-black uppercase tracking-wider transition-colors cursor-pointer ${
+                  selectedMonth === null
+                    ? "text-[#BFBCFC]"
+                    : "text-[#94A3B8]/50 hover:text-[#F8FAFC]"
+                }`}
+              >
+                All
+              </button>
+              {MONTH_NAMES.map((name, idx) => {
+                const hasEntries = monthsWithEntries.has(idx);
+                const isActive = selectedMonth === idx;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleSelectMonth(idx)}
+                    className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-sm font-black uppercase tracking-wider transition-colors cursor-pointer ${
+                      isActive
+                        ? "text-[#BFBCFC]"
+                        : hasEntries
+                        ? "text-[#94A3B8] hover:text-[#F8FAFC]"
+                        : "text-[#94A3B8]/25 hover:text-[#94A3B8]/60"
+                    }`}
+                  >
+                    {name.slice(0, 3)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -373,10 +452,24 @@ export function DiaryPage() {
                 : "Nothing was logged this year."}
             </p>
           </div>
+        ) : grouped.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="w-20 h-20 bg-[#BFBCFC]/8 rounded-full flex items-center justify-center border border-[#BFBCFC]/15 mb-5">
+              <BookOpen className="w-9 h-9 text-[#BFBCFC]/25" />
+            </div>
+            <p className="text-[#F8FAFC] font-semibold text-lg mb-1">
+              No logs in {MONTH_NAMES[selectedMonth]} {year}
+            </p>
+            <p className="text-[#94A3B8] text-sm">
+              {isPublic
+                ? `${data?.username ?? "This user"} didn't log anything this month.`
+                : "You didn't log anything this month."}
+            </p>
+          </div>
         ) : (
           <div className="flex gap-6 lg:gap-10 items-start">
             {/* LEFT: List */}
-            <div className="flex-1 min-w-0 max-h-[calc(100vh-180px)] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/15 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/30">
+            <div className="flex-1 min-w-0 max-h-[calc(100vh-180px)] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {grouped.map(([month, entries]) => (
                 <div key={month} className="mb-5">
                   {/* Month header */}
@@ -784,8 +877,8 @@ export function DiaryPage() {
           }}
           preIsRewatch={isPublic ? (logModalConfig.isRewatch ?? false) : true}
           preHasWatchedBefore={isPublic ? (logModalConfig.hasLogged ?? false) : true}
-          preIsLiked={isPublic ? (myStatus?.isFavorite ?? false) : (selected.isLiked ?? false)}
-          preRating={isPublic ? (myStatus?.filmRating ?? 0) : 0}
+          preIsLiked={myStatus?.isFavorite ?? false}
+          preRating={myStatus?.filmRating ?? 0}
           preReviewText={isPublic ? (logModalConfig.reviewText ?? "") : ""}
           preDate={isPublic ? (logModalConfig.date ?? "") : ""}
           preLogId={isPublic ? (logModalConfig.logId ?? null) : null}

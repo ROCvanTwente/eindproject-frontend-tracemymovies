@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   Heart, Star, List, Clock, AlignLeft, Plus, X,
@@ -15,6 +15,39 @@ import { ReviewCard } from "../components/profile/ReviewCard";
 import { useOwnProfileData } from "../hooks/useOwnProfileData";
 import { usePublicProfileData } from "../hooks/usePublicProfileData";
 
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAAALAAAAAABAAEAAAICRAEAOw==";
+
+function RecentListCard({ list, to }) {
+  const posters = (list.previewPosters ?? []).filter(Boolean).slice(0, 6);
+
+  return (
+    <Link to={to} className="group inline-block px-1 py-1 rounded-lg hover:bg-[#44FFFF]/6 transition-all">
+      <div className="flex items-center h-32">
+        {posters.length > 0 ? (
+          posters.map((poster, i) => (
+            <div
+              key={i}
+              className={`w-24 h-32 rounded-md overflow-hidden border-2 border-[#151921] shadow-lg shadow-black/40 ${i > 0 ? "-ml-12" : ""}`}
+              style={{ zIndex: i + 1 }}
+            >
+              <img src={poster} alt="" className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))
+        ) : (
+          <div className="w-24 h-32 rounded-md bg-[#0B0E14]" />
+        )}
+      </div>
+      <div className="flex items-center justify-between mt-1.5 px-0.5">
+        <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors truncate">{list.listName}</span>
+        <span className="text-[#94A3B8]/40 text-xs ml-2 flex-shrink-0">
+          {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export function UserProfilePage() {
   const { id } = useParams();
   if (!id) return <OwnProfileView />;
@@ -29,7 +62,7 @@ function OwnProfileView() {
 
   const {
     favoriteMovies, favoritesLoading,
-    watchedMoviesCount, watchedThisYear,
+    watchedMoviesCount, watchedThisYear, listsCount, recentLists,
     recentActivity, activityLoading,
     recentReviews, recentReviewsLoading,
     friends, badges, selectedBadges, isAdmin,
@@ -39,11 +72,21 @@ function OwnProfileView() {
   const [targetSlot, setTargetSlot] = useState(0);
   const [draggedSlot, setDraggedSlot] = useState(null);
   const [dragOverSlot, setDragOverSlot] = useState(null);
+  const [dragPos, setDragPos] = useState(null);
+  const transparentImgRef = useRef(null);
+  const dragInfoRef = useRef({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateError, setDuplicateError] = useState("");
+
+  useEffect(() => {
+    if (draggedSlot === null) return;
+    const handleDragOver = (e) => setDragPos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("dragover", handleDragOver);
+    return () => window.removeEventListener("dragover", handleDragOver);
+  }, [draggedSlot]);
 
   useEffect(() => {
     if (!searchModalOpen) return;
@@ -132,7 +175,7 @@ function OwnProfileView() {
               {[
                 { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate("/watched") },
                 { label: "THIS YEAR", value: watchedThisYear, onClick: () => navigate("/diary") },
-                { label: "LISTS", value: "—" },
+                { label: "LISTS", value: listsCount, onClick: () => navigate("/my-lists") },
                 { label: "FRIENDS", value: friends.length },
               ].map(({ label, value, onClick }, i, arr) => (
                 <div key={label} className="flex items-center">
@@ -174,8 +217,21 @@ function OwnProfileView() {
                   };
                   return movie ? (
                     <div key={`slot-${i}`}
-                      className={`relative group transition-all duration-150 ${isDragging ? "opacity-40 scale-95" : ""} ${isDragOver && draggedSlot !== i ? "ring-2 ring-[#FF61D2]/60 rounded-xl scale-[1.02]" : ""}`}
-                      draggable onDragStart={() => setDraggedSlot(i)} onDragEnd={() => { setDraggedSlot(null); setDragOverSlot(null); }}
+                      className={`relative group transition-all duration-150 ${isDragging ? "opacity-0" : ""} ${isDragOver && draggedSlot !== i ? "ring-2 ring-[#FF61D2]/60 rounded-xl scale-[1.02]" : ""}`}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedSlot(i);
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        dragInfoRef.current = {
+                          width: rect.width,
+                          height: rect.height,
+                          offsetX: e.clientX - rect.left,
+                          offsetY: e.clientY - rect.top,
+                        };
+                        setDragPos({ x: e.clientX, y: e.clientY });
+                        if (transparentImgRef.current) e.dataTransfer.setDragImage(transparentImgRef.current, 0, 0);
+                      }}
+                      onDragEnd={() => { setDraggedSlot(null); setDragOverSlot(null); setDragPos(null); }}
                       {...dropProps}
                     >
                       <ProfilePosterCard movieId={movie.id} poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} title={movie.title} />
@@ -201,6 +257,35 @@ function OwnProfileView() {
                   );
                 })}
               </div>
+
+              <img
+                ref={transparentImgRef}
+                src={TRANSPARENT_PIXEL}
+                alt=""
+                style={{ position: "fixed", top: -1, left: -1, width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+              />
+
+              {draggedSlot !== null && dragPos && favoriteMovies[draggedSlot] && (
+                <div className="fixed inset-0 z-[100] pointer-events-none">
+                  <div
+                    style={{
+                      position: "fixed",
+                      top: 0,
+                      left: 0,
+                      width: dragInfoRef.current.width,
+                      height: dragInfoRef.current.height,
+                      transform: `translate(${dragPos.x - dragInfoRef.current.offsetX}px, ${dragPos.y - dragInfoRef.current.offsetY}px)`,
+                    }}
+                    className="rounded-lg overflow-hidden shadow-2xl shadow-black/60 ring-2 ring-[#BFBCFC]"
+                  >
+                    <img
+                      src={`https://image.tmdb.org/t/p/w500${favoriteMovies[draggedSlot].poster_path}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Recent Activity */}
@@ -295,17 +380,14 @@ function OwnProfileView() {
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
                 <Link to="/my-lists" className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All →</Link>
               </div>
-              <div className="p-2">
-                {[
-                  { name: "Top 10 Sci-Fi", count: 10 },
-                  { name: "Favourite Thrillers", count: 7 },
-                  { name: "Must Watch 2024", count: 15 },
-                ].map((list) => (
-                  <div key={list.name} className="group flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-[#44FFFF]/6 cursor-pointer transition-all">
-                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors truncate">{list.name}</span>
-                    <span className="text-[#94A3B8]/40 text-xs tabular-nums ml-2 flex-shrink-0">{list.count}</span>
-                  </div>
-                ))}
+              <div className="p-2 divide-y divide-white/5">
+                {recentLists.length > 0 ? (
+                  recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/list/${list.listId}`} />
+                  ))
+                ) : (
+                  <p className="text-[#94A3B8]/40 text-xs italic px-3 py-2.5">No lists yet.</p>
+                )}
               </div>
             </div>
           </div>
@@ -333,7 +415,7 @@ function PublicProfileView({ id }) {
   const navigate = useNavigate();
   const { isUserOnline } = useSignalR();
   const { user } = useAuth();
-  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin } = usePublicProfileData(id);
+  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount, recentLists } = usePublicProfileData(id);
 
   const displayBadges = selectedBadges ?? [];
 
@@ -404,7 +486,7 @@ function PublicProfileView({ id }) {
               {[
                 { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
                 { label: "THIS YEAR", value: pub.watchedThisYear ?? 0, to: `/user/${id}/diary` },
-                { label: "LISTS", value: "—" },
+                { label: "LISTS", value: listsCount, to: `/user/${id}/lists` },
                 { label: "FRIENDS", value: pub.friendCount ?? 0 },
               ].map(({ label, value, to }, i, arr) => (
                 <div key={label} className="flex items-center">
@@ -529,6 +611,7 @@ function PublicProfileView({ id }) {
                   { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: `/user/${id}/diary`, icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: `/user/${id}/analytics`, icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                  { to: `/user/${id}/lists`, icon: <List className="w-3.5 h-3.5" />, label: "Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                   { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
                   { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
                 ].map(({ to, icon, label, color, bg }) => (
@@ -543,10 +626,19 @@ function PublicProfileView({ id }) {
             <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to={`/user/${id}/lists`} className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All →</Link>
               </div>
-              <div className="px-4 py-3">
-                <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
-              </div>
+              {recentLists.length > 0 ? (
+                <div className="p-2 divide-y divide-white/5">
+                  {recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/user/${id}/list/${list.listId}`} />
+                  ))}
+                </div>
+              ) : (
+                <div className="px-4 py-3">
+                  <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

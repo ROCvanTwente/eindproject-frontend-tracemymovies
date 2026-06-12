@@ -88,13 +88,17 @@ function FilterDropdown({ label, value, options, onChange, topOption }) {
 }
 
 const SORT_GROUPS = [
-  { label: "Film Name",     options: ["A - Z", "Z - A"] },
-  { label: "Film Popularity", options: ["Highest First", "Lowest First"] },
-  { label: "Shuffle",       options: ["Shuffle"] },
-  { label: "When Added",    options: ["Newest First", "Earliest First"] },
-  { label: "Release Date",  options: ["Newest First", "Earliest First"] },
-  { label: "Your Rating",   options: ["Highest First", "Lowest First"] },
-  { label: "Film Length",   options: ["Shortest First", "Longest First"] },
+  { category: "List Order", label: "List Order",      options: ["List Order"] },
+  { category: "List Order", label: "Reverse Order",   options: ["Reverse Order"] },
+  { category: "List Order", label: "Film Name",       options: ["A - Z", "Z - A"] },
+  { category: "List Order", label: "Film Popularity", options: ["Highest First", "Lowest First"] },
+  { category: "List Order", label: "Shuffle",         options: ["Shuffle"] },
+  { category: "Dates", label: "When Added",      options: ["Newest First", "Earliest First"] },
+  { category: "Dates", label: "Release Date",    options: ["Newest First", "Earliest First"] },
+  { category: "Dates", label: "Your Diary Date", options: ["Newest First", "Earliest First"] },
+  { category: "Ratings", label: "Average Rating", options: ["Highest First", "Lowest First"] },
+  { category: "Ratings", label: "Your Rating",    options: ["Highest First", "Lowest First"] },
+  { category: "Other", label: "Film Length", options: ["Shortest First", "Longest First"] },
 ];
 
 export function SortDropdown({ value, onChange, excludeGroups = [] }) {
@@ -109,7 +113,9 @@ export function SortDropdown({ value, onChange, excludeGroups = [] }) {
 
   const visibleGroups = SORT_GROUPS.filter(g => !excludeGroups.includes(g.label));
   const active = value !== null;
-  const label = active ? `${value.group}: ${value.option}` : "Sort by";
+  const label = active
+    ? (value.group === value.option ? value.group : `${value.group}: ${value.option}`)
+    : "Sort by";
 
   return (
     <div className="relative" ref={ref}>
@@ -135,30 +141,44 @@ export function SortDropdown({ value, onChange, excludeGroups = [] }) {
               Default
             </button>
             <hr className="border-[#BFBCFC]/10 mx-2 my-1" />
-            {visibleGroups.map((group, gi) => (
-              <div key={group.label}>
-                {gi > 0 && <hr className="border-[#BFBCFC]/8 mx-2 my-0.5" />}
-                <p className="px-4 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-widest text-[#BFBCFC]/50">
-                  {group.label}
-                </p>
-                {group.options.map((opt) => {
-                  const isActive = value?.group === group.label && value?.option === opt;
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() => { onChange({ group: group.label, option: opt }); setOpen(false); }}
-                      className={`w-full text-left px-4 py-1.5 text-sm transition-colors ${
-                        isActive
-                          ? "text-[#BFBCFC] bg-[#BFBCFC]/12 font-semibold"
-                          : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/8"
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+            {visibleGroups.map((group, gi) => {
+              const prevCategory = gi > 0 ? visibleGroups[gi - 1].category : null;
+              const showCategory = group.category !== prevCategory;
+              const isSingle = group.options.length === 1 && group.options[0] === group.label;
+              return (
+                <div key={group.label}>
+                  {showCategory && (
+                    <>
+                      {gi > 0 && <hr className="border-[#BFBCFC]/8 mx-2 my-0.5" />}
+                      <p className="px-4 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-widest text-[#BFBCFC]/50">
+                        {group.category}
+                      </p>
+                    </>
+                  )}
+                  {!isSingle && (
+                    <p className="px-4 pt-1 pb-0.5 text-xs font-semibold text-[#94A3B8]">
+                      {group.label}
+                    </p>
+                  )}
+                  {group.options.map((opt) => {
+                    const isActive = value?.group === group.label && value?.option === opt;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => { onChange({ group: group.label, option: opt }); setOpen(false); }}
+                        className={`w-full text-left py-1.5 text-sm transition-colors ${isSingle ? "px-4" : "pl-6 pr-4"} ${
+                          isActive
+                            ? "text-[#BFBCFC] bg-[#BFBCFC]/12 font-semibold"
+                            : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/8"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -171,11 +191,18 @@ export function applySort(movies, sortValue) {
   const { group, option } = sortValue;
   const arr = [...movies];
 
+  if (group === "List Order") return arr.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  if (group === "Reverse Order") return arr.sort((a, b) => (b.position ?? 0) - (a.position ?? 0));
   if (group === "Film Name") return arr.sort((a, b) => option === "A - Z" ? (a.title || "").localeCompare(b.title || "") : (b.title || "").localeCompare(a.title || ""));
   if (group === "Film Popularity") return arr.sort((a, b) => option === "Highest First" ? (b.popularity ?? 0) - (a.popularity ?? 0) : (a.popularity ?? 0) - (b.popularity ?? 0));
   if (group === "Shuffle") return arr.sort(() => Math.random() - 0.5);
-  if (group === "When Added") return arr.sort((a, b) => option === "Newest First" ? new Date(b.loggedDate) - new Date(a.loggedDate) : new Date(a.loggedDate) - new Date(b.loggedDate));
+  if (group === "When Added") {
+    const dateOf = (m) => new Date(m.loggedDate ?? m.addedDate);
+    return arr.sort((a, b) => option === "Newest First" ? dateOf(b) - dateOf(a) : dateOf(a) - dateOf(b));
+  }
   if (group === "Release Date") return arr.sort((a, b) => option === "Newest First" ? (Number(b.year) || 0) - (Number(a.year) || 0) : (Number(a.year) || 0) - (Number(b.year) || 0));
+  if (group === "Your Diary Date") return arr.sort((a, b) => option === "Newest First" ? new Date(b.watchedDate ?? 0) - new Date(a.watchedDate ?? 0) : new Date(a.watchedDate ?? 0) - new Date(b.watchedDate ?? 0));
+  if (group === "Average Rating") return arr.sort((a, b) => option === "Highest First" ? (b.voteAverage ?? 0) - (a.voteAverage ?? 0) : (a.voteAverage ?? 0) - (b.voteAverage ?? 0));
   if (group === "Your Rating") return arr.sort((a, b) => option === "Highest First" ? (b.userRating ?? 0) - (a.userRating ?? 0) : (a.userRating ?? 0) - (b.userRating ?? 0));
   if (group === "Film Length") return arr.sort((a, b) => option === "Shortest First" ? (a.runtime ?? 0) - (b.runtime ?? 0) : (b.runtime ?? 0) - (a.runtime ?? 0));
   return arr;

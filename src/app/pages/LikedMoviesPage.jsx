@@ -98,29 +98,8 @@ const LikedMoviesPage = () => {
       {/* ── CINEMATIC HEADER ── */}
       <div className="relative overflow-hidden">
 
-        {/* Backdrop: user's own liked posters blurred together */}
-        {likedMovies.length > 0 && (
-          <>
-            <div className="absolute inset-0 flex">
-              {likedMovies.slice(0, 7).map((m) => (
-                <div
-                  key={m._id}
-                  className="flex-1 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${m.poster})` }}
-                />
-              ))}
-            </div>
-            <div className="absolute inset-0 bg-[#0B0E14]/80 backdrop-blur-3xl" />
-          </>
-        )}
-
-        {/* Fallback blobs when no movies */}
-        {likedMovies.length === 0 && (
-          <>
-            <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#FF61D2]/8 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#BFBCFC]/6 rounded-full blur-3xl pointer-events-none" />
-          </>
-        )}
+        <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#FF61D2]/6 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#BFBCFC]/3 rounded-full blur-3xl pointer-events-none" />
 
         {/* Soft fade into page */}
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0B0E14] to-transparent" />
@@ -176,7 +155,7 @@ const LikedMoviesPage = () => {
                   className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#FF61D2]/35 transition-all"
                 />
               </div>
-              <SortDropdown value={sortValue} onChange={setSortValue} />
+              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["List Order", "Reverse Order", "Average Rating"]} />
               <MovieFilters
                 genre={genre} setGenre={setGenre}
                 decade={decade} setDecade={setDecade}

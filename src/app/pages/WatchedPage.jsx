@@ -87,29 +87,8 @@ export function WatchedPage() {
       {/* ── CINEMATIC HEADER ── */}
       <div className="relative overflow-hidden">
 
-        {/* Backdrop: user's own watched posters blurred together */}
-        {movies.length > 0 && (
-          <>
-            <div className="absolute inset-0 flex">
-              {movies.slice(0, 7).map((m) => (
-                <div
-                  key={m.movieId}
-                  className="flex-1 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${m.poster})` }}
-                />
-              ))}
-            </div>
-            <div className="absolute inset-0 bg-[#0B0E14]/80 backdrop-blur-3xl" />
-          </>
-        )}
-
-        {/* Fallback blobs when no movies */}
-        {movies.length === 0 && (
-          <>
-            <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#BFBCFC]/8 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-[#44FFFF]/6 rounded-full blur-3xl pointer-events-none" />
-          </>
-        )}
+        <div className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-[#BFBCFC]/6 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#44FFFF]/3 rounded-full blur-3xl pointer-events-none" />
 
         {/* Soft fade into page */}
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0B0E14] to-transparent" />
@@ -165,7 +144,7 @@ export function WatchedPage() {
                   className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
                 />
               </div>
-              <SortDropdown value={sortValue} onChange={setSortValue} />
+              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["List Order", "Reverse Order", "Average Rating"]} />
               <MovieFilters
                 genre={genre} setGenre={setGenre}
                 decade={decade} setDecade={setDecade}

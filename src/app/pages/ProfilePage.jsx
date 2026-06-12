@@ -207,7 +207,14 @@ export function ProfilePage() {
         openReAuth('update');
     };
 
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const handleDeleteAccount = () => {
+        setShowDeleteConfirm(true);
+    };
+
+    const handleDeleteConfirmed = () => {
+        setShowDeleteConfirm(false);
         openReAuth('delete');
     };
 
@@ -251,7 +258,7 @@ export function ProfilePage() {
                         setFormData((prev) => ({ ...prev, username: updatedUser.userName, email: updatedUser.email }));
                         setSavedData({ username: updatedUser.userName, email: updatedUser.email, profilePicture: profilePicture ?? user?.profilePicture });
                         closeReAuth();
-                        toast.info(`Check your current email inbox to confirm the change to ${data.pendingEmail}.`, { duration: 6000 });
+                        toast.info(`Step 1: Check your current email to confirm the request. Step 2: Your new email (${data.pendingEmail}) will also need to confirm.`, { duration: 9000 });
                     } else {
                     updateUser({
                         username: updatedUser.userName,
@@ -279,9 +286,7 @@ export function ProfilePage() {
 
                 if (response.ok) {
                     closeReAuth();
-                    logout();
-                    navigate('/');
-                    toast.success('Account deleted');
+                    toast.info('Check your email to confirm account deletion. The link expires in 5 minutes.', { duration: 7000 });
                 } else {
                     const err = await response.json().catch(() => null);
                     setReAuthError(err?.message || 'Incorrect password');
@@ -583,6 +588,40 @@ export function ProfilePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            {showDeleteConfirm && (
+                <>
+                    <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="bg-[#151921] border border-[#FF61D2]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="w-10 h-10 bg-[#FF61D2]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Trash2 className="w-5 h-5 text-[#FF61D2]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-[#F8FAFC] font-bold text-lg leading-tight">Delete account?</h3>
+                                    <p className="text-[#94A3B8] text-sm mt-1">This will send a confirmation email. Your account will only be deleted after you click the link.</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 px-4 py-2 rounded-lg border border-[#BFBCFC]/20 text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#BFBCFC]/40 transition-all text-sm font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDeleteConfirmed}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-[#FF61D2] hover:bg-[#FF4DC7] text-white font-bold transition-all shadow-lg shadow-[#FF61D2]/30 text-sm"
+                                >
+                                    Yes, continue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* Re-Auth Modal */}
             {reAuthModal.open && (

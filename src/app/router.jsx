@@ -7,6 +7,7 @@ import { MoviesPage } from './pages/MoviesPage';
 import { MovieDetailPage } from './pages/MovieDetailPage';
 import { MyListsPage } from './pages/MyListsPage';
 import { ListDetailPage } from './pages/ListDetailPage';
+import { CreateListPage } from './pages/CreateListPage';
 import { TheQueuePage } from './pages/TheQueuePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
@@ -21,6 +22,8 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { EmergencyResetPage } from './pages/EmergencyResetPage';
 import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
+import { ConfirmEmailChangeRequestPage } from './pages/ConfirmEmailChangeRequestPage';
+import { ConfirmDeletePage } from './pages/ConfirmDeletePage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
@@ -95,8 +98,16 @@ export const router = createBrowserRouter([
                 element: _jsx(EmergencyResetPage, {}),
             },
             {
+                path: 'confirm-email-change-request',
+                element: _jsx(ConfirmEmailChangeRequestPage, {}),
+            },
+            {
                 path: 'confirm-email-change',
                 element: _jsx(ConfirmEmailChangePage, {}),
+            },
+            {
+                path: 'confirm-delete',
+                element: _jsx(ConfirmDeletePage, {}),
             },
 
             // ── PROTECTED ROUTES ──
@@ -113,8 +124,24 @@ export const router = createBrowserRouter([
                 element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
             },
             {
+                path: 'user/:userId/lists',
+                element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
+            },
+            {
+                path: 'user/:userId/list/:id',
+                element: _jsx(ProtectedRoute, { children: _jsx(ListDetailPage, {}) }),
+            },
+            {
+                path: 'list/new',
+                element: _jsx(ProtectedRoute, { children: _jsx(CreateListPage, {}) }),
+            },
+            {
                 path: 'list/:id',
                 element: _jsx(ProtectedRoute, { children: _jsx(ListDetailPage, {}) }),
+            },
+            {
+                path: 'list/:id/edit',
+                element: _jsx(ProtectedRoute, { children: _jsx(CreateListPage, {}) }),
             },
             {
                 path: 'the-queue',

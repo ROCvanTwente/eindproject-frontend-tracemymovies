@@ -1,71 +1,283 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState } from 'react';
-import { useParams, Link } from 'react-router';
-import { ArrowLeft, Search, Plus, Trash2, GripVertical, Edit } from 'lucide-react';
-import { MovieCard } from '../components/MovieCard';
-import { searchMovies } from '../services/tmdb';
-import { toast } from 'sonner';
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router";
+import { Plus, Edit, Film, List, Search } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "../context/AuthContext";
+import { useRefresh } from "../context/RefreshContext";
+import { ProfilePosterCard } from "../components/ProfilePosterCard";
+import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
+
+function MovieCard({ movie, isRanked }) {
+  return (
+    <div>
+      <ProfilePosterCard
+        movieId={movie.movieId}
+        poster={movie.poster}
+        title={movie.title}
+        to={`/movie/${movie.movieId}`}
+      />
+      {isRanked && (
+        <p className="mt-1.5 text-center text-[#BFBCFC] font-bold font-heading text-sm">
+          {movie.position + 1}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function ListDetailPage() {
-    const { id } = useParams();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [isSearching, setIsSearching] = useState(false);
-    const [showSearch, setShowSearch] = useState(false);
-    // Mock list data
-    const list = {
-        id: 1,
-        name: 'Christopher Nolan Filmography',
-        description: 'All films directed by Christopher Nolan',
-        isRanked: true,
-        createdAt: '2024-03-15',
+  const { id, userId } = useParams();
+  const isPublic = !!userId;
+  const navigate = useNavigate();
+  const auth = useAuth();
+  const { refreshKey } = useRefresh();
+
+  const [list, setList] = useState(null);
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [sortValue, setSortValue] = useState(null);
+
+  const token = useMemo(
+    () =>
+      auth?.token ||
+      auth?.user?.token ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("authToken") ||
+      sessionStorage.getItem("auth_token") ||
+      sessionStorage.getItem("token"),
+    [auth]
+  );
+
+  const fetchList = async () => {
+    try {
+      setLoading(true);
+      const url = isPublic
+        ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Lists/${id}`
+        : `${import.meta.env.VITE_API_BASE_URL}/Lists/${id}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to load list");
+      const data = await res.json();
+      setList(data);
+      setMovies(data.movies ?? []);
+    } catch {
+      toast.error("Could not load this list");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchList();
+  }, [token, id, userId]);
+
+  useEffect(() => {
+    if (!token || !list) return;
+
+    const fetchWatchedCount = async () => {
+      try {
+        const url = isPublic
+          ? `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}/Lists/${id}/watched-count`
+          : `${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/watched-count`;
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setList((prev) => (prev ? { ...prev, watchedCount: data.watchedCount } : prev));
+      } catch {}
     };
-    const mockMovies = [
-        {
-            id: 1,
-            title: 'Inception',
-            poster_path: '/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg',
-            vote_average: 8.4,
-            release_date: '2010-07-15',
-            rank: 1,
-        },
-        {
-            id: 2,
-            title: 'The Dark Knight',
-            poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-            vote_average: 8.5,
-            release_date: '2008-07-16',
-            rank: 2,
-        },
-        {
-            id: 3,
-            title: 'Interstellar',
-            poster_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-            vote_average: 8.6,
-            release_date: '2014-11-05',
-            rank: 3,
-        },
-    ];
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (!searchQuery.trim())
-            return;
-        setIsSearching(true);
-        try {
-            const results = await searchMovies(searchQuery);
-            setSearchResults(results.slice(0, 8));
-        }
-        catch (error) {
-            toast.error('Search failed');
-        }
-        finally {
-            setIsSearching(false);
-        }
-    };
-    const handleAddMovie = (movie) => {
-        toast.success(`Added ${movie.title} to list`);
-        setShowSearch(false);
-        setSearchQuery('');
-        setSearchResults([]);
-    };
-    return (_jsx("div", { className: "min-h-screen py-8 md:py-12", children: _jsxs("div", { className: "container mx-auto px-4 max-w-7xl", children: [_jsxs(Link, { to: "/my-lists", className: "inline-flex items-center gap-2 text-[#BFBCFC] hover:text-[#AFA9FF] mb-6 transition-colors", children: [_jsx(ArrowLeft, { className: "w-5 h-5" }), "Back to Lists"] }), _jsxs("div", { className: "bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6 md:p-8 mb-8", children: [_jsxs("div", { className: "flex items-start justify-between mb-4", children: [_jsxs("div", { className: "flex-1", children: [_jsx("h1", { className: "text-3xl md:text-4xl font-bold font-heading text-[#F8FAFC] mb-2", children: list.name }), _jsx("p", { className: "text-[#94A3B8] mb-4", children: list.description }), _jsxs("div", { className: "flex items-center gap-4 text-sm", children: [_jsxs("span", { className: "text-[#44FFFF] font-data font-medium", children: [mockMovies.length, " films"] }), list.isRanked && (_jsx("span", { className: "text-[#94A3B8]", children: "\u2022 Ranked" })), _jsxs("span", { className: "text-[#94A3B8]", children: ["\u2022 Created ", list.createdAt] })] })] }), _jsx("button", { className: "p-2 hover:bg-[#BFBCFC]/20 rounded-lg transition-all", children: _jsx(Edit, { className: "w-5 h-5 text-[#BFBCFC]" }) })] }), _jsxs("button", { onClick: () => setShowSearch(!showSearch), className: "bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 shadow-lg shadow-[#BFBCFC]/30", children: [_jsx(Plus, { className: "w-5 h-5" }), "Add Movies"] })] }), showSearch && (_jsxs("div", { className: "bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6 mb-8", children: [_jsx("h3", { className: "text-xl font-bold text-[#F8FAFC] mb-4", children: "Search Movies" }), _jsxs("form", { onSubmit: handleSearch, className: "relative mb-4", children: [_jsx(Search, { className: "absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] w-5 h-5" }), _jsx("input", { type: "text", value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), placeholder: "Search for a movie to add...", className: "w-full bg-[#0B0E14] text-[#F8FAFC] pl-12 pr-28 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20" }), _jsx("button", { type: "submit", className: "absolute right-2 top-1/2 -translate-y-1/2 bg-[#BFBCFC] text-[#0B0E14] px-4 py-2 rounded-lg font-bold text-sm", children: isSearching ? 'Searching...' : 'Search' })] }), searchResults.length > 0 && (_jsx("div", { className: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4", children: searchResults.map((movie) => (_jsxs("div", { className: "relative group", children: [_jsxs("div", { className: "bg-[#0B0E14] rounded-xl overflow-hidden border border-[#BFBCFC]/10", children: [_jsx("img", { src: `https://image.tmdb.org/t/p/w500${movie.poster_path}`, alt: movie.title, className: "w-full aspect-[2/3] object-cover" }), _jsxs("div", { className: "p-3", children: [_jsx("h4", { className: "text-[#F8FAFC] text-sm font-medium truncate mb-1", children: movie.title }), _jsx("p", { className: "text-[#94A3B8] text-xs", children: movie.release_date?.split('-')[0] })] })] }), _jsx("button", { onClick: () => handleAddMovie(movie), className: "absolute top-2 right-2 bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] p-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all", children: _jsx(Plus, { className: "w-4 h-4" }) })] }, movie.id))) }))] })), _jsx("div", { className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6", children: mockMovies.map((movie) => (_jsxs("div", { className: "relative group", children: [list.isRanked && (_jsx("div", { className: "absolute top-2 left-2 z-10", children: _jsx("div", { className: "w-10 h-10 bg-[#BFBCFC] rounded-lg flex items-center justify-center shadow-lg", children: _jsx("span", { className: "text-[#0B0E14] font-bold font-heading text-lg", children: movie.rank }) }) })), _jsx(MovieCard, { movie: movie }), _jsxs("div", { className: "absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity", children: [list.isRanked && (_jsx("button", { className: "bg-[#151921]/90 backdrop-blur-sm hover:bg-[#BFBCFC]/20 text-[#BFBCFC] p-2 rounded-lg transition-all shadow-lg cursor-move", title: "Drag to reorder", children: _jsx(GripVertical, { className: "w-4 h-4" }) })), _jsx("button", { className: "bg-[#FF61D2]/90 backdrop-blur-sm hover:bg-[#FF61D2] text-white p-2 rounded-lg transition-all shadow-lg", title: "Remove from list", children: _jsx(Trash2, { className: "w-4 h-4" }) })] })] }, movie.id))) }), mockMovies.length === 0 && (_jsxs("div", { className: "text-center py-20", children: [_jsx(Search, { className: "w-24 h-24 text-[#BFBCFC]/20 mx-auto mb-4" }), _jsx("h3", { className: "text-2xl font-heading font-bold text-[#F8FAFC] mb-2", children: "No movies yet" }), _jsx("p", { className: "text-[#94A3B8] mb-6", children: "Start adding movies to your list" }), _jsxs("button", { onClick: () => setShowSearch(true), className: "bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all inline-flex items-center gap-2", children: [_jsx(Plus, { className: "w-5 h-5" }), "Add Your First Movie"] })] }))] }) }));
+
+    fetchWatchedCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+
+  const {
+    genre, setGenre, decade, setDecade, year, setYear,
+    filtered: filterResult, availableGenres, availableDecades,
+    hasActiveFilters, reset,
+  } = useMovieFilters(movies);
+
+  const filtered = useMemo(() => {
+    let result = filterResult;
+    if (search.trim()) {
+      result = result.filter((m) =>
+        m.title?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    return applySort(result, sortValue);
+  }, [filterResult, search, sortValue]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative w-20 h-20 mx-auto mb-4">
+            <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20 flex items-center justify-center">
+              <List className="w-8 h-8 text-[#BFBCFC] animate-pulse" />
+            </div>
+            <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
+          </div>
+          <p className="text-[#94A3B8] text-sm">Loading list...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const backTo = isPublic ? `/user/${userId}/lists` : "/my-lists";
+
+  if (!list) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center px-4">
+        <div>
+          <p className="text-[#F8FAFC] font-semibold text-lg mb-2">List not found</p>
+          <Link to={backTo} className="text-[#BFBCFC] hover:text-[#AFA9FF] transition-colors">
+            Back to lists
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen py-8 md:py-12">
+      <div className="container mx-auto px-4 max-w-7xl">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 mb-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-[#94A3B8] text-sm mb-1">
+              Published {new Date(list.createdAt).toLocaleDateString()}
+            </p>
+            <h1 className="text-2xl md:text-4xl font-black leading-none tracking-tight mb-2 text-[#F8FAFC]">
+              {list.listName}
+            </h1>
+            {list.listDescription && (
+              <p className="text-[#94A3B8] mb-2">{list.listDescription}</p>
+            )}
+            
+            <span className="inline-flex items-center gap-1.5 text-[#F8FAFC] font-data font-medium text-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#44FFFF]" />
+              {list.movieCount} {list.movieCount === 1 ? "Film" : "Films"}
+            </span>
+          </div>
+          <div className="flex flex-col gap-3 md:w-56 flex-shrink-0">
+            {!isPublic && (
+              <button
+                onClick={() => navigate(`/list/${id}/edit`)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[#BFBCFC] hover:bg-[#BFBCFC]/10 transition-all"
+              >
+                <Edit className="w-4 h-4" />
+                Edit or Delete this List
+              </button>
+            )}
+            {movies.length > 0 && (
+              <div className="bg-[#0B0E14] border border-white/5 rounded-xl p-4">
+                <div className="flex items-end justify-between gap-2">
+                  <p className="text-[#94A3B8] text-sm leading-snug">
+                    You've watched
+                    <br />
+                    <span className="text-[#F8FAFC] font-medium">
+                      {list.watchedCount ?? 0} of {movies.length}
+                    </span>
+                  </p>
+                  <span className="text-3xl font-bold font-heading text-[#BFBCFC] flex items-start gap-0.5">
+                    {Math.round(((list.watchedCount ?? 0) / movies.length) * 100)}
+                    <span className="text-base mt-1">%</span>
+                  </span>
+                </div>
+                <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#44FFFF] rounded-full transition-all"
+                    style={{ width: `${Math.round(((list.watchedCount ?? 0) / movies.length) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {movies.length > 0 ? (
+          <>
+            <div className="flex flex-col gap-2 mb-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+                  <input
+                    type="text"
+                    placeholder="Enter name of film..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
+                  />
+                </div>
+                <SortDropdown value={sortValue} onChange={setSortValue} />
+                <MovieFilters
+                  genre={genre} setGenre={setGenre}
+                  decade={decade} setDecade={setDecade}
+                  year={year} setYear={setYear}
+                  availableGenres={availableGenres}
+                  availableDecades={availableDecades}
+                  hasActiveFilters={hasActiveFilters}
+                  reset={reset}
+                  hideYearRow
+                  hideRating
+                />
+                {(search || hasActiveFilters) && (
+                  <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
+                    {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+              {decade && (
+                <MovieFilters
+                  genre={genre} setGenre={setGenre}
+                  decade={decade} setDecade={setDecade}
+                  year={year} setYear={setYear}
+                  availableGenres={availableGenres}
+                  availableDecades={availableDecades}
+                  hasActiveFilters={hasActiveFilters}
+                  reset={reset}
+                  yearRowOnly
+                />
+              )}
+            </div>
+
+            {filtered.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+                {filtered.map((movie) => (
+                  <MovieCard key={movie.movieId} movie={movie} isRanked={list.isRanked} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-[#94A3B8] text-sm">No movies match your filters</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-20">
+            <Film className="w-24 h-24 text-[#BFBCFC]/20 mx-auto mb-4" />
+            <h3 className="text-2xl font-heading font-bold text-[#F8FAFC] mb-2">No movies yet</h3>
+            {isPublic ? (
+              <p className="text-[#94A3B8]">This list is empty</p>
+            ) : (
+              <>
+                <p className="text-[#94A3B8] mb-6">Start adding movies to your list</p>
+                <button
+                  onClick={() => navigate(`/list/${id}/edit`)}
+                  className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all inline-flex items-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add Your First Movie
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
