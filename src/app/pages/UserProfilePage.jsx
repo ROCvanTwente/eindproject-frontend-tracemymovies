@@ -90,7 +90,8 @@ function RecentListCard({ list, to }) {
 
 export function UserProfilePage() {
   const { id } = useParams();
-  if (!id) return <OwnProfileView />;
+  const { user } = useAuth();
+  if (!id || id === user?.id) return <OwnProfileView />;
   return <PublicProfileView id={id} />;
 }
 
