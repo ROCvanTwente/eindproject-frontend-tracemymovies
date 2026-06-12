@@ -25,7 +25,7 @@ function BioText({ bio }) {
 
   return (
     <div className="mb-2 max-w-sm">
-      <p className={`text-[#94A3B8] text-sm leading-relaxed ${!expanded ? "line-clamp-3" : ""}`}>
+      <p className={`text-[#94A3B8] text-sm leading-relaxed break-words ${!expanded ? "line-clamp-3" : ""}`}>
         {bio}
       </p>
       {isLong && (
@@ -167,7 +167,7 @@ function OwnProfileView() {
               <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 md:self-start">
               <div className="flex items-center gap-3 flex-wrap mb-2">
                 <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">{displayName}</h1>
                 {isAdmin && (
@@ -482,7 +482,7 @@ function PublicProfileView({ id }) {
               )}
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 md:self-start">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC]">{pub.username}</h1>
                 {isAdmin && (

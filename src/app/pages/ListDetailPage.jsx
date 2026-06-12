@@ -13,8 +13,8 @@ function DescriptionText({ description }) {
   const isLong = description.length > 160;
 
   return (
-    <div className="mb-2">
-      <p className={`text-[#94A3B8] leading-relaxed ${!expanded ? "line-clamp-3" : ""}`}>
+    <div className="mb-2 max-w-[50rem]">
+      <p className={`text-[#94A3B8] leading-relaxed break-words ${!expanded ? "line-clamp-3" : ""}`}>
         {description}
       </p>
       {isLong && (

@@ -489,16 +489,14 @@ export function ProfilePage() {
                                     <textarea
                                         value={formData.bio}
                                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                        maxLength={500}
+                                        maxLength={70}
                                         rows={3}
                                         placeholder="Tell something about yourself..."
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm placeholder-[#94A3B8]/50 resize-none"
                                     />
-                                    {formData.bio.length > 400 && (
-                                        <p className={`text-[10px] text-right mt-0.5 ${formData.bio.length >= 500 ? "text-red-400" : "text-[#94A3B8]/50"}`}>
-                                            {formData.bio.length}/500
-                                        </p>
-                                    )}
+                                    <p className={`text-[10px] text-right mt-0.5 ${formData.bio.length >= 70 ? "text-red-400" : "text-[#94A3B8]/50"}`}>
+                                        {formData.bio.length}/70
+                                    </p>
                                 </div>
 
                                 <button
