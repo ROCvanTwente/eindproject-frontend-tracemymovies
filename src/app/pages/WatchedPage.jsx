@@ -133,8 +133,8 @@ export function WatchedPage() {
           <div className="container mx-auto px-4 max-w-7xl pt-3 pb-2 flex flex-col gap-2">
 
             {/* Row 1: search + sort + filters */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-xs">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="relative w-full sm:flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
                 <input
                   type="text"
@@ -144,24 +144,26 @@ export function WatchedPage() {
                   className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
                 />
               </div>
-              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["List Order", "Reverse Order", "Average Rating"]} />
-              <MovieFilters
-                genre={genre} setGenre={setGenre}
-                decade={decade} setDecade={setDecade}
-                year={year} setYear={setYear}
-                rating={rating} setRating={setRating}
-                availableGenres={availableGenres}
-                availableDecades={availableDecades}
-                ratingOptions={ratingOptions}
-                hasActiveFilters={hasActiveFilters}
-                reset={reset}
-                hideYearRow
-              />
-              {(search || hasActiveFilters) && (
-                <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
-                  {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-                </p>
-              )}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["List Order", "Reverse Order", "Average Rating"]} />
+                <MovieFilters
+                  genre={genre} setGenre={setGenre}
+                  decade={decade} setDecade={setDecade}
+                  year={year} setYear={setYear}
+                  rating={rating} setRating={setRating}
+                  availableGenres={availableGenres}
+                  availableDecades={availableDecades}
+                  ratingOptions={ratingOptions}
+                  hasActiveFilters={hasActiveFilters}
+                  reset={reset}
+                  hideYearRow
+                />
+                {(search || hasActiveFilters) && (
+                  <p className="text-[#94A3B8] text-xs sm:ml-auto hidden sm:block">
+                    {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Row 2: year row below search bar */}

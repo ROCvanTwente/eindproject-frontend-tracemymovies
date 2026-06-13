@@ -155,10 +155,10 @@ export function ActivityDetailPage() {
           Back
         </button>
 
-        <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
 
           {/* ── LEFT: Poster + Trailer button ── */}
-          <div className="flex-shrink-0 w-44 md:w-52 mx-auto md:mx-0">
+          <div className="flex-shrink-0 w-36 sm:w-44 md:w-52">
 
             {/* Poster */}
             <ProfilePosterCard
@@ -234,11 +234,11 @@ export function ActivityDetailPage() {
                 </p>
                 <div className="flex items-center gap-2 flex-wrap">
                   {data.rating != null && data.rating > 0 && (
-                    <div className="flex items-center gap-1 flex-wrap">
+                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                         <Star
                           key={n}
-                          className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${
+                          className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 transition-colors ${
                             n <= data.rating
                               ? "text-[#44FFFF] fill-[#44FFFF]"
                               : "text-[#94A3B8]/20"
@@ -320,7 +320,7 @@ export function ActivityDetailPage() {
             </p>
 
             {/* Eye + Heart icons row */}
-            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4 flex items-center justify-between">
+            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4 flex items-center justify-center gap-16 md:justify-between md:gap-0">
               {/* Eye */}
               <button
                 className="relative transition-all hover:scale-110"
@@ -361,7 +361,7 @@ export function ActivityDetailPage() {
                 )}
               </div>
               <div className="flex flex-col gap-1.5" onMouseLeave={() => setHoverFilmRating(0)}>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-center gap-1">
                   {[1,2,3,4,5].map((n) => {
                     const active = n <= (hoverFilmRating || currentFilmRating);
                     return (
@@ -383,7 +383,7 @@ export function ActivityDetailPage() {
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-center gap-1">
                   {[6,7,8,9,10].map((n) => {
                     const active = n <= (hoverFilmRating || currentFilmRating);
                     return (

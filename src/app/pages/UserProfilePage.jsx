@@ -198,7 +198,7 @@ function OwnProfileView() {
                                 </span>
                             )}
                 {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
-                <Link to="/profile" className="ml-4 flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap">
+                <Link to="/profile" className="hidden md:flex ml-4 items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap">
                   <Pencil className="w-3 h-3" />
                   Edit Profile
                 </Link>
@@ -210,6 +210,10 @@ function OwnProfileView() {
                   <span className="uppercase tracking-wide">{user.location}</span>
                 </div>
               )}
+              <Link to="/profile" className="md:hidden flex items-center justify-center gap-1.5 px-4 py-2 mt-3 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 w-fit">
+                <Pencil className="w-3 h-3" />
+                Edit Profile
+              </Link>
             </div>
 
             <div className="flex items-center">

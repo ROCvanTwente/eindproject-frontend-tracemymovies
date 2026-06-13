@@ -5,6 +5,8 @@ const currentDecade = Math.floor(new Date().getFullYear() / 10) * 10;
 const ALL_DECADES = [];
 for (let d = 1870; d <= currentDecade; d += 10) ALL_DECADES.push(`${d}s`);
 
+export const RATING_OPTIONS = ["1-2", "3-4", "5-6", "7-8", "9-10"];
+
 const GENRES = [
   "Action", "Adventure", "Animation", "Comedy", "Crime",
   "Documentary", "Drama", "Family", "Fantasy", "History",
@@ -12,7 +14,7 @@ const GENRES = [
   "Thriller", "TV Movie", "War", "Western",
 ];
 
-function FilterDropdown({ label, value, options, onChange, topOption }) {
+export function FilterDropdown({ label, value, options, onChange, topOption }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -39,7 +41,7 @@ function FilterDropdown({ label, value, options, onChange, topOption }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 bg-[#1A2030] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/50 min-w-[160px] overflow-hidden">
+        <div className="absolute left-0 top-full mt-2 z-50 bg-[#1A2030] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/50 min-w-[160px] max-w-[calc(100vw-2rem)] overflow-hidden">
           <div className="max-h-72 overflow-y-auto py-1.5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/25 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/50">
           <button
             onClick={() => { onChange(null); setOpen(false); }}
@@ -132,7 +134,7 @@ export function SortDropdown({ value, onChange, excludeGroups = [] }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 bg-[#1A2030] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/50 min-w-[200px] overflow-hidden">
+        <div className="absolute left-0 top-full mt-2 z-50 bg-[#1A2030] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/50 min-w-[200px] max-w-[calc(100vw-2rem)] overflow-hidden">
           <div className="max-h-80 overflow-y-auto py-1.5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/25 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/50">
             <button
               onClick={() => { onChange(null); setOpen(false); }}
@@ -216,7 +218,7 @@ export function useMovieFilters(movies) {
 
   const availableGenres = GENRES;
   const availableDecades = ALL_DECADES;
-  const ratingOptions = ["1-2", "3-4", "5-6", "7-8", "9-10"];
+  const ratingOptions = RATING_OPTIONS;
 
   // When decade changes, reset specific year
   const handleSetDecade = (d) => { setDecade(d); setYear(null); };
@@ -259,11 +261,11 @@ function YearRow({ decade, year, setYear, setDecade }) {
   const canNext = nextDecade <= Math.floor(new Date().getFullYear() / 10) * 10;
 
   return (
-    <div className="flex items-center gap-1 mt-2 bg-[#151921]/60 border border-[#BFBCFC]/10 rounded-xl px-2 py-1.5 w-fit">
+    <div className="flex items-center gap-1 mt-2 bg-[#151921]/60 border border-[#BFBCFC]/10 rounded-xl px-2 py-1.5 max-w-full overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/25 [&::-webkit-scrollbar-thumb]:rounded-full">
       <button
         onClick={() => canPrev && setDecade(`${prevDecade}s`)}
         disabled={!canPrev}
-        className={`p-1 rounded-md transition-colors ${canPrev ? "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/10" : "text-[#94A3B8]/20 cursor-not-allowed"}`}
+        className={`shrink-0 p-1 rounded-md transition-colors ${canPrev ? "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/10" : "text-[#94A3B8]/20 cursor-not-allowed"}`}
       >
         <ChevronLeft className="w-3.5 h-3.5" />
       </button>
@@ -271,7 +273,7 @@ function YearRow({ decade, year, setYear, setDecade }) {
       {/* Decade label */}
       <button
         onClick={() => setYear(null)}
-        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all mr-1 ${
+        className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold transition-all mr-1 ${
           year === null ? "bg-[#BFBCFC] text-[#0B0E14]" : "text-[#94A3B8] hover:text-[#F8FAFC]"
         }`}
       >
@@ -283,7 +285,7 @@ function YearRow({ decade, year, setYear, setDecade }) {
         <button
           key={y}
           onClick={() => setYear(year === y ? null : y)}
-          className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+          className={`shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
             year === y
               ? "bg-[#44FFFF]/20 text-[#44FFFF] border border-[#44FFFF]/40"
               : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/8"
@@ -296,7 +298,7 @@ function YearRow({ decade, year, setYear, setDecade }) {
       <button
         onClick={() => canNext && setDecade(`${nextDecade}s`)}
         disabled={!canNext}
-        className={`p-1 rounded-md transition-colors ml-1 ${canNext ? "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/10" : "text-[#94A3B8]/20 cursor-not-allowed"}`}
+        className={`shrink-0 p-1 rounded-md transition-colors ml-1 ${canNext ? "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/10" : "text-[#94A3B8]/20 cursor-not-allowed"}`}
       >
         <ChevronRight className="w-3.5 h-3.5" />
       </button>

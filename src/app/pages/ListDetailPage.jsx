@@ -222,8 +222,8 @@ export function ListDetailPage() {
         {movies.length > 0 ? (
           <>
             <div className="flex flex-col gap-2 mb-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative flex-1 max-w-xs">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <div className="relative w-full sm:flex-1 sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
                   <input
                     type="text"
@@ -233,23 +233,25 @@ export function ListDetailPage() {
                     className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
                   />
                 </div>
-                <SortDropdown value={sortValue} onChange={setSortValue} />
-                <MovieFilters
-                  genre={genre} setGenre={setGenre}
-                  decade={decade} setDecade={setDecade}
-                  year={year} setYear={setYear}
-                  availableGenres={availableGenres}
-                  availableDecades={availableDecades}
-                  hasActiveFilters={hasActiveFilters}
-                  reset={reset}
-                  hideYearRow
-                  hideRating
-                />
-                {(search || hasActiveFilters) && (
-                  <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
-                    {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-                  </p>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <SortDropdown value={sortValue} onChange={setSortValue} />
+                  <MovieFilters
+                    genre={genre} setGenre={setGenre}
+                    decade={decade} setDecade={setDecade}
+                    year={year} setYear={setYear}
+                    availableGenres={availableGenres}
+                    availableDecades={availableDecades}
+                    hasActiveFilters={hasActiveFilters}
+                    reset={reset}
+                    hideYearRow
+                    hideRating
+                  />
+                  {(search || hasActiveFilters) && (
+                    <p className="text-[#94A3B8] text-xs sm:ml-auto hidden sm:block">
+                      {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                </div>
               </div>
               {decade && (
                 <MovieFilters

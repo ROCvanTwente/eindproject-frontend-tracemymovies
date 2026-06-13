@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { AlignLeft, Film, Heart, Star, ArrowLeft, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { ReviewTextBlock } from "../components/profile/ReviewTextBlock";
+import { FilterDropdown, RATING_OPTIONS } from "../components/MovieFilters";
 
 const PAGE_SIZE = 10;
 
@@ -19,7 +20,6 @@ export function ReviewsPage() {
   // Filters
   const [ratingFilter, setRatingFilter] = useState(null);
   const [yearFilter, setYearFilter] = useState(null);
-  const [ratingOpen, setRatingOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
 
   const token = useMemo(
@@ -62,11 +62,6 @@ export function ReviewsPage() {
   }, [token, userId]);
 
   // Available filter options
-  const availableRatings = useMemo(() => {
-    const set = new Set(reviews.filter(r => r.rating > 0).map(r => r.rating));
-    return Array.from(set).sort((a, b) => b - a);
-  }, [reviews]);
-
   const availableYears = useMemo(() => {
     const set = new Set(reviews.map(r => new Date(r.watchedDate).getFullYear()));
     return Array.from(set).sort((a, b) => b - a);
@@ -75,8 +70,15 @@ export function ReviewsPage() {
   const filtered = useMemo(() => {
     let result = reviews;
     if (ratingFilter !== null) {
-      if (ratingFilter === 0) result = result.filter(r => !r.rating || r.rating === 0);
-      else result = result.filter(r => r.rating === ratingFilter);
+      if (ratingFilter === "No Rating") {
+        result = result.filter(r => !r.rating || r.rating === 0);
+      } else {
+        const [min, max] = ratingFilter.split("-").map(Number);
+        result = result.filter(r => {
+          const rt = r.rating ?? 0;
+          return rt >= min && rt <= max;
+        });
+      }
     }
     if (yearFilter !== null) result = result.filter(r => new Date(r.watchedDate).getFullYear() === yearFilter);
     return result;
@@ -160,53 +162,18 @@ export function ReviewsPage() {
             )}
 
             {/* Rating filter */}
-            <div className="relative">
-              <button
-                onClick={() => { setRatingOpen(p => !p); setYearOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
-                  ratingFilter !== null
-                    ? "bg-[#BFBCFC]/15 border-[#BFBCFC]/40 text-[#BFBCFC]"
-                    : "bg-transparent border-[#BFBCFC]/12 text-[#94A3B8] hover:text-[#F8FAFC] hover:border-[#BFBCFC]/20"
-                }`}
-              >
-                {ratingFilter === null ? "Rating" : ratingFilter === 0 ? "No Rating" : `${ratingFilter}/10`}
-                <ChevronDown className={`w-3 h-3 transition-transform ${ratingOpen ? "rotate-180" : ""}`} />
-              </button>
-              {ratingOpen && (
-                <div className="absolute top-full mt-2 right-0 z-50 bg-[#1A2030] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/50 min-w-[140px] overflow-hidden">
-                  <div className="max-h-72 overflow-y-auto py-1.5">
-                    <button
-                      onClick={() => { setRatingFilter(null); setRatingOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm font-semibold transition-colors ${ratingFilter === null ? "text-[#F8FAFC]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/8"}`}
-                    >
-                      Any rating
-                    </button>
-                    <hr className="border-[#BFBCFC]/10 mx-2 my-1" />
-                    <button
-                      onClick={() => { setRatingFilter(0); setRatingOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${ratingFilter === 0 ? "text-[#BFBCFC] bg-[#BFBCFC]/12 font-semibold" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/8"}`}
-                    >
-                      No Rating
-                    </button>
-                    <hr className="border-[#BFBCFC]/10 mx-2 my-1" />
-                    {availableRatings.map(r => (
-                      <button
-                        key={r}
-                        onClick={() => { setRatingFilter(r); setRatingOpen(false); }}
-                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${ratingFilter === r ? "text-[#BFBCFC] bg-[#BFBCFC]/12 font-semibold" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#BFBCFC]/8"}`}
-                      >
-                        {r}/10
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <FilterDropdown
+              label="Rating"
+              value={ratingFilter}
+              options={RATING_OPTIONS}
+              onChange={setRatingFilter}
+              topOption="No Rating"
+            />
 
             {/* Year filter */}
             <div className="relative">
               <button
-                onClick={() => { setYearOpen(p => !p); setRatingOpen(false); }}
+                onClick={() => setYearOpen(p => !p)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                   yearFilter !== null
                     ? "bg-[#BFBCFC]/15 border-[#BFBCFC]/40 text-[#BFBCFC]"
