@@ -5,7 +5,7 @@ import { ReviewTextBlock } from "./ReviewTextBlock";
 
 export function ReviewCard({ review, index, total, showInteractions = false, posterClassName = "w-36 flex-none" }) {
   return (
-    <div className={`flex gap-5 py-6 ${index < total - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}>
+    <div className={`flex gap-5 pb-6 ${index > 0 ? "pt-6" : ""} ${index < total - 1 ? "border-b border-[#BFBCFC]/8" : ""}`}>
       <div className={posterClassName}>
         <ProfilePosterCard
           movieId={review.movieId}

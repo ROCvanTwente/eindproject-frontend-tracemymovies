@@ -337,9 +337,7 @@ function OwnProfileView() {
                 <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
                   Recent Activity
                 </h2>
-                {recentActivity.length > 4 && (
-                  <Link to="/watched" className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">All</Link>
-                )}
+                <Link to="/diary" className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">All</Link>
               </div>
               {activityLoading ? (
                 <div className="grid grid-cols-4 gap-3">
@@ -359,7 +357,7 @@ function OwnProfileView() {
             {/* Recent Reviews */}
             {(recentReviewsLoading || recentReviews.length > 0) && (
               <div>
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
                     Recent Reviews
                   </h2>
@@ -390,7 +388,7 @@ function OwnProfileView() {
               </div>
             )}
 
-            <FriendsSection friends={friends} />
+            <FriendsSection friends={friends} linkTo="/friends" />
           </div>
 
           {/* Sidebar */}
@@ -573,9 +571,7 @@ function PublicProfileView({ id }) {
                 <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
                   Recent Activity
                 </h2>
-                {pub.recentActivity.length > 4 && (
-                  <Link to={`/user/${id}/watched`} className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">All</Link>
-                )}
+                <Link to={`/user/${id}/diary`} className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">All</Link>
               </div>
               {pub.recentActivity.length === 0 ? (
                 <p className="text-[#94A3B8] text-sm">No recent activity.</p>
@@ -604,7 +600,7 @@ function PublicProfileView({ id }) {
             {/* Recent Reviews */}
             {(publicRecentReviewsLoading || publicRecentReviews.length > 0) && (
               <div>
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
                     Recent Reviews
                   </h2>

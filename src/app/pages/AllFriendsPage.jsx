@@ -78,13 +78,13 @@ const Avatar = ({ name, src, size = "md" }) => {
     : null;
   if (imgSrc) {
     return (
-      <div className={`${cls} rounded-full overflow-hidden flex-shrink-0`}>
+      <div className={`${cls} rounded-full overflow-hidden flex-shrink-0 border-2 border-transparent group-hover:border-[#44FFFF] transition-colors`}>
         <img src={imgSrc} alt={name} className="w-full h-full object-cover" />
       </div>
     );
   }
   return (
-    <div className={`${cls} bg-gradient-to-br ${from} ${to} rounded-full flex items-center justify-center flex-shrink-0`}>
+    <div className={`${cls} bg-gradient-to-br ${from} ${to} rounded-full flex items-center justify-center flex-shrink-0 border-2 border-transparent group-hover:border-[#44FFFF] transition-colors`}>
       <span className="text-[#0B0E14] font-bold">{name ? name.charAt(0).toUpperCase() : '?'}</span>
     </div>
   );
@@ -180,7 +180,7 @@ const AllFriendsPage = () => {
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#44FFFF]/3 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0B0E14] to-transparent" />
 
-        <div className="relative container mx-auto px-4 max-w-7xl py-6 md:py-8">
+        <div className="relative container mx-auto px-4 max-w-7xl pt-6 pb-4 md:pt-8 md:pb-6">
           <div className="flex items-center gap-4 md:gap-6">
             <div className="flex-1 ml-5">
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
@@ -205,7 +205,7 @@ const AllFriendsPage = () => {
       </div>
 
       {/* ── CONTENT ── */}
-      <div className="container mx-auto px-4 max-w-7xl py-8 md:py-10">
+      <div className="container mx-auto px-4 max-w-7xl pt-4 pb-8 md:pt-6 md:pb-10">
         {friends.length === 0 ? (
           <EmptyState />
         ) : (
@@ -218,7 +218,7 @@ const AllFriendsPage = () => {
               <div
                 key={f.userId}
                 onClick={() => navigate(`/user/${f.userId}`)}
-                className="flex flex-col items-center gap-3 p-3 hover:opacity-80 transition-opacity cursor-pointer text-center"
+                className="group flex flex-col items-center gap-3 p-3 hover:opacity-80 transition-opacity cursor-pointer text-center"
               >
                 <div className="relative">
                   <Avatar name={f.userName} src={f.profileImageBase64} size="xl" />
