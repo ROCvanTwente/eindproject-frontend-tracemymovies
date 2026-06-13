@@ -6,7 +6,6 @@ import {
   List,
   Calendar,
   Eye,
-  Clock,
   Film,
   X,
   Search,
@@ -221,7 +220,7 @@ function OwnProfileView() {
                 { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate("/watched") },
                 { label: "THIS YEAR", value: watchedThisYear, onClick: () => navigate("/diary") },
                 { label: "LISTS", value: listsCount, onClick: () => navigate("/my-lists") },
-                { label: "FRIENDS", value: friends.length },
+                { label: "FRIENDS", value: friends.length, onClick: () => navigate("/friends") },
               ].map(({ label, value, onClick }, i, arr) => (
                 <div key={label} className="flex items-center">
                   <div onClick={onClick} className={`px-5 text-center ${onClick ? "cursor-pointer group" : ""}`}>
@@ -241,7 +240,6 @@ function OwnProfileView() {
             {/* Favourite Films */}
             <div>
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
-                <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -337,7 +335,6 @@ function OwnProfileView() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
                   Recent Activity
                 </h2>
                 {recentActivity.length > 4 && (
@@ -364,7 +361,6 @@ function OwnProfileView() {
               <div>
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
-                    <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
                     Recent Reviews
                   </h2>
                   <Link to="/reviews" className="text-xs text-[#94A3B8] hover:text-[#FF61D2] transition-colors font-medium uppercase tracking-widest">All</Link>
@@ -552,7 +548,6 @@ function PublicProfileView({ id }) {
             {/* Favourite Films */}
             <div>
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
-                <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
               {(pub.favorites ?? []).filter(Boolean).length === 0 ? (
@@ -576,7 +571,6 @@ function PublicProfileView({ id }) {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
                   Recent Activity
                 </h2>
                 {pub.recentActivity.length > 4 && (
@@ -612,7 +606,6 @@ function PublicProfileView({ id }) {
               <div>
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
-                    <AlignLeft className="w-3.5 h-3.5 text-[#FF61D2]" />
                     Recent Reviews
                   </h2>
                   <Link to={`/user/${id}/reviews`} className="text-xs text-[#94A3B8] hover:text-[#FF61D2] transition-colors font-medium uppercase tracking-widest">All</Link>

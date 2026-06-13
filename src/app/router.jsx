@@ -28,6 +28,7 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
 import FriendPage from './pages/FriendPage';
+import AllFriendsPage from './pages/AllFriendsPage';
 import LikedMoviesPage from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
@@ -118,6 +119,10 @@ export const router = createBrowserRouter([
             {
                 path: 'FriendPage',
                 element: _jsx(ProtectedRoute, { children: _jsx(FriendPage, {}) }),
+            },
+            {
+                path: 'friends',
+                element: _jsx(ProtectedRoute, { children: _jsx(AllFriendsPage, {}) }),
             },
             {
                 path: 'my-lists',

@@ -199,7 +199,7 @@ export function WatchedPage() {
       {/* ── CONTENT ── */}
       <div className="container mx-auto px-4 max-w-7xl py-8 md:py-10">
         {movies.length === 0 ? (
-          <EmptyState />
+          <EmptyState isPublic={isPublic} ownerUsername={ownerUsername} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Eye className="w-10 h-10 text-[#94A3B8]/20 mb-4" />
@@ -272,7 +272,7 @@ const MovieCard = ({ movie, isPublic }) => (
 );
 
 /* ── EMPTY STATE ── */
-const EmptyState = () => (
+const EmptyState = ({ isPublic, ownerUsername }) => (
   <div className="flex flex-col items-center justify-center py-32 text-center">
     <div className="relative mb-8">
       <div className="w-32 h-32 bg-gradient-to-br from-[#BFBCFC]/12 to-[#44FFFF]/6 rounded-full flex items-center justify-center border border-[#BFBCFC]/15">
@@ -281,17 +281,21 @@ const EmptyState = () => (
       <div className="absolute inset-0 rounded-full bg-[#BFBCFC]/6 blur-2xl -z-10" />
     </div>
     <h2 className="text-2xl md:text-3xl font-bold text-[#F8FAFC] mb-3">
-      No films watched yet
+      {isPublic ? `${ownerUsername ?? "This user"} hasn't watched any films yet` : "No films watched yet"}
     </h2>
-    <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
-      Log films using the + Log button in the header to see them here.
-    </p>
-    <Link
-      to="/search"
-      className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BFBCFC] to-[#44FFFF] text-[#0B0E14] font-bold px-7 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#BFBCFC]/25"
-    >
-      <Film className="w-4 h-4" />
-      Discover Movies
-    </Link>
+    {isPublic ? null : (
+      <>
+        <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
+          Log films using the + Log button in the header to see them here.
+        </p>
+        <Link
+          to="/search"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BFBCFC] to-[#44FFFF] text-[#0B0E14] font-bold px-7 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#BFBCFC]/25"
+        >
+          <Film className="w-4 h-4" />
+          Discover Movies
+        </Link>
+      </>
+    )}
   </div>
 );

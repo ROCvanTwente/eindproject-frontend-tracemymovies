@@ -210,7 +210,7 @@ const LikedMoviesPage = () => {
       {/* ── CONTENT ── */}
       <div className="container mx-auto px-4 max-w-7xl py-8 md:py-10">
         {likedMovies.length === 0 ? (
-          <EmptyState />
+          <EmptyState isPublic={isPublic} ownerUsername={ownerUsername} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Heart className="w-10 h-10 text-[#FF61D2]/20 mb-4" />
@@ -286,7 +286,7 @@ const MovieCard = ({ movie }) => (
 );
 
 /* ── EMPTY STATE ── */
-const EmptyState = () => (
+const EmptyState = ({ isPublic, ownerUsername }) => (
   <div className="flex flex-col items-center justify-center py-32 text-center">
     <div className="relative mb-8">
       <div className="w-32 h-32 bg-gradient-to-br from-[#FF61D2]/12 to-[#BFBCFC]/6 rounded-full flex items-center justify-center border border-[#FF61D2]/15">
@@ -295,18 +295,22 @@ const EmptyState = () => (
       <div className="absolute inset-0 rounded-full bg-[#FF61D2]/6 blur-2xl -z-10" />
     </div>
     <h2 className="text-2xl md:text-3xl font-bold text-[#F8FAFC] mb-3">
-      No liked movies yet
+      {isPublic ? `${ownerUsername ?? "This user"} hasn't liked any movies yet` : "No liked movies yet"}
     </h2>
-    <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
-      Explore movies and press the heart to start building your personal collection.
-    </p>
-    <Link
-      to="/search"
-      className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF61D2] to-[#BFBCFC] text-[#0B0E14] font-bold px-7 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#FF61D2]/25"
-    >
-      <Film className="w-4 h-4" />
-      Discover Movies
-    </Link>
+    {isPublic ? null : (
+      <>
+        <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
+          Explore movies and press the heart to start building your personal collection.
+        </p>
+        <Link
+          to="/search"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF61D2] to-[#BFBCFC] text-[#0B0E14] font-bold px-7 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#FF61D2]/25"
+        >
+          <Film className="w-4 h-4" />
+          Discover Movies
+        </Link>
+      </>
+    )}
   </div>
 );
 

@@ -3,11 +3,18 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function ReviewPagination({ currentPage, totalPages, onPageChange }) {
     if (totalPages <= 1) return null;
-    
+
+    const goToPage = (page) => {
+        onPageChange(page);
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    };
+
     return (
         <div className="flex justify-center items-center gap-4 mt-6">
             <button
-                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                onClick={() => goToPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="p-2 rounded-lg bg-[#151921] border border-[#BFBCFC]/15 text-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1E293B] transition-colors flex items-center justify-center"
             >
@@ -17,7 +24,7 @@ export function ReviewPagination({ currentPage, totalPages, onPageChange }) {
                 Page {currentPage} of {totalPages}
             </span>
             <button
-                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
                 className="p-2 rounded-lg bg-[#151921] border border-[#BFBCFC]/15 text-[#F8FAFC] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1E293B] transition-colors flex items-center justify-center"
             >
