@@ -54,6 +54,9 @@ export function MovieDetailPage() {
         setShowShareModal,
         showTrailerModal,
         isAnimateIn,
+        isSavingWatch,
+        isSavingLike,
+        isSavingWatchlist,
         trailerVideo,
         openTrailer,
         closeTrailer,
@@ -93,6 +96,9 @@ export function MovieDetailPage() {
                 onToggleLike={handleToggleLike}
                 isInWatchlist={isInWatchlist}
                 onToggleWatchlist={handleToggleWatchlist}
+                isSavingWatch={isSavingWatch}
+                isSavingLike={isSavingLike}
+                isSavingWatchlist={isSavingWatchlist}
                 onSetRating={handleSetRating}
                 onOpenLog={() => setShowWatchLogModal(true)}
                 onOpenEditLog={() => setShowEditLogModal(true)}

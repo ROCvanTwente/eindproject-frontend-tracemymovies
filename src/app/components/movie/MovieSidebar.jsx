@@ -11,6 +11,9 @@ export function MovieSidebar({
   onToggleWatch,
   onToggleLike,
   onToggleWatchlist,
+  isSavingWatch,
+  isSavingLike,
+  isSavingWatchlist,
   onSetRating,
   onOpenLog,
   onOpenEditLog,
@@ -30,8 +33,9 @@ export function MovieSidebar({
       {/* Eye + Watchlist + Heart */}
       <div className="bg-[#151921]/80 border border-white/10 rounded-2xl px-5 py-4 flex items-center justify-between">
         <button
-          className="relative transition-all hover:scale-110 active:scale-95"
+          className="relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           onClick={onToggleWatch}
+          disabled={isSavingWatch}
         >
           <Eye className={`w-10 h-10 transition-colors ${(isWatched || filmRating > 0) ? "text-[#44FFFF] fill-[#44FFFF]/15" : "text-white/40"}`} />
           {watchCount > 1 && (
@@ -42,19 +46,17 @@ export function MovieSidebar({
         </button>
 
         <button
-          className="cursor-pointer transition-all hover:scale-110 active:scale-95"
-          onClick={() => {
-            if (!(isWatched || filmRating > 0 || watchCount > 0)) {
-              onToggleWatchlist?.();
-            }
-          }}
+          className="cursor-pointer transition-all hover:scale-110 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+          onClick={onToggleWatchlist}
+          disabled={isSavingWatchlist}
         >
           <Bookmark className={`w-10 h-10 transition-colors ${isInWatchlist ? "text-[#BFBCFC] fill-[#BFBCFC]" : "text-white/40"}`} />
         </button>
 
         <button
-          className="cursor-pointer transition-all hover:scale-110 active:scale-95"
+          className="cursor-pointer transition-all hover:scale-110 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           onClick={onToggleLike}
+          disabled={isSavingLike}
         >
           <Heart className={`w-10 h-10 transition-colors ${isFavorite ? "text-[#FF61D2] fill-[#FF61D2]" : "text-white/40"}`} />
         </button>

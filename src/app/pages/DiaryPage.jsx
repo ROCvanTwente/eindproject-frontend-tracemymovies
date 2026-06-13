@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router";
 import { BookOpen, ArrowLeft, Star, Heart, RotateCw, AlignLeft, ChevronLeft, ChevronRight, Film, Pencil, MoreHorizontal, Eye } from "lucide-react";
 import { EditLogModal } from "../components/EditLogModal";
 import { WatchLogModal } from "../components/WatchLogModal";
+import { MovieFilters, useMovieFilters } from "../components/MovieFilters";
+import { ReviewPagination } from "../components/review/ReviewPagination";
 import { toast } from "sonner";
 
 const getToken = () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
 const API = import.meta.env.VITE_API_BASE_URL;
+const LOGS_PER_PAGE = 20;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -53,6 +56,7 @@ export function DiaryPage() {
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [logModalConfig, setLogModalConfig] = useState({});
   const [menuHoverRating, setMenuHoverRating] = useState(0);
+  const [page, setPage] = useState(0);
   const rightPanelRef = useRef(null);
   const dotsButtonRef = useRef(null);
 
@@ -135,22 +139,38 @@ export function DiaryPage() {
       .finally(() => setLoading(false));
   }, [year, userId, isPublic]);
 
-  const monthsWithEntries = data?.entries
-    ? new Set(data.entries.map((e) => new Date(e.loggedDate).getMonth()))
-    : new Set();
+  const entriesForFilter = useMemo(
+    () => (data?.entries ?? []).map((e) => ({ ...e, year: e.releaseYear })),
+    [data]
+  );
 
-  const grouped = data?.entries
-    ? (() => {
-        const map = new Map();
-        for (const entry of data.entries) {
-          const month = new Date(entry.loggedDate).getMonth();
-          if (selectedMonth !== null && month !== selectedMonth) continue;
-          if (!map.has(month)) map.set(month, []);
-          map.get(month).push(entry);
-        }
-        return Array.from(map.entries()).sort((a, b) => b[0] - a[0]);
-      })()
-    : [];
+  const {
+    genre, setGenre,
+    decade, setDecade,
+    year: filterYear, setYear: setFilterYear,
+    rating, setRating,
+    filtered: filterResult,
+    availableGenres, availableDecades, ratingOptions,
+    hasActiveFilters, reset: resetFilters,
+  } = useMovieFilters(entriesForFilter);
+
+  useEffect(() => setPage(0), [filterResult, selectedMonth]);
+
+  const totalPages = Math.max(1, Math.ceil(filterResult.length / LOGS_PER_PAGE));
+  const pagedResult = filterResult.slice(page * LOGS_PER_PAGE, (page + 1) * LOGS_PER_PAGE);
+
+  const monthsWithEntries = new Set(pagedResult.map((e) => new Date(e.loggedDate).getMonth()));
+
+  const grouped = (() => {
+    const map = new Map();
+    for (const entry of pagedResult) {
+      const month = new Date(entry.loggedDate).getMonth();
+      if (selectedMonth !== null && month !== selectedMonth) continue;
+      if (!map.has(month)) map.set(month, []);
+      map.get(month).push(entry);
+    }
+    return Array.from(map.entries()).sort((a, b) => b[0] - a[0]);
+  })();
 
   const handleSelectMonth = (month) => {
     const next = selectedMonth === month ? null : month;
@@ -161,12 +181,12 @@ export function DiaryPage() {
       ? data.entries
       : data.entries.filter((e) => new Date(e.loggedDate).getMonth() === next);
     setSelected(filtered[0] ?? null);
-    rightPanelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    rightPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleSelect = (entry) => {
     setSelected(entry);
-    rightPanelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    rightPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleDeleteLog = async (logId) => {
@@ -349,11 +369,11 @@ export function DiaryPage() {
             <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#BFBCFC]/25 to-[#44FFFF]/10 rounded-2xl flex items-center justify-center border border-[#BFBCFC]/30 shadow-lg flex-shrink-0">
               <BookOpen className="w-6 h-6 text-[#BFBCFC]" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-[#BFBCFC]/60 text-[9px] font-bold uppercase tracking-[0.25em] mb-0.5">
                 Film Diary
               </p>
-              <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
+              <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight break-words">
                 {isPublic && <span className="text-[#F8FAFC]">{data?.username ?? "…"}'s </span>}
                 <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
                   {isPublic ? "Logs" : "Your Logs"}
@@ -431,6 +451,38 @@ export function DiaryPage() {
         </div>
       </div>
 
+      {/* Genre / decade / rating filters */}
+      {data?.entries?.length > 0 && (
+        <div className="container mx-auto px-4 max-w-7xl pt-4 pb-4 flex flex-col gap-2">
+          <MovieFilters
+            genre={genre} setGenre={setGenre}
+            decade={decade} setDecade={setDecade}
+            year={filterYear} setYear={setFilterYear}
+            rating={rating} setRating={setRating}
+            availableGenres={availableGenres}
+            availableDecades={availableDecades}
+            ratingOptions={ratingOptions}
+            hasActiveFilters={hasActiveFilters}
+            reset={resetFilters}
+            hideYearRow
+          />
+          {decade && (
+            <MovieFilters
+              genre={genre} setGenre={setGenre}
+              decade={decade} setDecade={setDecade}
+              year={filterYear} setYear={setFilterYear}
+              rating={rating} setRating={setRating}
+              availableGenres={availableGenres}
+              availableDecades={availableDecades}
+              ratingOptions={ratingOptions}
+              hasActiveFilters={hasActiveFilters}
+              reset={resetFilters}
+              yearRowOnly
+            />
+          )}
+        </div>
+      )}
+
       {/* Content */}
       <div className="container mx-auto px-4 max-w-7xl pb-16">
         {loading ? (
@@ -452,6 +504,19 @@ export function DiaryPage() {
                 : "Nothing was logged this year."}
             </p>
           </div>
+        ) : filterResult.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="w-20 h-20 bg-[#BFBCFC]/8 rounded-full flex items-center justify-center border border-[#BFBCFC]/15 mb-5">
+              <BookOpen className="w-9 h-9 text-[#BFBCFC]/25" />
+            </div>
+            <p className="text-[#F8FAFC] font-semibold text-lg mb-1">No logs match your filters</p>
+            <button
+              onClick={resetFilters}
+              className="mt-3 text-xs text-[#BFBCFC]/70 hover:text-[#BFBCFC] transition-colors underline underline-offset-2"
+            >
+              Clear filters
+            </button>
+          </div>
         ) : grouped.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="w-20 h-20 bg-[#BFBCFC]/8 rounded-full flex items-center justify-center border border-[#BFBCFC]/15 mb-5">
@@ -467,9 +532,10 @@ export function DiaryPage() {
             </p>
           </div>
         ) : (
-          <div className="flex gap-6 lg:gap-10 items-start">
+          <>
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
             {/* LEFT: List */}
-            <div className="flex-1 min-w-0 max-h-[calc(100vh-180px)] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="order-2 lg:order-1 w-full lg:flex-1 min-w-0 lg:max-h-[calc(100vh-180px)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {grouped.map(([month, entries]) => (
                 <div key={month} className="mb-5">
                   {/* Month header */}
@@ -494,7 +560,7 @@ export function DiaryPage() {
                         <div
                           key={entry.logId}
                           onClick={() => handleSelect(entry)}
-                          className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-150 cursor-pointer group ${
+                          className={`w-full flex items-center gap-2 sm:gap-4 px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-150 cursor-pointer group ${
                             isSelected
                               ? "bg-[#BFBCFC]/10 border border-[#BFBCFC]/20"
                               : "hover:bg-[#151921]/80 border border-transparent"
@@ -502,7 +568,7 @@ export function DiaryPage() {
                         >
                           {/* Day */}
                           <span
-                            className={`text-xl font-black tabular-nums w-8 flex-shrink-0 leading-none text-right ${
+                            className={`text-sm sm:text-xl font-black tabular-nums w-5 sm:w-8 flex-shrink-0 leading-none text-right ${
                               isSelected
                                 ? "text-[#BFBCFC]"
                                 : "text-[#94A3B8]/50 group-hover:text-[#94A3B8]"
@@ -515,7 +581,7 @@ export function DiaryPage() {
                           <Link
                             to={`/log/${entry.logId}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="relative w-12 flex-shrink-0 aspect-[2/3]"
+                            className="relative w-10 sm:w-12 flex-shrink-0 aspect-[2/3]"
                           >
                             <div className="w-full h-full rounded-md overflow-hidden bg-[#151921] border border-transparent group-hover:border-[#44FFFF]/40 transition-all duration-200">
                               {entry.poster ? (
@@ -553,7 +619,7 @@ export function DiaryPage() {
                           </div>
 
                           {/* Rating + status icons */}
-                          <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                             {/* Stars */}
                             <span className="flex items-center gap-0.5">
                               {Array.from({ length: 10 }).map((_, i) => {
@@ -562,7 +628,7 @@ export function DiaryPage() {
                                   ? (entry.userRating ?? 0)
                                   : (hoverMap[entry.logId] ?? entry.userRating ?? 0);
                                 return isPublic ? (
-                                  <Star key={i} className={`w-6 h-6 flex-shrink-0 ${starNum <= active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#44FFFF]/12"}`} />
+                                  <Star key={i} className={`w-3.5 h-3.5 sm:w-6 sm:h-6 flex-shrink-0 ${starNum <= active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#44FFFF]/12"}`} />
                                 ) : (
                                   <button
                                     key={i}
@@ -572,11 +638,11 @@ export function DiaryPage() {
                                     onClick={() => patchLog(entry, { userRating: starNum === entry.userRating ? 0 : starNum })}
                                     className="transition-transform hover:scale-110"
                                   >
-                                    <Star className={`w-6 h-6 flex-shrink-0 transition-colors ${starNum <= active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#44FFFF]/12"}`} />
+                                    <Star className={`w-3.5 h-3.5 sm:w-6 sm:h-6 flex-shrink-0 transition-colors ${starNum <= active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#44FFFF]/12"}`} />
                                   </button>
                                 );
                               })}
-                              <span className="text-xs text-[#44FFFF]/80 font-bold ml-1 tabular-nums w-4 text-left">
+                              <span className="text-[10px] sm:text-xs text-[#44FFFF]/80 font-bold ml-1 tabular-nums w-3 sm:w-4 text-left">
                                 {isPublic
                                   ? (entry.userRating > 0 ? entry.userRating : "")
                                   : (hoverMap[entry.logId] ?? (entry.userRating > 0 ? entry.userRating : ""))}
@@ -585,23 +651,23 @@ export function DiaryPage() {
 
                             {/* Heart */}
                             {isPublic ? (
-                              <Heart className={`w-6 h-6 ${entry.isLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/20"}`} />
+                              <Heart className={`w-4 h-4 sm:w-6 sm:h-6 flex-shrink-0 ${entry.isLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/20"}`} />
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => patchLog(entry, { isLiked: !entry.isLiked })}
-                                className="transition-transform hover:scale-110"
+                                className="transition-transform hover:scale-110 flex-shrink-0"
                               >
-                                <Heart className={`w-6 h-6 transition-colors ${entry.isLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/20 hover:text-[#FF61D2]/60"}`} />
+                                <Heart className={`w-4 h-4 sm:w-6 sm:h-6 transition-colors ${entry.isLiked ? "text-[#FF61D2] fill-[#FF61D2]" : "text-[#94A3B8]/20 hover:text-[#FF61D2]/60"}`} />
                               </button>
                             )}
 
-                            {entry.isRewatch && <RotateCw className="w-6 h-6 text-[#44FFFF]" />}
+                            {entry.isRewatch && <RotateCw className="hidden sm:block w-6 h-6 text-[#44FFFF] flex-shrink-0" />}
                             {entry.hasReview && (
                               <Link
                                 to={`/log/${entry.logId}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="group/review relative flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[#BFBCFC]/10"
+                                className="hidden sm:flex group/review relative items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[#BFBCFC]/10 flex-shrink-0"
                               >
                                 <AlignLeft className="w-5 h-5 text-[#BFBCFC]/50 group-hover/review:text-[#BFBCFC] transition-colors" />
                               </Link>
@@ -618,7 +684,7 @@ export function DiaryPage() {
             {/* RIGHT: Detail panel */}
             <div
               ref={rightPanelRef}
-              className="hidden lg:block w-72 xl:w-80 flex-shrink-0 sticky top-20"
+              className="order-1 lg:order-2 w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-20"
             >
               {selected ? (
                 <div className="bg-[#151921]/60 border border-[#BFBCFC]/10 rounded-2xl overflow-hidden">
@@ -750,6 +816,12 @@ export function DiaryPage() {
               )}
             </div>
           </div>
+          <ReviewPagination
+            currentPage={page + 1}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p - 1)}
+          />
+          </>
         )}
       </div>
 

@@ -21,6 +21,9 @@ export function MovieDetailContent({
   onToggleWatch,
   onToggleLike,
   onToggleWatchlist,
+  isSavingWatch,
+  isSavingLike,
+  isSavingWatchlist,
   onSetRating,
   onOpenLog,
   onOpenEditLog,
@@ -92,6 +95,9 @@ export function MovieDetailContent({
           onToggleWatch={onToggleWatch}
           onToggleLike={onToggleLike}
           onToggleWatchlist={onToggleWatchlist}
+          isSavingWatch={isSavingWatch}
+          isSavingLike={isSavingLike}
+          isSavingWatchlist={isSavingWatchlist}
           onSetRating={onSetRating}
           onOpenLog={onOpenLog}
           onOpenEditLog={onOpenEditLog}

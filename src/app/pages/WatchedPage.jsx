@@ -5,6 +5,9 @@ import { Eye, Search, Film, Heart, Star, AlignLeft, Film as FilmIcon } from "luc
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { useRefresh } from "../context/RefreshContext";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
+import { ReviewPagination } from "../components/review/ReviewPagination";
+
+const PAGE_SIZE = 32;
 
 export function WatchedPage() {
   const { userId } = useParams();
@@ -16,6 +19,7 @@ export function WatchedPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortValue, setSortValue] = useState(null);
+  const [page, setPage] = useState(0);
 
   const token = useMemo(
     () =>
@@ -64,6 +68,11 @@ export function WatchedPage() {
     }
     return applySort(result, sortValue);
   }, [filterResult, search, sortValue]);
+
+  useEffect(() => setPage(0), [filtered]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (loading) {
     return (
@@ -133,8 +142,8 @@ export function WatchedPage() {
           <div className="container mx-auto px-4 max-w-7xl pt-3 pb-2 flex flex-col gap-2">
 
             {/* Row 1: search + sort + filters */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-xs">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="relative w-full sm:flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
                 <input
                   type="text"
@@ -144,24 +153,26 @@ export function WatchedPage() {
                   className="w-full bg-[#151921] border border-[#BFBCFC]/12 rounded-lg pl-8.5 pr-3 py-2 text-[#F8FAFC] placeholder-[#94A3B8]/50 text-sm focus:outline-none focus:border-[#BFBCFC]/35 transition-all"
                 />
               </div>
-              <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["List Order", "Reverse Order", "Average Rating"]} />
-              <MovieFilters
-                genre={genre} setGenre={setGenre}
-                decade={decade} setDecade={setDecade}
-                year={year} setYear={setYear}
-                rating={rating} setRating={setRating}
-                availableGenres={availableGenres}
-                availableDecades={availableDecades}
-                ratingOptions={ratingOptions}
-                hasActiveFilters={hasActiveFilters}
-                reset={reset}
-                hideYearRow
-              />
-              {(search || hasActiveFilters) && (
-                <p className="text-[#94A3B8] text-xs ml-auto hidden sm:block">
-                  {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-                </p>
-              )}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <SortDropdown value={sortValue} onChange={setSortValue} excludeGroups={["List Order", "Reverse Order", "Average Rating"]} />
+                <MovieFilters
+                  genre={genre} setGenre={setGenre}
+                  decade={decade} setDecade={setDecade}
+                  year={year} setYear={setYear}
+                  rating={rating} setRating={setRating}
+                  availableGenres={availableGenres}
+                  availableDecades={availableDecades}
+                  ratingOptions={ratingOptions}
+                  hasActiveFilters={hasActiveFilters}
+                  reset={reset}
+                  hideYearRow
+                />
+                {(search || hasActiveFilters) && (
+                  <p className="text-[#94A3B8] text-xs sm:ml-auto hidden sm:block">
+                    {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Row 2: year row below search bar */}
@@ -210,11 +221,18 @@ export function WatchedPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
-            {filtered.map((movie, index) => (
-              <MovieCard key={movie.movieId} movie={movie} index={index} isPublic={isPublic} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
+              {paged.map((movie, index) => (
+                <MovieCard key={movie.movieId} movie={movie} index={index} isPublic={isPublic} />
+              ))}
+            </div>
+            <ReviewPagination
+              currentPage={page + 1}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p - 1)}
+            />
+          </>
         )}
       </div>
     </div>

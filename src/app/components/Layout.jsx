@@ -27,11 +27,19 @@ export function Layout() {
                 <ApiKeyBanner />
                 <Toaster
                     position="top-right"
-                    richColors
                     theme="dark"
                     offset="72px"
                     duration={4000}
                     swipeDirections={['right', 'left']}
+                    toastOptions={{
+                        classNames: {
+                            toast: "!bg-[#151921] !text-[#F8FAFC] !border !border-white/10",
+                            success: "!border-[#44FFFF]/30 [&_[data-icon]]:!text-[#44FFFF]",
+                            error: "!border-[#FF6B6B]/30 [&_[data-icon]]:!text-[#FF6B6B]",
+                            warning: "!border-[#FF61D2]/30 [&_[data-icon]]:!text-[#FF61D2]",
+                            info: "!border-[#BFBCFC]/30 [&_[data-icon]]:!text-[#BFBCFC]",
+                        },
+                    }}
                 />
                 <BadgeChecker />
                 <BadgeUnlockOverlay />
