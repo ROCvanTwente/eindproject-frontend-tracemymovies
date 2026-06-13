@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 const currentDecade = Math.floor(new Date().getFullYear() / 10) * 10;
@@ -223,7 +223,7 @@ export function useMovieFilters(movies) {
   // When decade changes, reset specific year
   const handleSetDecade = (d) => { setDecade(d); setYear(null); };
 
-  const filtered = movies.filter((m) => {
+  const filtered = useMemo(() => movies.filter((m) => {
     if (genre && !(m.genres ?? []).includes(genre)) return false;
     if (year) {
       if (Number(m.year) !== year) return false;
@@ -242,7 +242,7 @@ export function useMovieFilters(movies) {
       }
     }
     return true;
-  });
+  }), [movies, genre, year, decade, rating]);
 
   const hasActiveFilters = genre !== null || decade !== null || year !== null || rating !== null;
   const reset = () => { setGenre(null); setDecade(null); setYear(null); setRating(null); };

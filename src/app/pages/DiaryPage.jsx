@@ -5,10 +5,12 @@ import { BookOpen, ArrowLeft, Star, Heart, RotateCw, AlignLeft, ChevronLeft, Che
 import { EditLogModal } from "../components/EditLogModal";
 import { WatchLogModal } from "../components/WatchLogModal";
 import { MovieFilters, useMovieFilters } from "../components/MovieFilters";
+import { ReviewPagination } from "../components/review/ReviewPagination";
 import { toast } from "sonner";
 
 const getToken = () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
 const API = import.meta.env.VITE_API_BASE_URL;
+const LOGS_PER_PAGE = 20;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -54,6 +56,7 @@ export function DiaryPage() {
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [logModalConfig, setLogModalConfig] = useState({});
   const [menuHoverRating, setMenuHoverRating] = useState(0);
+  const [page, setPage] = useState(0);
   const rightPanelRef = useRef(null);
   const dotsButtonRef = useRef(null);
 
@@ -151,11 +154,16 @@ export function DiaryPage() {
     hasActiveFilters, reset: resetFilters,
   } = useMovieFilters(entriesForFilter);
 
-  const monthsWithEntries = new Set(filterResult.map((e) => new Date(e.loggedDate).getMonth()));
+  useEffect(() => setPage(0), [filterResult, selectedMonth]);
+
+  const totalPages = Math.max(1, Math.ceil(filterResult.length / LOGS_PER_PAGE));
+  const pagedResult = filterResult.slice(page * LOGS_PER_PAGE, (page + 1) * LOGS_PER_PAGE);
+
+  const monthsWithEntries = new Set(pagedResult.map((e) => new Date(e.loggedDate).getMonth()));
 
   const grouped = (() => {
     const map = new Map();
-    for (const entry of filterResult) {
+    for (const entry of pagedResult) {
       const month = new Date(entry.loggedDate).getMonth();
       if (selectedMonth !== null && month !== selectedMonth) continue;
       if (!map.has(month)) map.set(month, []);
@@ -524,6 +532,7 @@ export function DiaryPage() {
             </p>
           </div>
         ) : (
+          <>
           <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start">
             {/* LEFT: List */}
             <div className="order-2 lg:order-1 w-full lg:flex-1 min-w-0 lg:max-h-[calc(100vh-180px)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -807,6 +816,12 @@ export function DiaryPage() {
               )}
             </div>
           </div>
+          <ReviewPagination
+            currentPage={page + 1}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p - 1)}
+          />
+          </>
         )}
       </div>
 

@@ -29,7 +29,7 @@ function DescriptionText({ description }) {
   );
 }
 
-function MovieCard({ movie, isRanked }) {
+function MovieCard({ movie, isRanked, onRemove }) {
   return (
     <div>
       <ProfilePosterCard
@@ -37,6 +37,8 @@ function MovieCard({ movie, isRanked }) {
         poster={movie.poster}
         title={movie.title}
         to={`/movie/${movie.movieId}`}
+        inListContext={!!onRemove}
+        onRemoveFromList={onRemove ? () => onRemove(movie.movieId) : undefined}
       />
       {isRanked && (
         <p className="mt-1.5 text-center text-[#BFBCFC] font-bold font-heading text-sm">
@@ -96,6 +98,24 @@ export function ListDetailPage() {
   useEffect(() => {
     if (token) fetchList();
   }, [token, id, userId]);
+
+  const handleRemoveMovie = async (movieId) => {
+    const previousMovies = movies;
+    const previousList = list;
+    setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
+    setList((prev) => (prev ? { ...prev, movieCount: prev.movieCount - 1 } : prev));
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/movies/${movieId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to remove movie");
+    } catch {
+      setMovies(previousMovies);
+      setList(previousList);
+      toast.error("Could not remove movie from list");
+    }
+  };
 
   useEffect(() => {
     if (!token || !list) return;
@@ -270,7 +290,12 @@ export function ListDetailPage() {
             {filtered.length > 0 ? (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
                 {filtered.map((movie) => (
-                  <MovieCard key={movie.movieId} movie={movie} isRanked={list.isRanked} />
+                  <MovieCard
+                    key={movie.movieId}
+                    movie={movie}
+                    isRanked={list.isRanked}
+                    onRemove={isPublic ? undefined : handleRemoveMovie}
+                  />
                 ))}
               </div>
             ) : (

@@ -5,6 +5,9 @@ import { Eye, Search, Film, Heart, Star, AlignLeft, Film as FilmIcon } from "luc
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { useRefresh } from "../context/RefreshContext";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
+import { ReviewPagination } from "../components/review/ReviewPagination";
+
+const PAGE_SIZE = 32;
 
 export function WatchedPage() {
   const { userId } = useParams();
@@ -16,6 +19,7 @@ export function WatchedPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortValue, setSortValue] = useState(null);
+  const [page, setPage] = useState(0);
 
   const token = useMemo(
     () =>
@@ -64,6 +68,11 @@ export function WatchedPage() {
     }
     return applySort(result, sortValue);
   }, [filterResult, search, sortValue]);
+
+  useEffect(() => setPage(0), [filtered]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (loading) {
     return (
@@ -212,11 +221,18 @@ export function WatchedPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
-            {filtered.map((movie, index) => (
-              <MovieCard key={movie.movieId} movie={movie} index={index} isPublic={isPublic} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
+              {paged.map((movie, index) => (
+                <MovieCard key={movie.movieId} movie={movie} index={index} isPublic={isPublic} />
+              ))}
+            </div>
+            <ReviewPagination
+              currentPage={page + 1}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p - 1)}
+            />
+          </>
         )}
       </div>
     </div>

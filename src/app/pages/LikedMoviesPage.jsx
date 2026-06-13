@@ -6,7 +6,10 @@ import { toast } from "sonner";
 import { Heart, Search, Film, Star, AlignLeft } from "lucide-react";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { MovieFilters, useMovieFilters, SortDropdown, applySort } from "../components/MovieFilters";
+import { ReviewPagination } from "../components/review/ReviewPagination";
 import { Link } from "react-router";
+
+const PAGE_SIZE = 32;
 
 const LikedMoviesPage = () => {
   const { userId } = useParams();
@@ -16,6 +19,7 @@ const LikedMoviesPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortValue, setSortValue] = useState(null);
+  const [page, setPage] = useState(0);
   const auth = useAuth();
   const { refreshKey } = useRefresh();
 
@@ -75,6 +79,11 @@ const LikedMoviesPage = () => {
     }
     return applySort(result, sortValue);
   }, [filterResult, search, sortValue]);
+
+  useEffect(() => setPage(0), [filtered]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (loading) {
     return (
@@ -223,11 +232,18 @@ const LikedMoviesPage = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
-            {filtered.map((movie) => (
-              <MovieCard key={movie.movieId} movie={movie} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 md:gap-3">
+              {paged.map((movie) => (
+                <MovieCard key={movie.movieId} movie={movie} />
+              ))}
+            </div>
+            <ReviewPagination
+              currentPage={page + 1}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p - 1)}
+            />
+          </>
         )}
       </div>
     </div>
