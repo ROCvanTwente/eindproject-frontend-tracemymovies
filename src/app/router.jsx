@@ -38,6 +38,7 @@ import { BadgesPage } from './pages/BadgesPage';
 import { ActorPage } from './pages/ActorPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { DiaryPage } from './pages/DiaryPage';
+import { MovieFriendsActivityPage } from './pages/MovieFriendsActivityPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -65,6 +66,10 @@ export const router = createBrowserRouter([
             {
                 path: 'actor/:id',
                 element: _jsx(ActorPage, {}),
+            },
+            {
+                path: 'movie/:id/friends-activity',
+                element: _jsx(ProtectedRoute, { children: _jsx(MovieFriendsActivityPage, {}) }),
             },
             // {
             //     path: 'weekly-favorites',

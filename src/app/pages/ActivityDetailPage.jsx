@@ -4,13 +4,15 @@ import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import {
   ArrowLeft, Heart, RotateCw, Eye, Star,
-  MessageSquare, Film, AlertCircle, Play, Pencil, RefreshCw,
+  MessageSquare, Film, AlertCircle, Play, Pencil, RefreshCw, Bookmark, Trash2, Loader2, ListPlus,
 } from "lucide-react";
 import { TrailerModal } from "../components/movie/TrailerModal";
 import { toast } from "sonner";
 import { EditLogModal } from "../components/EditLogModal";
 import { WatchLogModal } from "../components/WatchLogModal";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
+import { AddToListsModal } from "../components/AddToListsModal";
+import { FriendsActivitySidebar } from "../components/movie/FriendsActivitySidebar";
 
 export function ActivityDetailPage() {
   const { id } = useParams();
@@ -31,6 +33,10 @@ export function ActivityDetailPage() {
   const [hoverFilmRating, setHoverFilmRating] = useState(0);
   const [myIsWatched, setMyIsWatched] = useState(false);
   const [myWatchCount, setMyWatchCount] = useState(0);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [addToListsOpen, setAddToListsOpen] = useState(false);
 
   const token = useMemo(
     () =>
@@ -61,6 +67,7 @@ export function ActivityDetailPage() {
       setCurrentFilmRating(detail.isOwnLog ? (detail.filmRating ?? 0) : (detail.myFilmRating ?? 0));
       setMyIsWatched(detail.myIsWatched ?? false);
       setMyWatchCount(detail.myWatchCount ?? 0);
+      setIsInWatchlist(detail.myIsInWatchlist ?? false);
 
       // Fetch trailer only once
       if (!trailerKey) {
@@ -100,6 +107,43 @@ export function ActivityDetailPage() {
     } else {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
       if (res.ok) { setMyIsWatched(true); setMyWatchCount(1); triggerRefresh(); }
+    }
+  };
+
+  const handleToggleWatchlist = async () => {
+    const next = !isInWatchlist;
+    setIsInWatchlist(next);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/ToggleWatchlistStatus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ MovieId: data.movieId, IsInWatchlist: next }),
+      });
+      if (!res.ok) setIsInWatchlist(!next);
+      else {
+        toast.success(next ? `'${data.title}' added to watchlist` : `'${data.title}' removed from watchlist`);
+        triggerRefresh();
+      }
+    } catch {
+      setIsInWatchlist(!next);
+    }
+  };
+
+  const handleDeleteLog = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Log/Delete/${data.logId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Log deleted.");
+      triggerRefresh();
+      navigate(-1);
+    } catch {
+      toast.error("Delete failed.");
+      setIsDeleting(false);
     }
   };
 
@@ -181,6 +225,12 @@ export function ActivityDetailPage() {
                 <Play className="w-4 h-4 fill-[#FF61D2]" />
                 Trailer
               </button>
+            )}
+
+            {data.isOwnLog && (
+              <div className="hidden md:block">
+                <FriendsActivitySidebar movieId={data.movieId} />
+              </div>
             )}
           </div>
 
@@ -285,7 +335,7 @@ export function ActivityDetailPage() {
                   </button>
                 ) : (
                   <div>
-                    <p className="text-[#F8FAFC] text-sm leading-relaxed">{data.reviewText}</p>
+                    <p className="text-[#F8FAFC] text-sm leading-relaxed break-words">{data.reviewText}</p>
                     {data.containsSpoilers && (
                       <button
                         onClick={() => setSpoilerRevealed(false)}
@@ -319,8 +369,8 @@ export function ActivityDetailPage() {
               {data.isOwnLog ? "Your current status" : "Your current status"}
             </p>
 
-            {/* Eye + Heart icons row */}
-            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4 flex items-center justify-center gap-16 md:justify-between md:gap-0">
+            {/* Eye + Watchlist + Heart icons row */}
+            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl px-5 py-4 flex items-center justify-between">
               {/* Eye */}
               <button
                 className="relative transition-all hover:scale-110"
@@ -332,6 +382,14 @@ export function ActivityDetailPage() {
                     {data.isOwnLog ? data.watchCount : myWatchCount}
                   </span>
                 )}
+              </button>
+
+              {/* Watchlist */}
+              <button
+                className="transition-all hover:scale-110"
+                onClick={handleToggleWatchlist}
+              >
+                <Bookmark className={`w-10 h-10 transition-all ${isInWatchlist ? "text-[#BFBCFC] fill-[#BFBCFC]" : "text-[#94A3B8]/30"}`} />
               </button>
 
               {/* Heart */}
@@ -422,6 +480,25 @@ export function ActivityDetailPage() {
                   {data.reviewText ? "Edit Log" : "Add review"}
                 </button>
                 <button
+                  onClick={() => setAddToListsOpen(true)}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                >
+                  <ListPlus className="w-4 h-4" />
+                  Add to lists
+                </button>
+                <button
+                  onClick={handleDeleteLog}
+                  disabled={isDeleting}
+                  className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50 ${confirmDelete ? "bg-red-500 text-white" : "bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-red-500/40 text-[#94A3B8] hover:text-red-400"}`}
+                >
+                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4" />{confirmDelete ? "Are you sure?" : "Delete log"}</>}
+                </button>
+                {confirmDelete && (
+                  <button onClick={() => setConfirmDelete(false)} className="text-[#94A3B8] text-xs hover:text-[#F8FAFC] transition-colors text-center">
+                    Cancel
+                  </button>
+                )}
+                <button
                   onClick={() => setLogAgainOpen(true)}
                   className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
                 >
@@ -430,16 +507,32 @@ export function ActivityDetailPage() {
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setLogAgainOpen(true)}
-                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
-              >
-                <RefreshCw className="w-4 h-4" />
-                {myWatchCount > 0 ? "Log again" : "Log this film"}
-              </button>
+              <>
+                <button
+                  onClick={() => setAddToListsOpen(true)}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                >
+                  <ListPlus className="w-4 h-4" />
+                  Add to lists
+                </button>
+                <button
+                  onClick={() => setLogAgainOpen(true)}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {myWatchCount > 0 ? "Log again" : "Log this film"}
+                </button>
+              </>
             )}
           </div>
         </div>
+
+        {/* Friends activity — bottom of page on mobile only, own log only */}
+        {data.isOwnLog && (
+          <div className="md:hidden mt-6">
+            <FriendsActivitySidebar movieId={data.movieId} />
+          </div>
+        )}
       </div>
 
       {/* Trailer modal */}
@@ -472,6 +565,14 @@ export function ActivityDetailPage() {
         preIsRewatch={true}
         preIsLiked={currentFilmIsLiked}
         preRating={currentFilmRating}
+      />
+
+      {/* Add to lists modal */}
+      <AddToListsModal
+        isOpen={addToListsOpen}
+        onClose={() => setAddToListsOpen(false)}
+        movieId={data?.movieId}
+        movieTitle={data?.title}
       />
     </div>
   );
