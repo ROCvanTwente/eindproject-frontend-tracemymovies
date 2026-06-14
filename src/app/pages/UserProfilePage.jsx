@@ -26,6 +26,7 @@ import { useSignalR } from "../context/SignalRContext";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
 import { BadgeChip } from "../components/BadgesSection";
 import { FavouriteSearchModal } from "../components/profile/FavouriteSearchModal";
+import { ProfilePictureModal } from "../components/profile/ProfilePictureModal";
 import { FriendsSection } from "../components/profile/FriendsSection";
 import { ActivityPosterItem } from "../components/profile/ActivityPosterItem";
 import { ReviewCard } from "../components/profile/ReviewCard";
@@ -116,6 +117,7 @@ function OwnProfileView() {
   const transparentImgRef = useRef(null);
   const dragInfoRef = useRef({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [pictureModalOpen, setPictureModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -174,18 +176,21 @@ function OwnProfileView() {
         {/* Profile Header */}
         <div className="mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <div className="relative flex-shrink-0">
+            <div
+              className="relative flex-shrink-0 cursor-pointer group"
+              onClick={() => setPictureModalOpen(true)}
+            >
               {user?.profilePicture ? (
-                <img src={user.profilePicture} alt={displayName} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg" />
+                <img src={user.profilePicture} alt={displayName} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg transition-opacity group-hover:opacity-80" />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30 transition-opacity group-hover:opacity-80">
                   <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{avatarLetter}</span>
                 </div>
               )}
               <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
             </div>
 
-            <div className="flex-1 min-w-0 md:self-start">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap mb-2">
                 <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">{displayName}</h1>
                 {isAdmin && (
@@ -444,6 +449,13 @@ function OwnProfileView() {
           onClose={() => setSearchModalOpen(false)}
         />
       )}
+
+      <ProfilePictureModal
+        isOpen={pictureModalOpen}
+        onClose={() => setPictureModalOpen(false)}
+        src={user?.profilePicture}
+        name={displayName}
+      />
     </div>
   );
 }
@@ -455,6 +467,7 @@ function PublicProfileView({ id }) {
   const { isUserOnline } = useSignalR();
   const { user } = useAuth();
   const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount, recentLists } = usePublicProfileData(id);
+  const [pictureModalOpen, setPictureModalOpen] = useState(false);
 
   const displayBadges = selectedBadges ?? [];
 
@@ -486,11 +499,14 @@ function PublicProfileView({ id }) {
         {/* Profile Header */}
         <div className="mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <div className="relative flex-shrink-0">
+            <div
+              className="relative flex-shrink-0 cursor-pointer group"
+              onClick={() => setPictureModalOpen(true)}
+            >
               {pub.profilePicture ? (
-                <img src={pub.profilePicture} alt={pub.username} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg" />
+                <img src={pub.profilePicture} alt={pub.username} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg transition-opacity group-hover:opacity-80" />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30 transition-opacity group-hover:opacity-80">
                   <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{pubLetter}</span>
                 </div>
               )}
@@ -499,7 +515,7 @@ function PublicProfileView({ id }) {
               )}
             </div>
 
-            <div className="flex-1 md:self-start">
+            <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC]">{pub.username}</h1>
                 {isAdmin && (
@@ -677,6 +693,13 @@ function PublicProfileView({ id }) {
           </div>
         </div>
       </div>
+
+      <ProfilePictureModal
+        isOpen={pictureModalOpen}
+        onClose={() => setPictureModalOpen(false)}
+        src={pub.profilePicture}
+        name={pub.username}
+      />
     </div>
   );
 }
