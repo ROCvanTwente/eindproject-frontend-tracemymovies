@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback, use } from 'react';
+import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film, Check, CheckCheck } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from "../context/AuthContext";
 import * as signalR from "@microsoft/signalr";
@@ -13,6 +13,7 @@ export function MessagesPage() {
     const [filterMyFriends, setFilterMyFriends] = useState([]);
     const [connection, setConnection] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [lastMessages, setLastMessages] = useState([]);
 
     const handleSendMessage = useCallback(async (e) => {
         e.preventDefault();
@@ -23,6 +24,23 @@ export function MessagesPage() {
                 "SendMessagePrivate",
                 selectedFriend.userId,
                 messageText
+            );
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setMessageText('');
+        }
+    });
+
+    const handleLiveIsRead = useCallback(async (senderId, messageId) => {
+        console.log(senderId)
+        console.log(messageId)
+
+        try {
+            await connection.invoke(
+                "LiveIsRead",
+                senderId,
+                messageId
             );
         } catch (err) {
             console.error(err);
@@ -69,12 +87,18 @@ export function MessagesPage() {
                 setFilterMyFriends(data);
             })
             .catch((err) => console.log(err));
+        
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLastMessages`, { headers })
+            .then((r) => r.ok ? r.json() : [])
+            .then((data) => {
+                console.log(data)
+                setLastMessages(data);
+            })
+            .catch((err) => console.log(err));
     });
-
 
     useEffect(() => {
         getMyFriends();
-
         const newConnection = new signalR.HubConnectionBuilder()
             .withUrl(`${import.meta.env.VITE_API_BASE_URL.replace("/api", "")}/hubs/chat`, {
                 accessTokenFactory: () => token
@@ -83,38 +107,50 @@ export function MessagesPage() {
             .withAutomaticReconnect()
             .build();
 
-        newConnection.start()
-            .then(() => {
-                console.log("Verbonden met SignalR");
+        console.log(newConnection)
+        if (newConnection.state === signalR.HubConnectionState.Disconnected) {
+            newConnection.start()
+                .then(() => {
+                    console.log("Verbonden met SignalR");
 
-                newConnection.on("ReceiveMessage", (senderId, messageId, message, timeSended) => {
-                    setMessages((prev) => [
-                        ...prev,
-                        { senderId, messageId, message, timeSended }
-                    ]);
-                });
-            })
-            .catch((err) => console.error(err));
-
+                    newConnection.on("ReceiveIsRead", () => {
+                        setMessages(prev => {
+                            return prev.map(message => {
+                                return {
+                                    ...message,
+                                    isRead: true
+                                }
+                            });
+                        });
+                    });
+                })
+                .catch((err) => console.error(err));
+        }
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setConnection(newConnection);
 
         return () => {
-            newConnection.stop();
+            if (newConnection.state !== signalR.HubConnectionState.Disconnected) {
+                newConnection.stop()
+                    .then(() => console.log("SignalR netjes afgesloten"))
+                    .catch(err => console.error("Fout bij sluiten:", err));
+            }
+            setConnection(null);
         };
-    }, [token]);
+    }, [token, auth]);
 
     useEffect(() => {
-        const chatDiv = document.querySelector("#chatDiv");
-        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
-    }, [messages]);
+        if (!selectedFriend) return
 
-    useEffect(() => {
         const headers = { 'Authorization': `Bearer ${token}` };
         fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetMessages?friendId=${selectedFriend.userId}`, { headers })
             .then((r) => r.ok ? r.json() : [])
             .then((data) => {
                 setMessages(data);
+                console.log(data)
+                if (data[data.length - 1].senderId != auth.user.userId) {
+                    handleLiveIsRead(selectedFriend.userId, 0);
+                }
             })
             .catch((err) => console.log(err));
     }, [selectedFriend, token])
@@ -127,6 +163,31 @@ export function MessagesPage() {
             setFilterMyFriends(filterMyFriends);
         }
     }, [searchQuery])
+
+    useEffect(() => {
+        if (!connection) return
+        connection.off("ReceiveMessage")
+        connection.on("ReceiveMessage", (senderId, messageId, message, timeSended, isRead) => {
+            if (selectedFriend.userId == senderId || auth.user.userId == senderId) {
+                setMessages((prev) => [
+                    ...prev,
+                    { senderId, messageId, message, timeSended, isRead }
+                ]);
+            }
+
+            if (selectedFriend.userId == senderId) {
+                console.log("Stuur NU DE LIVE EVENT")
+                handleLiveIsRead(selectedFriend.userId, messageId);
+            } else if (auth.user.userId != senderId) {
+                console.log("Het us van de andere vriend")
+            }
+        });
+    }, [selectedFriend, connection])
+
+    useEffect(() => {
+        const chatDiv = document.querySelector("#chatDiv");
+        if (chatDiv) chatDiv.scrollTop = chatDiv.scrollHeight;
+    }, [messages]);
 
     return (
         <div className="min-h-screen py-8">
@@ -159,7 +220,6 @@ export function MessagesPage() {
                                 />
                             </div>
                         </div>
-
                         <div className="flex-1 overflow-y-auto">
                             {filterMyFriends.map((friend) => (
                                 <div
@@ -197,7 +257,7 @@ export function MessagesPage() {
                                             <div className="flex items-center justify-between mb-1">
                                                 <h3 className="text-[#F8FAFC] font-medium truncate">{friend.userName}</h3>
                                             </div>
-                                            <p className="text-[#94A3B8] text-sm truncate"></p>
+                                            <p className="text-[#94A3B8] text-sm truncate">{lastMessages.length != 0 && lastMessages.find(lm => lm.friendId == friend.userId)?.message}</p>
                                         </button>
                                     </div>
                                 </div>
@@ -212,7 +272,7 @@ export function MessagesPage() {
                                 {/* Chat Header */}
                                 <div className="p-4 border-b border-[#BFBCFC]/15 flex items-center justify-between">
                                     <Link
-                                        to={`/user/${selectedFriend.friendId}`}
+                                        to={`/user/${selectedFriend.userId}`}
                                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                                     >
                                         <div className="relative">
@@ -284,6 +344,7 @@ export function MessagesPage() {
                                                 )}
                                                 <p className="text-sm">{message.message}</p>
                                                 <p className={`text-xs mt-1 text-[#94A3B8]`}>{message.timeSended}</p>
+                                                {message.senderId == auth.user.userId && <span>{message.isRead ? <CheckCheck /> : <Check />}</span>}
                                             </div>
                                         </div>
                                     ))}

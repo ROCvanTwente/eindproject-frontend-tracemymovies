@@ -2,7 +2,6 @@
 import { useEffect } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
-import { ApiKeyBanner } from './ApiKeyBanner';
 import { Toaster } from 'sonner';
 import { BadgeProvider } from '../context/BadgeContext';
 import { BadgeChecker } from './BadgeChecker';
@@ -24,7 +23,6 @@ export function Layout() {
                     <Outlet />
                 </main>
                 <Footer />
-                <ApiKeyBanner />
                 <Toaster
                     position="top-right"
                     richColors
