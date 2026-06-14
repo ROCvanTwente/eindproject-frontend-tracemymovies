@@ -140,7 +140,12 @@ export function DiaryPage() {
   }, [year, userId, isPublic]);
 
   const entriesForFilter = useMemo(
-    () => (data?.entries ?? []).map((e) => ({ ...e, year: e.releaseYear })),
+    () => (data?.entries ?? [])
+      .map((e) => ({ ...e, year: e.releaseYear }))
+      .sort((a, b) => {
+        const dateDiff = new Date(b.loggedDate) - new Date(a.loggedDate);
+        return dateDiff !== 0 ? dateDiff : (b.logId ?? 0) - (a.logId ?? 0);
+      }),
     [data]
   );
 

@@ -217,16 +217,20 @@ export function ReviewsPage() {
             <div className="w-24 h-24 bg-[#FF61D2]/8 rounded-full flex items-center justify-center border border-[#FF61D2]/15 mb-6">
               <AlignLeft className="w-10 h-10 text-[#FF61D2]/30" />
             </div>
-            <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">No reviews yet</h2>
-            <p className="text-[#94A3B8] text-sm max-w-xs">Log films and add a review to see them here.</p>
+            <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">
+              {isPublic ? `${ownerUsername ?? "This user"} hasn't written any reviews yet` : "No reviews yet"}
+            </h2>
             {!isPublic && (
-              <Link
-                to="/search"
-                className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-[#FF61D2] to-[#BFBCFC] text-[#0B0E14] font-bold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
-              >
-                <Film className="w-4 h-4" />
-                Discover Movies
-              </Link>
+              <>
+                <p className="text-[#94A3B8] text-sm max-w-xs">Log films and add a review to see them here.</p>
+                <Link
+                  to="/search"
+                  className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-[#FF61D2] to-[#BFBCFC] text-[#0B0E14] font-bold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                >
+                  <Film className="w-4 h-4" />
+                  Discover Movies
+                </Link>
+              </>
             )}
           </div>
         ) : filtered.length === 0 ? (

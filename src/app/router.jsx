@@ -28,6 +28,7 @@ import { UserProfilePage } from './pages/UserProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
 import FriendPage from './pages/FriendPage';
+import AllFriendsPage from './pages/AllFriendsPage';
 import LikedMoviesPage from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
@@ -37,6 +38,7 @@ import { BadgesPage } from './pages/BadgesPage';
 import { ActorPage } from './pages/ActorPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { DiaryPage } from './pages/DiaryPage';
+import { MovieFriendsActivityPage } from './pages/MovieFriendsActivityPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -64,6 +66,10 @@ export const router = createBrowserRouter([
             {
                 path: 'actor/:id',
                 element: _jsx(ActorPage, {}),
+            },
+            {
+                path: 'movie/:id/friends-activity',
+                element: _jsx(ProtectedRoute, { children: _jsx(MovieFriendsActivityPage, {}) }),
             },
             // {
             //     path: 'weekly-favorites',
@@ -118,6 +124,10 @@ export const router = createBrowserRouter([
             {
                 path: 'FriendPage',
                 element: _jsx(ProtectedRoute, { children: _jsx(FriendPage, {}) }),
+            },
+            {
+                path: 'friends',
+                element: _jsx(ProtectedRoute, { children: _jsx(AllFriendsPage, {}) }),
             },
             {
                 path: 'my-lists',
