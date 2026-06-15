@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
@@ -54,14 +54,16 @@ export function ActivityDetailPage() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const loadData = async () => {
+  const loadData = async (withDelay = false) => {
     try {
+      const delayPromise = withDelay ? new Promise((r) => setTimeout(r, 2000)) : null;
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/Log/ActivityDetail/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.status === 404) { setNotFound(true); return; }
+      if (res.status === 404) { setNotFound(true); if (delayPromise) await delayPromise; return; }
       if (!res.ok) return;
+      setNotFound(false);
       const detail = await res.json();
       setData(detail);
       setCurrentFilmIsLiked(detail.isOwnLog ? (detail.filmIsLiked ?? false) : (detail.myFilmIsLiked ?? false));
@@ -83,6 +85,8 @@ export function ActivityDetailPage() {
           if (trailer?.key) setTrailerKey(trailer.key);
         }
       }
+
+      if (delayPromise) await delayPromise;
     } catch (err) {
       console.error(err);
     } finally {
@@ -90,8 +94,15 @@ export function ActivityDetailPage() {
     }
   };
 
+  const prevIdRef = useRef(id);
+
   useEffect(() => {
-    if (token && id) loadData();
+    if (token && id) {
+      const idChanged = prevIdRef.current !== id;
+      prevIdRef.current = id;
+      if (idChanged) setLoading(true);
+      loadData(idChanged);
+    }
   }, [id, token, refreshKey]);
 
   const handleEyeToggle = async () => {
