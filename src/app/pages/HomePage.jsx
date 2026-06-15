@@ -38,7 +38,7 @@ const FEATURES = [
   },
 ];
 
-function PlatformBanner() {
+function PlatformBanner({ isAuthenticated }) {
   return (
     <section className="relative py-10 md:py-18 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -94,13 +94,15 @@ function PlatformBanner() {
 
         {/* CTA */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            to="/register"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-2.5 rounded-xl font-black text-sm transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#BFBCFC]/30"
-          >
-            Create Free Account
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          {!isAuthenticated && (
+            <Link
+              to="/register"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-2.5 rounded-xl font-black text-sm transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#BFBCFC]/30"
+            >
+              Create Free Account
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
           <Link
             to="/movies"
             className="flex items-center gap-2 text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors"
@@ -125,11 +127,7 @@ export function HomePage() {
     <>
       <HeroSection movies={movies.trending} />
 
-      {!isAuthenticated && <PlatformBanner />}
-
-      {isAuthenticated && (
-        <div className="h-8 md:h-12" />
-      )}
+      <PlatformBanner isAuthenticated={isAuthenticated} />
 
       <HomeMovieLists
         popularMovies={movies.popular}
