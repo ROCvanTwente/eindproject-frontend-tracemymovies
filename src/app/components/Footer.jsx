@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Film, Star, Users, Trophy, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 const LINKS = {
   Discover: [
@@ -12,10 +12,10 @@ const LINKS = {
     { label: 'Sign In',        to: '/login' },
   ],
   Features: [
-    { label: 'Track Films',  to: '/register', icon: Film   },
-    { label: 'Rate & Review',to: '/register', icon: Star   },
-    { label: 'Friends',      to: '/register', icon: Users  },
-    { label: 'Badges',       to: '/register', icon: Trophy },
+    { label: 'Track Films',   to: '/register' },
+    { label: 'Rate & Review', to: '/register' },
+    { label: 'Friends',       to: '/register' },
+    { label: 'Badges',        to: '/register' },
   ],
 };
 
@@ -67,10 +67,9 @@ export function Footer() {
 
             <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4 mt-8">Features</h4>
             <ul className="space-y-3">
-              {LINKS.Features.map(({ label, to, icon: Icon }) => (
+              {LINKS.Features.map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="flex items-center gap-2 text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200 group">
-                    <Icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <Link to={to} className="text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200">
                     {label}
                   </Link>
                 </li>
