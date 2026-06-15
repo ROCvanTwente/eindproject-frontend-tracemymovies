@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router";
 import { BookOpen, ArrowLeft, Star, Heart, RotateCw, AlignLeft, ChevronLeft, ChevronRight, Film, Pencil, MoreHorizontal, Eye } from "lucide-react";
 import { EditLogModal } from "../components/EditLogModal";
 import { WatchLogModal } from "../components/WatchLogModal";
+import { AddToListsModal } from "../components/AddToListsModal";
 import { MovieFilters, useMovieFilters } from "../components/MovieFilters";
 import { ReviewPagination } from "../components/review/ReviewPagination";
 import { toast } from "sonner";
@@ -56,9 +57,12 @@ export function DiaryPage() {
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [logModalConfig, setLogModalConfig] = useState({});
   const [menuHoverRating, setMenuHoverRating] = useState(0);
+  const [addToListsOpen, setAddToListsOpen] = useState(false);
   const [page, setPage] = useState(0);
   const rightPanelRef = useRef(null);
   const dotsButtonRef = useRef(null);
+  const reviewRef = useRef(null);
+  const [reviewTruncated, setReviewTruncated] = useState(false);
 
   const updateEntry = (logId, changes) => {
     setData((prev) => ({
@@ -117,6 +121,12 @@ export function DiaryPage() {
       .then(setMyStatus)
       .catch(console.error);
   }, [selected?.movieId, isPublic]);
+
+  // Check if the review text overflows the line-clamp
+  useEffect(() => {
+    const el = reviewRef.current;
+    setReviewTruncated(!!el && el.scrollHeight > el.clientHeight + 1);
+  }, [selected?.logId, selected?.reviewText]);
 
   useEffect(() => {
     setLoading(true);
@@ -186,12 +196,10 @@ export function DiaryPage() {
       ? data.entries
       : data.entries.filter((e) => new Date(e.loggedDate).getMonth() === next);
     setSelected(filtered[0] ?? null);
-    rightPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleSelect = (entry) => {
     setSelected(entry);
-    rightPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleDeleteLog = async (logId) => {
@@ -257,6 +265,25 @@ export function DiaryPage() {
       if (!res.ok) setMyStatus((prev) => ({ ...prev, isFavorite: !next }));
     } catch {
       setMyStatus((prev) => ({ ...prev, isFavorite: !next }));
+    }
+  };
+
+  const handleToggleWatchlist = async () => {
+    const token = getToken();
+    if (!token || !selected) return;
+    const next = !myStatus?.isInWatchlist;
+    setMyStatus((prev) => ({ ...prev, isInWatchlist: next }));
+    setDotsMenuOpen(false);
+    try {
+      const res = await fetch(`${API}/database/ToggleWatchlistStatus`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ MovieId: selected.movieId, IsInWatchlist: next }),
+      });
+      if (!res.ok) setMyStatus((prev) => ({ ...prev, isInWatchlist: !next }));
+      else toast.success(next ? `'${selected.title}' added to watchlist` : `'${selected.title}' removed from watchlist`);
+    } catch {
+      setMyStatus((prev) => ({ ...prev, isInWatchlist: !next }));
     }
   };
 
@@ -372,9 +399,6 @@ export function DiaryPage() {
 
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
-              <p className="text-[#BFBCFC]/60 text-[9px] font-bold uppercase tracking-[0.25em] mb-0.5">
-                Film Diary
-              </p>
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight break-words">
                 {isPublic && <span className="text-[#F8FAFC]">{data?.username ?? "…"}'s </span>}
                 <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
@@ -759,14 +783,21 @@ export function DiaryPage() {
                       <div className="border-t border-[#BFBCFC]/8 mx-5" />
                       <div className="px-5 py-4">
                         <div className="flex items-center gap-1.5 mb-2">
-                          <AlignLeft className="w-3.5 h-3.5 text-[#BFBCFC]/40" />
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#BFBCFC]/40">
                             {isPublic ? "Their review" : "Your review"}
                           </span>
                         </div>
-                        <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-4">
+                        <p ref={reviewRef} className="text-[#94A3B8] text-sm leading-relaxed line-clamp-4">
                           {selected.reviewText}
                         </p>
+                        {reviewTruncated && (
+                          <Link
+                            to={`/log/${selected.logId}`}
+                            className="inline-block text-[#BFBCFC]/70 hover:text-[#BFBCFC] text-xs font-semibold mt-1.5 transition-colors"
+                          >
+                            Read more
+                          </Link>
+                        )}
                       </div>
                     </>
                   )}
@@ -900,7 +931,16 @@ export function DiaryPage() {
                       )}
                     </>
                   )}
-                  <button className="w-full text-left px-4 py-2.5 text-sm text-[#94A3B8]/35 cursor-default">
+                  <button
+                    onClick={handleToggleWatchlist}
+                    className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                  >
+                    {myStatus?.isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                  </button>
+                  <button
+                    onClick={() => { setDotsMenuOpen(false); setAddToListsOpen(true); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                  >
                     Add to lists...
                   </button>
                 </>
@@ -921,7 +961,16 @@ export function DiaryPage() {
                       Add review...
                     </button>
                   )}
-                  <button className="w-full text-left px-4 py-2.5 text-sm text-[#94A3B8]/35 cursor-default">
+                  <button
+                    onClick={handleToggleWatchlist}
+                    className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                  >
+                    {myStatus?.isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                  </button>
+                  <button
+                    onClick={() => { setDotsMenuOpen(false); setAddToListsOpen(true); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
+                  >
                     Add to lists...
                   </button>
                   <div className="border-t border-[#BFBCFC]/10 my-0.5" />
@@ -974,6 +1023,16 @@ export function DiaryPage() {
           }}
           onClose={() => setEditEntry(null)}
           onSaved={handleEditSave}
+        />
+      )}
+
+      {/* Add to lists modal */}
+      {selected && (
+        <AddToListsModal
+          isOpen={addToListsOpen}
+          onClose={() => setAddToListsOpen(false)}
+          movieId={selected.movieId}
+          movieTitle={selected.title}
         />
       )}
     </div>
