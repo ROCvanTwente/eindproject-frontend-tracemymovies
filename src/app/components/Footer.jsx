@@ -1,42 +1,115 @@
+import { Link } from 'react-router';
+import { Film, Star, Users, Trophy, Mail } from 'lucide-react';
+
+const LINKS = {
+  Discover: [
+    { label: 'Home',         to: '/' },
+    { label: 'Browse Films', to: '/movies' },
+    { label: 'About Us',     to: '/about' },
+  ],
+  Account: [
+    { label: 'Create Account', to: '/register' },
+    { label: 'Sign In',        to: '/login' },
+  ],
+  Features: [
+    { label: 'Track Films',  to: '/register', icon: Film   },
+    { label: 'Rate & Review',to: '/register', icon: Star   },
+    { label: 'Friends',      to: '/register', icon: Users  },
+    { label: 'Badges',       to: '/register', icon: Trophy },
+  ],
+};
+
 export function Footer() {
   return (
-    <footer className="bg-[#151921]/50 backdrop-blur-xl border-t border-[#BFBCFC]/15 mt-12 md:mt-16 lg:mt-24">
-      <div className="container mx-auto px-4 sm:px-6 py-8 md:py-12 max-w-7xl">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-          <div className="text-[#94A3B8] text-xs md:text-sm font-body">
-            <p>
-              This product uses the TMDB API but is not endorsed or certified by
-              TMDB. It is not intended for commercial use and was created as a
-              school project inspired by the great Letterboxd.
-            </p>
-            <p className="mt-2">
-              © 2026 TraceMyMovies. All rights reserved.
+    <footer className="bg-[#0D1017] border-t border-white/5 mt-12 md:mt-20">
+      <div className="container mx-auto px-5 sm:px-6 max-w-7xl">
+
+        {/* Main grid */}
+        <div className="py-12 md:py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
+
+          {/* Brand column */}
+          <div className="col-span-2 md:col-span-1">
+            <Link to="/" className="flex items-center gap-2.5 mb-4">
+              <img src="/logo.png" alt="TraceMyMovies" className="h-8 w-auto" />
+              <span className="font-black text-[#F8FAFC] text-sm">TraceMyMovies</span>
+            </Link>
+            <p className="text-[#475569] text-xs leading-relaxed">
+              Your personal cinema companion. Track, rate, and share the films you love.
             </p>
           </div>
 
-          <div className="flex gap-6 md:gap-8">
-            <a
-              href="#"
-              className="text-[#94A3B8] hover:text-[#BFBCFC] transition-colors duration-200 font-medium text-sm md:text-base"
-            >
-              Twitter
-            </a>
+          {/* Discover */}
+          <div>
+            <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4">Discover</h4>
+            <ul className="space-y-3">
+              {LINKS.Discover.map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            <a
-              href="#"
-              className="text-[#94A3B8] hover:text-[#BFBCFC] transition-colors duration-200 font-medium text-sm md:text-base"
-            >
-              Facebook
-            </a>
+          {/* Account */}
+          <div>
+            <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4">Account</h4>
+            <ul className="space-y-3">
+              {LINKS.Account.map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
 
+            <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4 mt-8">Features</h4>
+            <ul className="space-y-3">
+              {LINKS.Features.map(({ label, to, icon: Icon }) => (
+                <li key={label}>
+                  <Link to={to} className="flex items-center gap-2 text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200 group">
+                    <Icon className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* TMDB notice + contact */}
+          <div>
+            <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4">About</h4>
+            <p className="text-[#475569] text-xs leading-relaxed mb-3">
+              TraceMyMovies is a third-year graduation project built by students at ROC van Twente. It is not a real commercial service — no data is sold, no payments are processed.
+            </p>
+            <p className="text-[#475569] text-xs leading-relaxed mb-5">
+              Film data is provided by TMDB. This product is not endorsed or certified by TMDB.
+            </p>
             <a
-              href="#"
-              className="text-[#94A3B8] hover:text-[#BFBCFC] transition-colors duration-200 font-medium text-sm md:text-base"
+              href="mailto:info@tracemymovies.nl"
+              className="inline-flex items-center gap-2 text-[#475569] hover:text-[#BFBCFC] text-xs transition-colors duration-200"
             >
-              Instagram
+              <Mail className="w-3.5 h-3.5" />
+              info@tracemymovies.nl
             </a>
           </div>
         </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-white/5 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[#334155] text-xs">
+            © 2026 TraceMyMovies. All rights reserved.
+          </p>
+          <div className="flex items-center gap-1 text-[#334155] text-xs">
+            <span>Powered by</span>
+            <span className="text-[#BFBCFC]/60 font-semibold ml-1">TMDB</span>
+            <span className="mx-2">·</span>
+            <Link to="/about" className="hover:text-[#BFBCFC] transition-colors">About the project</Link>
+          </div>
+        </div>
+
       </div>
     </footer>
   );

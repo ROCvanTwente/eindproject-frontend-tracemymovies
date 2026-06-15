@@ -200,6 +200,7 @@ export function Header() {
                 {[
                   { to: "/", label: "Home", end: true },
                   { to: "/movies", label: "Movies" },
+                  { to: "/about", label: "About" },
                   ...(isAuthenticated ? [
                     { to: "/the-queue", label: "Lists" },
                   ] : []),
@@ -482,7 +483,7 @@ export function Header() {
               ) : (
                 <Link
                   to="/login"
-                  className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-all hover:scale-105 text-sm md:text-base"
+                  className="shrink-0 whitespace-nowrap bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-colors text-sm md:text-base"
                 >
                   Login
                 </Link>
@@ -511,6 +512,7 @@ export function Header() {
             {[
               { to: "/", label: "Home", end: true },
               { to: "/movies", label: "Movies" },
+              { to: "/about", label: "About" },
               ...(isAuthenticated ? [{ to: "/the-queue", label: "Lists" }] : []),
             ].map(({ to, label, end }) => (
               <NavLink
