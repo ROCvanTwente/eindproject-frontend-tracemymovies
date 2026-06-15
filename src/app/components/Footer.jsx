@@ -1,25 +1,34 @@
 import { Link } from 'react-router';
 import { Mail } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const LINKS = {
-  Discover: [
-    { label: 'Home',         to: '/' },
-    { label: 'Browse Films', to: '/movies' },
-    { label: 'About Us',     to: '/about' },
-  ],
-  Account: [
-    { label: 'Create Account', to: '/register' },
-    { label: 'Sign In',        to: '/login' },
-  ],
-  Features: [
-    { label: 'Track Films',   to: '/register' },
-    { label: 'Rate & Review', to: '/register' },
-    { label: 'Friends',       to: '/register' },
-    { label: 'Badges',        to: '/register' },
-  ],
-};
+const DISCOVER = [
+  { label: 'Home',         to: '/' },
+  { label: 'Browse Films', to: '/movies' },
+  { label: 'About Us',     to: '/about' },
+];
+
+const FEATURES_GUEST = [
+  { label: 'Track Films',   to: '/register' },
+  { label: 'Rate & Review', to: '/register' },
+  { label: 'Friends',       to: '/register' },
+  { label: 'Badges',        to: '/register' },
+];
+
+const FEATURES_AUTH = [
+  { label: 'Track Films',   to: '/watched' },
+  { label: 'Rate & Review', to: '/reviews' },
+  { label: 'Friends',       to: '/FriendPage' },
+  { label: 'Badges',        to: '/badges' },
+];
 
 export function Footer() {
+  const { isAuthenticated } = useAuth();
+  const accountLinks = isAuthenticated
+    ? [{ label: 'My Profile', to: '/my-profile' }, { label: 'Settings', to: '/profile' }]
+    : [{ label: 'Create Account', to: '/register' }, { label: 'Sign In', to: '/login' }];
+  const featureLinks = isAuthenticated ? FEATURES_AUTH : FEATURES_GUEST;
+
   return (
     <footer className="bg-[#0D1017] border-t border-white/5 mt-12 md:mt-20">
       <div className="container mx-auto px-5 sm:px-6 max-w-7xl">
@@ -42,7 +51,7 @@ export function Footer() {
           <div>
             <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4">Discover</h4>
             <ul className="space-y-3">
-              {LINKS.Discover.map(({ label, to }) => (
+              {DISCOVER.map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200">
                     {label}
@@ -56,7 +65,7 @@ export function Footer() {
           <div>
             <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4">Account</h4>
             <ul className="space-y-3">
-              {LINKS.Account.map(({ label, to }) => (
+              {accountLinks.map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200">
                     {label}
@@ -67,7 +76,7 @@ export function Footer() {
 
             <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4 mt-8">Features</h4>
             <ul className="space-y-3">
-              {LINKS.Features.map(({ label, to }) => (
+              {featureLinks.map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="text-[#475569] hover:text-[#BFBCFC] text-sm transition-colors duration-200">
                     {label}

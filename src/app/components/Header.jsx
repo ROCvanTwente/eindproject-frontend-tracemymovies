@@ -189,7 +189,7 @@ export function Header() {
             <div className="flex items-center gap-2 lg:gap-4">
               <Link to="/" className="flex items-center gap-2 shrink-0">
                 <img src="logo.png" alt="TraceMyMovies" className="h-12 md:h-14 w-auto" />
-                <span className="font-black text-sm md:text-base text-[#F8FAFC] tracking-tight">
+                <span className="font-black text-base md:text-lg text-[#F8FAFC] tracking-tight">
                   TraceMyMovies
                 </span>
               </Link>
@@ -207,7 +207,7 @@ export function Header() {
                     to={to}
                     end={end}
                     className={({ isActive }) =>
-                      `px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      `px-3 py-1.5 rounded-lg text-base font-medium transition-all duration-200 ${
                         isActive
                           ? "text-[#F8FAFC] bg-white/8"
                           : "text-[#64748B] hover:text-[#CBD5E1] hover:bg-white/5"
@@ -371,7 +371,7 @@ export function Header() {
 
                   <button
                     onClick={() => setShowWatchLogModal(true)}
-                    className="hidden md:flex items-center gap-1.5 bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 text-[#BFBCFC] border border-[#BFBCFC]/20 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                    className="hidden md:flex items-center gap-1.5 bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 text-[#BFBCFC] border border-[#BFBCFC]/20 px-3 py-1.5 rounded-full text-sm font-bold transition-all"
                     title="Log a movie"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -404,7 +404,7 @@ export function Header() {
                         </span>
                       </div>
                     )}
-                    <span className="hidden lg:block text-[#CBD5E1] text-sm font-medium">
+                    <span className="hidden lg:block text-[#CBD5E1] text-base font-medium">
                       {user.username || user.email}
                     </span>
                   </button>
