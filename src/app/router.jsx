@@ -25,6 +25,7 @@ import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
 import { ConfirmEmailChangeRequestPage } from './pages/ConfirmEmailChangeRequestPage';
 import { ConfirmDeletePage } from './pages/ConfirmDeletePage';
 import { UserProfilePage } from './pages/UserProfilePage';
+import { AboutPage } from './pages/AboutPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
 import FriendPage from './pages/FriendPage';
@@ -79,6 +80,10 @@ export const router = createBrowserRouter([
             //     path: 'global-dna',
             //     element: _jsx(GlobalMovieDNAPage, {}),
             // },
+            {
+                path: 'about',
+                element: _jsx(AboutPage, {}),
+            },
             {
                 path: 'register',
                 element: _jsx(RegisterPage, {}),

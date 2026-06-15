@@ -1,145 +1,298 @@
-import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState, useEffect } from 'react';
-import { Play, Info, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Play, BookmarkPlus, ChevronLeft, ChevronRight, Star, Calendar, ArrowRight, Info } from 'lucide-react';
+import { useNavigate, Link } from 'react-router';
 
+const TMDB_IMG = 'https://image.tmdb.org/t/p/';
+const AUTO_MS = 4500;
+const FADE_MS = 400;
+
+// ─── Brand intro slide ────────────────────────────────────────────────────────
+function BrandSlide({ movies }) {
+  const pool = (movies || [])
+    .filter((m) => m.poster_path)
+    .map((m) => `${TMDB_IMG}w342${m.poster_path}`);
+
+  const COLS = 7;
+  const ROWS = 6;
+
+  const cols = Array.from({ length: COLS }, (_, ci) =>
+    Array.from({ length: ROWS }, (_, ri) => pool.length ? pool[(ci * 3 + ri) % pool.length] : null)
+  );
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+      {/* Poster mosaic */}
+      {pool.length > 0 && (
+        <div className="absolute flex gap-2 blur-[3px]" style={{ inset: '-8%' }}>
+          {cols.map((col, ci) => (
+            <div
+              key={ci}
+              className="flex flex-col gap-2 flex-1"
+              style={{ transform: `translateY(${ci % 2 === 0 ? '-10%' : '4%'})` }}
+            >
+              {col.map((url, ri) =>
+                url ? (
+                  <div key={ri} className="flex-1 overflow-hidden rounded-md min-h-0">
+                    <img src={url} alt="" draggable="false" loading="lazy" className="w-full h-full object-cover" />
+                  </div>
+                ) : null
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="absolute inset-0 bg-[#0B0E14]/70" />
+      <div className="absolute inset-0"
+        style={{ background: 'radial-gradient(ellipse 60% 70% at 50% 50%, transparent 0%, rgba(11,14,20,0.92) 100%)' }}
+      />
+      <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#0B0E14] to-transparent" />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] rounded-full blur-[90px] pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(191,188,252,0.13) 0%, rgba(68,255,255,0.05) 55%, transparent 75%)' }}
+      />
+
+      {/* Content — stacked on mobile, row on sm+ */}
+      <div className="relative z-10 flex flex-col items-center text-center px-5 max-w-xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-5">
+          <img
+            src="/logo.png"
+            alt="TraceMyMovies"
+            className="w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-[0_0_28px_rgba(191,188,252,0.65)]"
+          />
+          <span
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-[#F8FAFC] tracking-tight"
+            style={{ textShadow: '0 2px 32px rgba(0,0,0,0.95), 0 0 40px rgba(191,188,252,0.22)' }}
+          >
+            TraceMyMovies
+          </span>
+        </div>
+
+        <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#BFBCFC]/50 to-transparent mb-5" />
+
+        <p
+          className="text-[#CBD5E1] text-base sm:text-lg md:text-xl lg:text-2xl font-semibold leading-snug mb-7"
+          style={{ textShadow: '0 2px 20px rgba(0,0,0,0.9)' }}
+        >
+          Track films you've watched.
+          <br />
+          Save those you want to see.
+          <br />
+          <span className="text-[#BFBCFC]">Tell your friends what's good.</span>
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3" onClick={(e) => e.stopPropagation()}>
+          <Link
+            to="/about"
+            className="inline-flex items-center gap-2 bg-[#BFBCFC] hover:bg-white text-[#0B0E14] px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-black text-sm transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-[#BFBCFC]/40"
+          >
+            <Info className="w-4 h-4" />
+            Learn more about us
+          </Link>
+          <Link
+            to="/register"
+            className="inline-flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-medium transition-colors"
+          >
+            Create account
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Movie slide ──────────────────────────────────────────────────────────────
+function MovieSlide({ movie, navigate }) {
+  const backdrop = movie.backdrop_path ? `${TMDB_IMG}original${movie.backdrop_path}` : null;
+  const year     = movie.release_date?.split('-')[0];
+  const rating   = movie.vote_average >= 0.1 ? movie.vote_average.toFixed(1) : null;
+
+  return (
+    <div className="relative w-full h-full">
+      {backdrop && (
+        <img
+          src={backdrop}
+          alt=""
+          draggable="false"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B0E14] via-[#0B0E14]/70 to-[#0B0E14]/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/20 to-transparent" />
+
+      {/* Content — vertically centred on mobile, pinned to bottom on md+ */}
+      <div className="relative z-10 h-full flex items-center md:items-end pb-0 md:pb-24 pt-8 md:pt-0">
+        <div className="container mx-auto px-5 sm:px-8 max-w-7xl w-full">
+          <div className="max-w-xl">
+            {/* Badges */}
+            <div className="flex items-center flex-wrap gap-2 mb-3">
+              <span className="inline-flex items-center gap-1.5 bg-[#FF61D2]/15 border border-[#FF61D2]/35 text-[#FF61D2] px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-[0.12em] uppercase">
+                🔥 Trending
+              </span>
+              {rating && (
+                <span className="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm border border-[#FFD700]/20 text-[#FFD700] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                  <Star className="w-2.5 h-2.5 fill-[#FFD700]" />
+                  {rating}
+                </span>
+              )}
+              {year && (
+                <span className="inline-flex items-center gap-1 text-[#64748B] text-[10px] font-medium">
+                  <Calendar className="w-2.5 h-2.5" />
+                  {year}
+                </span>
+              )}
+            </div>
+
+            {/* Title */}
+            <h1
+              className="font-black text-[#F8FAFC] leading-[1.05] mb-3 text-[clamp(1.55rem,6vw,3.8rem)]"
+              style={{ textShadow: '0 2px 24px rgba(0,0,0,0.85)' }}
+            >
+              {movie.title}
+            </h1>
+
+            {/* Overview — 2 lines on mobile, 3 on desktop */}
+            <p className="text-[#94A3B8] text-sm leading-relaxed mb-5 line-clamp-2 md:line-clamp-3">
+              {movie.overview}
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => navigate(`/movie/${movie.id}`)}
+                className="flex items-center gap-2 bg-[#BFBCFC] hover:bg-white text-[#0B0E14] px-5 py-2.5 rounded-xl font-black text-sm transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-[#BFBCFC]/40"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                View Film
+              </button>
+              <button
+                onClick={() => navigate(`/movie/${movie.id}`)}
+                className="flex items-center gap-2 bg-white/10 backdrop-blur-md text-[#F8FAFC] px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 border border-white/12 hover:bg-white/18"
+              >
+                <BookmarkPlus className="w-4 h-4" />
+                <span className="hidden xs:inline">Watchlist</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main HeroSection ─────────────────────────────────────────────────────────
 export function HeroSection({ movies }) {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [startX, setStartX] = useState(0);
-    const [offsetX, setOffsetX] = useState(0); // Tracks drag offset in pixels
-    const [isDragging, setIsDragging] = useState(false);
-    
-    const { isAuthenticated } = useAuth();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        if (movies.length === 0)
-            return;
-        const interval = setInterval(() => {
-            setCurrentIndex((prev) => (prev + 1) % movies.length);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [movies.length, currentIndex]);
+  const slides = [
+    { isBrandSlide: true, id: '__brand__' },
+    ...(movies || []).map((m) => ({ ...m, isBrandSlide: false })),
+  ];
 
-    if (!movies || movies.length === 0) {
-        return (_jsx("div", { className: "relative h-[500px] bg-[#151921] animate-pulse", children: _jsx("div", { className: "absolute inset-0 bg-gradient-to-t from-[#0B0E14] to-transparent" }) }));
-    }
+  const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+  const fadingRef = useRef(false);
+  const touchStartX = useRef(null);
+  const [progress, setProgress] = useState(0);
 
-    const goToPrevious = () => {
-        setCurrentIndex((prev) => (prev - 1 + movies.length) % movies.length);
-    };
+  const goTo = useCallback((newIdx) => {
+    if (fadingRef.current) return;
+    fadingRef.current = true;
+    setFading(true);
+    setProgress(0);
+    setTimeout(() => {
+      setIdx(newIdx);
+      setFading(false);
+      fadingRef.current = false;
+    }, FADE_MS);
+  }, []);
 
-    const goToNext = () => {
-        setCurrentIndex((prev) => (prev + 1) % movies.length);
-    };
+  const slideDuration = slides[idx]?.isBrandSlide ? 6000 : AUTO_MS;
+  useEffect(() => {
+    if (!slides.length) return;
+    setProgress(0);
+    const start = Date.now();
+    const tick = setInterval(() => {
+      const pct = Math.min(((Date.now() - start) / slideDuration) * 100, 100);
+      setProgress(pct);
+      if (pct >= 100) goTo((idx + 1) % slides.length);
+    }, 40);
+    return () => clearInterval(tick);
+  }, [idx, slides.length, goTo, slideDuration]);
 
-    // --- REAL-TIME FLUID DRAG HANDLERS ---
-    const handleDragStart = (clientX, target) => {
-        if (target.closest('button') || target.closest('a')) return;
-        setStartX(clientX);
-        setIsDragging(true);
-        setOffsetX(0);
-    };
+  if (!slides.length) {
+    return (
+      <div className="bg-[#0B0E14] animate-pulse" style={{ height: 'clamp(380px, 72vh, 750px)' }} />
+    );
+  }
 
-    const handleDragMove = (clientX) => {
-        if (!isDragging) return;
-        const diffX = clientX - startX;
-        setOffsetX(diffX);
-    };
+  const current = slides[idx];
 
-    const handleDragEnd = () => {
-        if (!isDragging) return;
-        
-        const swipeThreshold = 100; // Pixels needed to commit a slide turn
-
-        if (offsetX < -swipeThreshold) {
-            goToNext();
-        } else if (offsetX > swipeThreshold) {
-            goToPrevious();
+  return (
+    <div
+      className="relative overflow-hidden bg-[#0B0E14] select-none"
+      style={{ height: 'clamp(400px, 78vh, 780px)' }}
+      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => {
+        if (touchStartX.current === null) return;
+        const diff = touchStartX.current - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50)
+          goTo(diff > 0 ? (idx + 1) % slides.length : (idx - 1 + slides.length) % slides.length);
+        touchStartX.current = null;
+      }}
+    >
+      {/* Fade wrapper */}
+      <div
+        className="absolute inset-0 transition-opacity duration-[400ms]"
+        style={{ opacity: fading ? 0 : 1 }}
+      >
+        {current.isBrandSlide
+          ? <BrandSlide movies={movies} />
+          : <MovieSlide movie={current} navigate={navigate} />
         }
-        
-        setIsDragging(false);
-        setOffsetX(0);
-    };
+      </div>
 
-    const handleViewDetails = () => {
-            navigate(`/movie/${movie.id}`);
-    };
+      {/* Progress dots + arrows */}
+      {slides.length > 1 && (
+        <div className="absolute bottom-4 sm:bottom-6 left-0 right-0 z-20">
+          <div className="container mx-auto px-4 sm:px-8 max-w-7xl flex items-center gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                aria-label={`Slide ${i + 1}`}
+                className="relative h-[3px] rounded-full overflow-hidden transition-all duration-300 focus:outline-none"
+                style={{ width: i === idx ? 36 : 14, background: i === idx ? 'transparent' : 'rgba(255,255,255,0.2)' }}
+              >
+                {i === idx && (
+                  <div className="absolute inset-0 bg-white/20 rounded-full">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-[#BFBCFC] rounded-full"
+                      style={{ width: `${progress}%`, transition: 'width 40ms linear' }}
+                    />
+                  </div>
+                )}
+              </button>
+            ))}
 
-    return (_jsxs("div", { 
-        className: "relative h-[350px] md:h-[450px] lg:h-[500px] overflow-hidden group select-none cursor-grab active:cursor-grabbing bg-[#0B0E14]", 
-        onMouseDown: (e) => handleDragStart(e.clientX, e.target),
-        onMouseMove: (e) => handleDragMove(e.clientX),
-        onMouseUp: handleDragEnd,
-        onMouseLeave: handleDragEnd,
-        onTouchStart: (e) => handleDragStart(e.touches[0].clientX, e.target),
-        onTouchMove: (e) => handleDragMove(e.touches[0].clientX),
-        onTouchEnd: handleDragEnd,
-        children: [
-            
-            /* NETFLIX RIBBON TRACK: Renders all items side-by-side for organic slide revelation */
-            _jsx("div", {
-                className: "absolute inset-0 flex h-full w-full",
-                style: {
-                    // Mathematically stacks slides and factors in mouse tracking displacement
-                    transform: `translateX(calc(-${currentIndex * 100}% + ${offsetX}px))`,
-                    // Custom easing curve replicates a high-end physical spring-back snap
-                    transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)' 
-                },
-                children: movies.map((movie) => {
-                    const imageUrl = movie.backdrop_path
-                        ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
-                        : 'https://via.placeholder.com/1920x1080/151921/BFBCFC?text=No+Image';
-
-                    return (
-                        _jsxs("div", { 
-                            className: "w-full h-full min-w-full relative flex flex-col justify-end shrink-0",
-                            children: [
-                                _jsx("img", { src: imageUrl, alt: movie.title, draggable: "false", className: "absolute inset-0 w-full h-full object-cover" }), 
-                                _jsx("div", { className: "absolute inset-0 bg-gradient-to-t from-[#0B0E14] via-[#0B0E14]/60 to-transparent" }), 
-                                _jsx("div", { className: "absolute inset-0 bg-gradient-to-r from-[#0B0E14]/80 via-transparent to-transparent" }), 
-                                
-                                _jsx("div", { className: "relative p-3 md:p-6 lg:p-8 z-10 w-full mb-6 md:mb-8", children: _jsxs("div", { className: "container mx-auto max-w-7xl px-4", children: [
-                                    _jsxs("div", { className: "flex items-center gap-2 mb-2 md:mb-3", children: [
-                                        _jsx("span", { className: "bg-[#FF61D2] text-[#F8FAFC] px-2 md:px-3 py-0.5 md:py-1 rounded-lg text-xs md:text-sm font-medium font-heading shadow-lg shadow-[#FF61D2]/30", children: "LIVE" }), 
-                                        _jsx("div", { className: "flex items-center gap-1", children: _jsxs("span", { className: "text-[#44FFFF] font-data font-medium text-xs md:text-sm", children: ["\u2605 ", movie.vote_average.toFixed(1)] }) })
-                                    ] }), 
-                                    _jsx("h1", { className: "text-2xl md:text-4xl lg:text-5xl font-bold text-[#F8FAFC] mb-2 md:mb-4 max-w-4xl leading-tight pointer-events-auto", children: movie.title }), 
-                                    _jsx("p", { className: "text-[#94A3B8] text-xs md:text-sm lg:text-base leading-relaxed mb-3 md:mb-5 max-w-2xl line-clamp-2 md:line-clamp-3", children: movie.overview }), 
-                                    _jsxs("div", { className: "flex flex-wrap gap-2 md:gap-3 pointer-events-auto", children: [
-                                        _jsxs("button", { onClick: () => handleViewDetails(movie.id), className: "bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-4 md:px-6 py-1.5 md:py-2 rounded-lg font-medium font-heading flex items-center gap-1.5 md:gap-2 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-[#BFBCFC]/40 text-xs md:text-sm cursor-pointer", children: [_jsx(Play, { className: "w-3.5 md:w-4 h-3.5 md:h-4", fill: "currentColor" }), "Watch Now"] }), 
-                                        _jsxs("button", { onClick: () => handleViewDetails(movie.id), className: "bg-[#151921]/70 backdrop-blur-xl hover:bg-[#151921] text-[#F8FAFC] px-4 md:px-6 py-1.5 md:py-2 rounded-lg font-medium font-heading flex items-center gap-1.5 md:gap-2 transition-all duration-200 hover:scale-105 border border-[#BFBCFC]/20 text-xs md:text-sm cursor-pointer", children: [_jsx(Info, { className: "w-3.5 md:w-4 h-3.5 md:h-4" }), _jsx("span", { className: "hidden sm:inline", children: "View Details" }), _jsx("span", { className: "sm:hidden", children: "Details" })] })
-                                    ] })
-                                ] }) })
-                            ]
-                        }, movie.id)
-                    );
-                })
-            }),
-            
-            /* FIXED OVERLAY INDICATORS: Keeps layout layout-aligned but completely frozen in place while banners move */
-            movies.length > 1 && (_jsx("div", { 
-                className: "absolute bottom-0 left-0 right-0 p-3 md:p-6 lg:p-8 z-20 pointer-events-none", 
-                children: _jsx("div", { 
-                    className: "container mx-auto max-w-7xl px-4", 
-                    children: _jsx("div", { 
-                        className: "flex gap-1.5 pointer-events-auto", 
-                        children: movies.map((_, index) => (
-                            _jsx("button", { 
-                                onClick: () => setCurrentIndex(index), 
-                                className: `h-1 rounded-full transition-all duration-300 cursor-pointer ${index === currentIndex ? 'w-6 bg-[#BFBCFC]' : 'w-3 bg-[#94A3B8]/50 hover:bg-[#94A3B8]'}` 
-                            }, index)
-                        )) 
-                    }) 
-                }) 
-            })),
-
-            /* Stationary Navigation Arrows */
-            movies.length > 1 && (_jsxs(_Fragment, { children: [
-                _jsx("button", { onClick: goToPrevious, className: "absolute left-3 top-1/2 -translate-y-1/2 z-30 bg-[#151921]/80 backdrop-blur-sm hover:bg-[#BFBCFC] text-[#F8FAFC] hover:text-[#0B0E14] p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 cursor-pointer", children: _jsx(ChevronLeft, { className: "w-5 h-5" }) }), 
-                _jsx("button", { onClick: goToNext, className: "absolute right-3 top-1/2 -translate-y-1/2 z-30 bg-[#151921]/80 backdrop-blur-sm hover:bg-[#BFBCFC] text-[#F8FAFC] hover:text-[#0B0E14] p-2 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 cursor-pointer", children: _jsx(ChevronRight, { className: "w-5 h-5" }) })
-            ] }))
-        ] 
-    }));
+            <div className="ml-auto flex gap-1.5">
+              <button
+                onClick={() => goTo((idx - 1 + slides.length) % slides.length)}
+                className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-white/8 hover:bg-[#BFBCFC]/20 text-white/60 hover:text-[#BFBCFC] transition-all border border-white/8 backdrop-blur-sm"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+              <button
+                onClick={() => goTo((idx + 1) % slides.length)}
+                className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-white/8 hover:bg-[#BFBCFC]/20 text-white/60 hover:text-[#BFBCFC] transition-all border border-white/8 backdrop-blur-sm"
+              >
+                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
