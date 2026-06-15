@@ -718,7 +718,7 @@ export function DiaryPage() {
                   <div className="flex gap-4 p-5 pb-4">
                     <Link
                       to={`/log/${selected.logId}`}
-                      className="w-32 flex-shrink-0 aspect-[2/3] rounded-lg overflow-hidden bg-[#0B0E14] border border-white/5 hover:border-[#44FFFF]/40 transition-colors block"
+                      className="w-32 flex-shrink-0 aspect-[2/3] self-start rounded-lg overflow-hidden bg-[#0B0E14] border border-white/5 hover:border-[#44FFFF]/40 transition-colors block"
                     >
                       {selected.poster ? (
                         <img
