@@ -199,6 +199,7 @@ export function MoviesPage() {
                     movieId={id}
                     poster={poster}
                     title={title}
+                    to={`/movie/${id}`}
                   />
                 );
               })}

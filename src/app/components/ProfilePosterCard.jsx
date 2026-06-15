@@ -385,7 +385,7 @@ export function ProfilePosterCard({
         onClick={(e) => { e.stopPropagation(); navigate(to ?? (autoLatestLogId ? `/log/${autoLatestLogId}` : `/movie/${movieId}`)); }}
       >
         {/* Title on hover */}
-        <div className="absolute -top-8 left-0 right-0 z-20 px-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+        <div className="absolute -top-8 left-0 right-0 z-50 px-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
           <div className="bg-[#151921] border border-[#BFBCFC]/20 rounded-md px-2 py-1 shadow-lg">
             <p className="text-[#F8FAFC] text-[11px] font-semibold text-center truncate leading-tight">
               {title}
