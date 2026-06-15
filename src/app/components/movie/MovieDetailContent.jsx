@@ -13,6 +13,7 @@ export function MovieDetailContent({
   movie,
   loadingRecommendations,
   recommendations,
+  streamingProviders,
   isWatched,
   isFavorite,
   filmRating,
@@ -87,6 +88,7 @@ export function MovieDetailContent({
         {/* ── RIGHT COLUMN: sidebar, same top as poster ── */}
         <MovieSidebar
           movie={movie}
+          streamingProviders={streamingProviders}
           isWatched={isWatched}
           isFavorite={isFavorite}
           filmRating={filmRating}
