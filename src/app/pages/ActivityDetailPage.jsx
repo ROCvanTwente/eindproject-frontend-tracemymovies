@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import {
-  ArrowLeft, Heart, RotateCw, Eye, Star,
+  ArrowLeft, Heart, RotateCw, Eye, Star, X,
   MessageSquare, Film, AlertCircle, Play, Pencil, RefreshCw, Bookmark, Trash2, Loader2, ListPlus,
 } from "lucide-react";
 import { TrailerModal } from "../components/movie/TrailerModal";
@@ -429,55 +429,67 @@ export function ActivityDetailPage() {
                   <span className="text-sm font-bold text-[#44FFFF]">{currentFilmRating}/10</span>
                 )}
               </div>
-              <div className="flex flex-col gap-1.5" onMouseLeave={() => setHoverFilmRating(0)}>
-                <div className="flex items-center justify-center gap-1">
-                  {[1,2,3,4,5].map((n) => {
-                    const active = n <= (hoverFilmRating || currentFilmRating);
-                    return (
-                      <Star
-                        key={n}
-                        className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
-                        onMouseEnter={() => setHoverFilmRating(n)}
-                        onClick={async () => {
-                          const newRating = n === currentFilmRating ? 0 : n;
-                          setCurrentFilmRating(newRating);
-                          await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }) });
-                          if (newRating > 0 && !myIsWatched) {
-                            const r = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
-                            if (r.ok) { setMyIsWatched(true); setMyWatchCount(1); }
-                          }
-                          triggerRefresh();
-                        }}
-                      />
-                    );
-                  })}
+              <div className="flex items-center gap-2" onMouseLeave={() => setHoverFilmRating(0)}>
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-center gap-1">
+                    {[1,2,3,4,5].map((n) => {
+                      const active = n <= (hoverFilmRating || currentFilmRating);
+                      return (
+                        <Star
+                          key={n}
+                          className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
+                          onMouseEnter={() => setHoverFilmRating(n)}
+                          onClick={async () => {
+                            const newRating = n === currentFilmRating ? 0 : n;
+                            setCurrentFilmRating(newRating);
+                            await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }) });
+                            if (newRating > 0 && !myIsWatched) {
+                              const r = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
+                              if (r.ok) { setMyIsWatched(true); setMyWatchCount(1); }
+                            }
+                            triggerRefresh();
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-center gap-1">
+                    {[6,7,8,9,10].map((n) => {
+                      const active = n <= (hoverFilmRating || currentFilmRating);
+                      return (
+                        <Star
+                          key={n}
+                          className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
+                          onMouseEnter={() => setHoverFilmRating(n)}
+                          onClick={async () => {
+                            const newRating = n === currentFilmRating ? 0 : n;
+                            setCurrentFilmRating(newRating);
+                            await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }) });
+                            if (newRating > 0 && !myIsWatched) {
+                              const r = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
+                              if (r.ok) { setMyIsWatched(true); setMyWatchCount(1); }
+                            }
+                            triggerRefresh();
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex items-center justify-center gap-1">
-                  {[6,7,8,9,10].map((n) => {
-                    const active = n <= (hoverFilmRating || currentFilmRating);
-                    return (
-                      <Star
-                        key={n}
-                        className={`w-7 h-7 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
-                        onMouseEnter={() => setHoverFilmRating(n)}
-                        onClick={async () => {
-                          const newRating = n === currentFilmRating ? 0 : n;
-                          setCurrentFilmRating(newRating);
-                          await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId, Rating: newRating }) });
-                          if (newRating > 0 && !myIsWatched) {
-                            const r = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId }) });
-                            if (r.ok) { setMyIsWatched(true); setMyWatchCount(1); }
-                          }
-                          triggerRefresh();
-                        }}
-                      />
-                    );
-                  })}
-                </div>
+                {currentFilmRating > 0 && (
+                  <button
+                    onClick={async () => {
+                      setCurrentFilmRating(0);
+                      await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ MovieId: data.movieId, Rating: 0 }) });
+                      triggerRefresh();
+                    }}
+                    className="flex-shrink-0 -ml-1 self-center flex items-center justify-center text-[#94A3B8] hover:text-[#FF61D2] transition-colors cursor-pointer"
+                    title="Clear rating"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
-              {currentFilmRating === 0 && (
-                <p className="text-xs text-[#94A3B8]/40 mt-2">Click a star to rate</p>
-              )}
             </div>
 
             {/* Action buttons */}
@@ -488,7 +500,7 @@ export function ActivityDetailPage() {
                   className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
                 >
                   <Pencil className="w-4 h-4" />
-                  {data.reviewText ? "Edit Log" : "Add review"}
+                  {data.reviewText ? "Edit review" : "Edit entry / add review"}
                 </button>
                 <button
                   onClick={() => setAddToListsOpen(true)}
@@ -500,7 +512,7 @@ export function ActivityDetailPage() {
                 <button
                   onClick={handleDeleteLog}
                   disabled={isDeleting}
-                  className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50 ${confirmDelete ? "bg-red-500 text-white" : "bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-red-500/40 text-[#94A3B8] hover:text-red-400"}`}
+                  className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all disabled:opacity-50 ${confirmDelete ? "bg-[#FF61D2] text-white" : "bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#FF61D2] text-[#94A3B8] hover:text-[#FF61D2]"}`}
                 >
                   {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Trash2 className="w-4 h-4" />{confirmDelete ? "Are you sure?" : "Delete log"}</>}
                 </button>

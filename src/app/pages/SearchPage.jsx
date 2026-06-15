@@ -83,9 +83,12 @@ function MovieTvRow({ item, onClick }) {
 }
 
 
-function PersonRow({ item }) {
+function PersonRow({ item, navigate }) {
     return (
-        <div className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group">
+        <div
+            onClick={() => navigate(`/actor/${item.id}`)}
+            className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group cursor-pointer"
+        >
             {/* Profile photo */}
             <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
                 {item.profile ? (
@@ -105,7 +108,7 @@ function PersonRow({ item }) {
             {/* Info */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <div className="flex items-baseline gap-2 mb-1">
-                    <h3 className="text-[#F8FAFC] font-bold text-base">{item.name}</h3>
+                    <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-[#FF61D2] transition-colors">{item.name}</h3>
                     {item.department && (
                         <span className="text-[#FF61D2] text-xs font-semibold">{item.department}</span>
                     )}
@@ -206,7 +209,7 @@ function UserRow({ item, navigate }) {
 
 
 function ResultRow({ item, navigate }) {
-    if (item.type === 'person')     return <PersonRow item={item} />;
+    if (item.type === 'person')     return <PersonRow item={item} navigate={navigate} />;
     if (item.type === 'company')    return <CompanyRow item={item} />;
     if (item.type === 'collection') return <CollectionRow item={item} onClick={() => {}} />;
     if (item.type === 'user')       return <UserRow item={item} navigate={navigate} />;

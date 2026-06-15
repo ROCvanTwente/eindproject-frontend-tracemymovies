@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Eye, Heart, Bookmark, Star, RefreshCw, Pencil, LogIn } from "lucide-react";
+import { Eye, Heart, Bookmark, Star, RefreshCw, Pencil, LogIn, X } from "lucide-react";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/original";
 
@@ -102,33 +102,44 @@ export function MovieSidebar({
                 <span className="text-sm font-bold text-[#44FFFF]">{filmRating}/10</span>
               )}
             </div>
-            <div className="flex flex-col items-center gap-2" onMouseLeave={() => setHoverRating(0)}>
-              <div className="flex items-center justify-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((n) => {
-                  const active = n <= (hoverRating || filmRating);
-                  return (
-                    <Star
-                      key={n}
-                      className={`w-9 h-9 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
-                      onMouseEnter={() => setHoverRating(n)}
-                      onClick={() => onSetRating?.(n === filmRating ? 0 : n)}
-                    />
-                  );
-                })}
+            <div className="flex items-center gap-2" onMouseLeave={() => setHoverRating(0)}>
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <div className="flex items-center justify-center gap-1.5">
+                  {[1, 2, 3, 4, 5].map((n) => {
+                    const active = n <= (hoverRating || filmRating);
+                    return (
+                      <Star
+                        key={n}
+                        className={`w-9 h-9 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
+                        onMouseEnter={() => setHoverRating(n)}
+                        onClick={() => onSetRating?.(n === filmRating ? 0 : n)}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-center gap-1.5">
+                  {[6, 7, 8, 9, 10].map((n) => {
+                    const active = n <= (hoverRating || filmRating);
+                    return (
+                      <Star
+                        key={n}
+                        className={`w-9 h-9 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
+                        onMouseEnter={() => setHoverRating(n)}
+                        onClick={() => onSetRating?.(n === filmRating ? 0 : n)}
+                      />
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center justify-center gap-1.5">
-                {[6, 7, 8, 9, 10].map((n) => {
-                  const active = n <= (hoverRating || filmRating);
-                  return (
-                    <Star
-                      key={n}
-                      className={`w-9 h-9 cursor-pointer transition-colors ${active ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#BFBCFC]/15 hover:text-[#44FFFF]/40"}`}
-                      onMouseEnter={() => setHoverRating(n)}
-                      onClick={() => onSetRating?.(n === filmRating ? 0 : n)}
-                    />
-                  );
-                })}
-              </div>
+              {filmRating > 0 && (
+                <button
+                  onClick={() => onSetRating?.(0)}
+                  className="flex-shrink-0 -ml-2 self-center flex items-center justify-center text-[#94A3B8] hover:text-[#FF61D2] transition-colors cursor-pointer"
+                  title="Clear rating"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
             {filmRating === 0 && (
               <p className="text-xs text-[#94A3B8]/40 mt-3 text-center">Click a star to rate</p>
