@@ -32,6 +32,7 @@ export function MovieDetailContent({
   onOpenShare,
   hasReview,
   hasLog,
+  isLoggedIn,
 }) {
   return (
     <div className="container mx-auto px-4 max-w-7xl -mt-12 md:-mt-16 relative z-10 pb-16">
@@ -105,6 +106,7 @@ export function MovieDetailContent({
           onOpenEditLog={onOpenEditLog}
           hasReview={hasReview}
           hasLog={hasLog}
+          isLoggedIn={isLoggedIn}
         />
       </div>
     </div>

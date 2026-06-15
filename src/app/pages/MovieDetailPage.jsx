@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useParams } from "react-router";
+import { toast } from "sonner";
 import {
     Heart, Plus, DollarSign, Globe, Calendar,
     Clock, Eye, Share2, Loader2, User, ChevronRight, AlertCircle, RefreshCw,
@@ -102,12 +103,19 @@ export function MovieDetailPage() {
                 isSavingLike={isSavingLike}
                 isSavingWatchlist={isSavingWatchlist}
                 onSetRating={handleSetRating}
-                onOpenLog={() => setShowWatchLogModal(true)}
-                onOpenEditLog={() => setShowEditLogModal(true)}
+                onOpenLog={() => {
+                    if (!token) { toast.error("You must be logged in."); return; }
+                    setShowWatchLogModal(true);
+                }}
+                onOpenEditLog={() => {
+                    if (!token) { toast.error("You must be logged in."); return; }
+                    setShowEditLogModal(true);
+                }}
                 onOpenTrailer={openTrailer}
                 onOpenShare={() => setShowShareModal(true)}
                 hasReview={!!latestReviewText}
                 hasLog={!!latestLogId}
+                isLoggedIn={!!token}
             />
 
             <TrailerModal

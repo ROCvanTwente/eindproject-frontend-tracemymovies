@@ -294,6 +294,11 @@ export function useMovieDetail(id, token) {
     };
 
     const handleSetRating = async (newRating) => {
+        if (!token) {
+            toast.error("You must be logged in.", { id: STATUS_TOAST_ID });
+            return;
+        }
+
         setFilmRating(newRating);
         await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, {
             method: "POST",
