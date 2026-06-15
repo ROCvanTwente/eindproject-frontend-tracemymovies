@@ -1,5 +1,6 @@
 import { Film, Users, Star, Trophy, Clapperboard, BookOpen, Heart, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router';
+import { useAuth } from '../context/AuthContext';
 
 const TEAM = [
   { name: 'Sunny Lim',          initial: 'S', color: '#BFBCFC' },
@@ -17,6 +18,8 @@ const FEATURES = [
 ];
 
 export function AboutPage() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen bg-[#0B0E14] text-[#F8FAFC]">
 
@@ -200,13 +203,15 @@ export function AboutPage() {
             Create a free account and start tracking your films today.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              to="/register"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#BFBCFC] hover:bg-white text-[#0B0E14] px-7 py-3 rounded-xl font-black text-sm transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#BFBCFC]/30"
-            >
-              Create an account
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {!isAuthenticated && (
+              <Link
+                to="/register"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#BFBCFC] hover:bg-white text-[#0B0E14] px-7 py-3 rounded-xl font-black text-sm transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#BFBCFC]/30"
+              >
+                Create an account
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
             <Link
               to="/movies"
               className="flex items-center gap-2 text-[#64748B] hover:text-[#F8FAFC] text-sm font-medium transition-colors"

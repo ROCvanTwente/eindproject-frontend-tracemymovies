@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, BookmarkPlus, ChevronLeft, ChevronRight, Star, Calendar, ArrowRight, Info } from 'lucide-react';
 import { useNavigate, Link } from 'react-router';
+import { useAuth } from '../context/AuthContext';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/';
 const AUTO_MS = 4500;
 const FADE_MS = 400;
 
 // ─── Brand intro slide ────────────────────────────────────────────────────────
-function BrandSlide({ movies }) {
+function BrandSlide({ movies, isAuthenticated }) {
   const pool = (movies || [])
     .filter((m) => m.poster_path)
     .map((m) => `${TMDB_IMG}w342${m.poster_path}`);
@@ -89,13 +90,23 @@ function BrandSlide({ movies }) {
             <Info className="w-4 h-4" />
             Learn more about us
           </Link>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-medium transition-colors"
-          >
-            Create account
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to="/movies"
+              className="inline-flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-medium transition-colors"
+            >
+              Browse films
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-medium transition-colors"
+            >
+              Create account
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -184,6 +195,7 @@ function MovieSlide({ movie, navigate }) {
 // ─── Main HeroSection ─────────────────────────────────────────────────────────
 export function HeroSection({ movies }) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const slides = [
     { isBrandSlide: true, id: '__brand__' },
@@ -248,7 +260,7 @@ export function HeroSection({ movies }) {
         style={{ opacity: fading ? 0 : 1 }}
       >
         {current.isBrandSlide
-          ? <BrandSlide movies={movies} />
+          ? <BrandSlide movies={movies} isAuthenticated={isAuthenticated} />
           : <MovieSlide movie={current} navigate={navigate} />
         }
       </div>

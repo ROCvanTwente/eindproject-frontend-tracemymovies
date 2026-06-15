@@ -476,13 +476,13 @@ export function Header() {
                 <div className="flex items-center gap-2">
                   <Link
                     to="/login"
-                    className="hidden sm:block shrink-0 whitespace-nowrap text-[#94A3B8] hover:text-[#F8FAFC] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
+                    className="shrink-0 whitespace-nowrap text-[#94A3B8] hover:text-[#F8FAFC] px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5"
                   >
                     Sign in
                   </Link>
                   <Link
                     to="/register"
-                    className="shrink-0 whitespace-nowrap bg-[#BFBCFC] hover:bg-white text-[#0B0E14] px-4 py-1.5 rounded-full font-bold text-sm transition-all hover:shadow-lg hover:shadow-[#BFBCFC]/20"
+                    className="hidden sm:block shrink-0 whitespace-nowrap bg-[#BFBCFC] hover:bg-white text-[#0B0E14] px-4 py-1.5 rounded-full font-bold text-sm transition-all hover:shadow-lg hover:shadow-[#BFBCFC]/20"
                   >
                     Get started
                   </Link>
