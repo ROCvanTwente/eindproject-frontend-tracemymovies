@@ -4,6 +4,7 @@ import {
     register as registerService,
     logout as logoutService,
     validateToken,
+    setToken,
     setStoredUser,
     getStoredUser,
     getToken
@@ -50,6 +51,19 @@ async function register(formData) {
 
     return res;
 }
+
+    async function loginWithToken(token, userData) {
+        setToken(token, true);
+        setStoredUser({
+            email: userData.email,
+            username: userData.username,
+            id: userData.id,
+            isAdmin: userData.isAdmin || false,
+        }, true);
+        const fullUser = await validateToken();
+        setUser(fullUser);
+        startHeartbeat();
+    }
 
     function getAuthToken() {
         return localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
@@ -108,6 +122,7 @@ async function register(formData) {
                 isAuthenticated: !!user,
                 isLoading,
                 login,
+                loginWithToken,
                 register,
                 logout,
                 updateUser
