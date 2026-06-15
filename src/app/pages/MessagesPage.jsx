@@ -113,7 +113,7 @@ export function MessagesPage() {
                 .then(() => {
                     console.log("Verbonden met SignalR");
 
-                    newConnection.on("ReceiveIsRead", () => {
+                    newConnection.on("ReceiveIsRead", (senderId) => {
                         setMessages(prev => {
                             return prev.map(message => {
                                 return {
@@ -121,6 +121,19 @@ export function MessagesPage() {
                                     isRead: true
                                 }
                             });
+                        });
+
+                        setLastMessages(prev => {
+                            return prev.map(lastmessage => {
+                                if (lastmessage.senderId == senderId) {
+                                    return {
+                                        ...lastMessages,
+                                        isRead: true,
+                                        totalNotReadMessages: 0
+                                    }
+                                }
+                                return (lastmessage);
+                            })
                         });
                     });
                 })
@@ -148,7 +161,7 @@ export function MessagesPage() {
             .then((data) => {
                 setMessages(data);
                 console.log(data)
-                if (data[data.length - 1].senderId != auth.user.userId) {
+                if (data[data.length - 1]?.senderId != auth.user.userId) {
                     handleLiveIsRead(selectedFriend.userId, 0);
                 }
             })
@@ -257,7 +270,17 @@ export function MessagesPage() {
                                             <div className="flex items-center justify-between mb-1">
                                                 <h3 className="text-[#F8FAFC] font-medium truncate">{friend.userName}</h3>
                                             </div>
-                                            <p className="text-[#94A3B8] text-sm truncate">{lastMessages.length != 0 && lastMessages.find(lm => lm.friendId == friend.userId)?.message}</p>
+                                            <div className='flex row justify-between items-center'>
+                                                <p
+                                                    className={`text-[#94A3B8] text-sm truncate ${(lastMessages.length != 0 && !lastMessages.find(lm => lm.friendId == friend.userId)?.isRead && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId) && "font-black"}`}>
+                                                    {lastMessages.length != 0 && lastMessages.find(lm => lm.friendId == friend.userId)?.message}
+                                                </p>
+                                                <div className='flex justify-center bg-[#ff61d2] rounded-full w-[10%]'>{(lastMessages.length != 0
+                                                    && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages != 0
+                                                    && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId)
+                                                    && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages}
+                                                </div>
+                                            </div>
                                         </button>
                                     </div>
                                 </div>
