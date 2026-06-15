@@ -117,10 +117,6 @@ const LikedMoviesPage = () => {
         <div className="relative container mx-auto px-4 max-w-7xl py-6 md:py-8">
           <div className="flex items-center gap-4 md:gap-6">
 
-            {/* Icon */}
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#FF61D2]/30 to-[#BFBCFC]/10 rounded-2xl flex items-center justify-center border border-[#FF61D2]/35 shadow-lg shadow-[#FF61D2]/15 flex-shrink-0">
-              <Heart className="w-6 h-6 md:w-7 md:h-7 text-[#FF61D2] fill-[#FF61D2]" />
-            </div>
 
             {/* Title */}
             <div className="flex-1">
@@ -302,13 +298,6 @@ const EmptyState = ({ isPublic, ownerUsername }) => (
         <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
           Explore movies and press the heart to start building your personal collection.
         </p>
-        <Link
-          to="/search"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#FF61D2] to-[#BFBCFC] text-[#0B0E14] font-bold px-7 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#FF61D2]/25"
-        >
-          <Film className="w-4 h-4" />
-          Discover Movies
-        </Link>
       </>
     )}
   </div>

@@ -106,11 +106,6 @@ export function WatchedPage() {
         <div className="relative container mx-auto px-4 max-w-7xl py-6 md:py-8">
           <div className="flex items-center gap-4 md:gap-6">
 
-            {/* Icon */}
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#BFBCFC]/30 to-[#44FFFF]/10 rounded-2xl flex items-center justify-center border border-[#BFBCFC]/35 shadow-lg shadow-[#BFBCFC]/15 flex-shrink-0">
-              <Eye className="w-6 h-6 md:w-7 md:h-7 text-[#BFBCFC]" />
-            </div>
-
             {/* Title */}
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
@@ -288,13 +283,6 @@ const EmptyState = ({ isPublic, ownerUsername }) => (
         <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-8 leading-relaxed">
           Log films using the + Log button in the header to see them here.
         </p>
-        <Link
-          to="/search"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#BFBCFC] to-[#44FFFF] text-[#0B0E14] font-bold px-7 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#BFBCFC]/25"
-        >
-          <Film className="w-4 h-4" />
-          Discover Movies
-        </Link>
       </>
     )}
   </div>

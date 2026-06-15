@@ -193,7 +193,7 @@ export function ListDetailPage() {
             <p className="text-[#94A3B8] text-sm mb-1">
               Published {new Date(list.createdAt).toLocaleDateString()}
             </p>
-            <h1 className="text-2xl md:text-4xl font-black leading-none tracking-tight mb-2 text-[#F8FAFC]">
+            <h1 className="text-xl md:text-3xl font-black leading-tight tracking-tight mb-2 text-[#F8FAFC] break-words max-w-[50rem]">
               {list.listName}
             </h1>
             <DescriptionText description={list.listDescription} />

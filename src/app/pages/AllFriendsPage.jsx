@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useSignalR } from "../context/SignalRContext";
 import { Users, Eye, Heart, List, ChevronDown } from "lucide-react";
@@ -17,7 +17,7 @@ const SORT_OPTIONS = [
   { value: "friends", label: "Most friends" },
 ];
 
-function SortDropdown({ value, onChange }) {
+function SortDropdown({ value, onChange, options = SORT_OPTIONS }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -27,7 +27,7 @@ function SortDropdown({ value, onChange }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const current = SORT_OPTIONS.find((o) => o.value === value) ?? SORT_OPTIONS[0];
+  const current = options.find((o) => o.value === value) ?? options[0];
 
   return (
     <div className="relative" ref={ref}>
@@ -42,7 +42,7 @@ function SortDropdown({ value, onChange }) {
       {open && (
         <div className="absolute right-0 top-full mt-2 z-50 bg-[#1A2030] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/50 min-w-[180px] max-w-[calc(100vw-2rem)] overflow-hidden">
           <div className="max-h-80 overflow-y-auto py-1.5 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/25 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[#BFBCFC]/50">
-            {SORT_OPTIONS.map((opt) => (
+            {options.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
@@ -91,13 +91,18 @@ const Avatar = ({ name, src, size = "md" }) => {
 };
 
 const AllFriendsPage = () => {
+  const { userId } = useParams();
+  const isPublic = !!userId;
   const [friends, setFriends] = useState([]);
+  const [ownerUsername, setOwnerUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
-  const [sortBy, setSortBy] = useState("online");
+  const [sortBy, setSortBy] = useState(isPublic ? "name" : "online");
   const auth = useAuth();
   const navigate = useNavigate();
   const { isUserOnline } = useSignalR();
+
+  const sortOptions = isPublic ? SORT_OPTIONS.filter((o) => o.value !== "online") : SORT_OPTIONS;
 
   const token = useMemo(() => {
     return (
@@ -142,10 +147,22 @@ const AllFriendsPage = () => {
     const fetchFriends = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetMyFriendsWithStats`, {
+        const url = isPublic
+          ? `${import.meta.env.VITE_API_BASE_URL}/friend/GetUserFriendsWithStats/${userId}`
+          : `${import.meta.env.VITE_API_BASE_URL}/friend/GetMyFriendsWithStats`;
+        const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        if (res.ok) { setFriends(await res.json()); setPage(0); }
+        if (res.ok) {
+          const data = await res.json();
+          if (isPublic) {
+            setFriends(data.friends ?? []);
+            setOwnerUsername(data.username ?? null);
+          } else {
+            setFriends(data);
+          }
+          setPage(0);
+        }
       } catch (e) {
         console.error("Error fetching friends:", e);
       } finally {
@@ -153,7 +170,7 @@ const AllFriendsPage = () => {
       }
     };
     fetchFriends();
-  }, [token]);
+  }, [token, isPublic, userId]);
 
   if (loading) {
     return (
@@ -184,6 +201,9 @@ const AllFriendsPage = () => {
           <div className="flex items-center gap-4 md:gap-6">
             <div className="flex-1 ml-5">
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
+                {isPublic && ownerUsername && (
+                  <span className="text-[#94A3B8]">{ownerUsername}'s </span>
+                )}
                 <span className="bg-gradient-to-r from-[#BFBCFC] via-[#cc7be0] to-[#44FFFF] bg-clip-text text-transparent ">
                   Friends
                 </span>
@@ -207,11 +227,11 @@ const AllFriendsPage = () => {
       {/* ── CONTENT ── */}
       <div className="container mx-auto px-4 max-w-7xl pt-4 pb-8 md:pt-6 md:pb-10">
         {friends.length === 0 ? (
-          <EmptyState />
+          <EmptyState isPublic={isPublic} />
         ) : (
           <>
           <div className="flex justify-end mb-5">
-            <SortDropdown value={sortBy} onChange={(v) => { setSortBy(v); setPage(0); }} />
+            <SortDropdown value={sortBy} onChange={(v) => { setSortBy(v); setPage(0); }} options={sortOptions} />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-5">
             {sortedFriends.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((f) => (
@@ -222,7 +242,9 @@ const AllFriendsPage = () => {
               >
                 <div className="relative">
                   <Avatar name={f.userName} src={f.profileImageBase64} size="xl" />
-                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#151921] ${isUserOnline(f.userId, f.isOnline) ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
+                  {!isPublic && (
+                    <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#151921] ${isUserOnline(f.userId, f.isOnline) ? 'bg-[#44FFFF] shadow-[0_0_6px_#44FFFF]' : 'bg-[#94A3B8]/30'}`} />
+                  )}
                 </div>
 
                 <p className="font-semibold text-lg text-[#F8FAFC] truncate w-full">{f.userName}</p>
@@ -274,7 +296,7 @@ const AllFriendsPage = () => {
 };
 
 /* ── EMPTY STATE ── */
-const EmptyState = () => (
+const EmptyState = ({ isPublic = false }) => (
   <div className="flex flex-col items-center justify-center py-32 text-center">
     <div className="relative mb-8">
       <div className="w-32 h-32 bg-gradient-to-br from-[#BFBCFC]/12 to-[#44FFFF]/6 rounded-full flex items-center justify-center border border-[#BFBCFC]/15">
@@ -286,7 +308,9 @@ const EmptyState = () => (
       No friends yet
     </h2>
     <p className="text-[#94A3B8] text-sm md:text-base max-w-xs mb-2 leading-relaxed">
-      Search for users on the Friends page to start building your movie community.
+      {isPublic
+        ? "This user has no friends to show."
+        : "Search for users on the Friends page to start building your movie community."}
     </p>
   </div>
 );

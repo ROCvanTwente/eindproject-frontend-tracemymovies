@@ -130,6 +130,10 @@ export const router = createBrowserRouter([
                 element: _jsx(ProtectedRoute, { children: _jsx(AllFriendsPage, {}) }),
             },
             {
+                path: 'user/:userId/friends',
+                element: _jsx(ProtectedRoute, { children: _jsx(AllFriendsPage, {}) }),
+            },
+            {
                 path: 'my-lists',
                 element: _jsx(ProtectedRoute, { children: _jsx(MyListsPage, {}) }),
             },

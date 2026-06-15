@@ -103,9 +103,6 @@ export function WatchlistPage() {
 
         <div className="relative container mx-auto px-4 max-w-7xl py-6 md:py-8">
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#BFBCFC]/20 to-[#44FFFF]/8 rounded-2xl flex items-center justify-center border border-[#BFBCFC]/30 shadow-lg shadow-[#BFBCFC]/10 flex-shrink-0">
-              <Bookmark className="w-6 h-6 md:w-7 md:h-7 text-[#BFBCFC]" />
-            </div>
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
                 {isPublic && <span className="text-[#F8FAFC]">{ownerUsername ?? "..."}'s </span>}
