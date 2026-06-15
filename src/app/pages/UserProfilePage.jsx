@@ -283,7 +283,7 @@ function OwnProfileView() {
                     >
                       <ProfilePosterCard movieId={movie.id} poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} title={movie.title} />
                       <button onClick={(e) => { e.stopPropagation(); removeFavorite(i); }}
-                        className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10">
+                        className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-[#FF61D2] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10">
                         <X className="w-3.5 h-3.5 text-white" />
                       </button>
                     </div>
