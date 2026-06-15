@@ -231,8 +231,7 @@ export function HeroSection({ movies }) {
 
   return (
     <div
-      className="relative overflow-hidden bg-[#0B0E14] select-none"
-      style={{ height: 'clamp(400px, 78vh, 780px)' }}
+      className="relative overflow-hidden bg-[#0B0E14] select-none h-[52vh] md:h-[78vh] md:min-h-[400px] md:max-h-[780px]"
       onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
       onTouchEnd={(e) => {
         if (touchStartX.current === null) return;
