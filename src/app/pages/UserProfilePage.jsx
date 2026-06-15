@@ -62,7 +62,7 @@ function RecentListCard({ list, to }) {
   const posters = (list.previewPosters ?? []).filter(Boolean).slice(0, 6);
 
   return (
-    <Link to={to} className="group inline-block px-1 py-1 rounded-lg hover:bg-[#44FFFF]/6 transition-all">
+    <Link to={to} className="group block px-1 py-2 rounded-lg hover:bg-[#44FFFF]/6 transition-all">
       <div className="flex items-center h-32">
         {posters.length > 0 ? (
           posters.map((poster, i) => (
@@ -78,9 +78,8 @@ function RecentListCard({ list, to }) {
           <div className="w-24 h-32 rounded-md bg-[#0B0E14]" />
         )}
       </div>
-      <div className="flex items-center justify-between mt-1.5 px-0.5">
-        <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors truncate">{list.listName}</span>
-        <span className="text-[#94A3B8]/40 text-xs ml-2 flex-shrink-0">
+      <div className="flex items-center justify-end mt-1.5 px-0.5">
+        <span className="text-[#94A3B8]/40 text-xs flex-shrink-0">
           {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
         </span>
       </div>
@@ -400,7 +399,7 @@ function OwnProfileView() {
           <div className="space-y-8 pt-8">
             <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
               </div>
               <div className="p-2">
                 {[
@@ -421,8 +420,8 @@ function OwnProfileView() {
 
             <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <Link to="/my-lists" className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All →</Link>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to="/my-lists" className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
               </div>
               <div className="p-2 divide-y divide-white/5">
                 {recentLists.length > 0 ? (
@@ -542,7 +541,7 @@ function PublicProfileView({ id }) {
                 { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
                 { label: "THIS YEAR", value: pub.watchedThisYear ?? 0, to: `/user/${id}/diary` },
                 { label: "LISTS", value: listsCount, to: `/user/${id}/lists` },
-                { label: "FRIENDS", value: pub.friendCount ?? 0 },
+                { label: "FRIENDS", value: pub.friendCount, ...(pub.showFriends ? { to: `/user/${id}/friends` } : {}) },
               ].map(({ label, value, to }, i, arr) => (
                 <div key={label} className="flex items-center">
                   <div onClick={() => to && navigate(to)} className={`px-5 text-center transition-transform duration-100 ${to ? "cursor-pointer group active:scale-95" : ""}`}>
@@ -654,7 +653,7 @@ function PublicProfileView({ id }) {
           <div className="space-y-8 pt-8">
             <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
               </div>
               <div className="p-2">
                 {[
@@ -675,8 +674,8 @@ function PublicProfileView({ id }) {
 
             <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <Link to={`/user/${id}/lists`} className="text-[#44FFFF]/50 text-[10px] hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All →</Link>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to={`/user/${id}/lists`} className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
               </div>
               {recentLists.length > 0 ? (
                 <div className="p-2 divide-y divide-white/5">

@@ -371,9 +371,6 @@ export function DiaryPage() {
           </Link>
 
           <div className="flex items-center gap-4 flex-wrap">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#BFBCFC]/25 to-[#44FFFF]/10 rounded-2xl flex items-center justify-center border border-[#BFBCFC]/30 shadow-lg flex-shrink-0">
-              <BookOpen className="w-6 h-6 text-[#BFBCFC]" />
-            </div>
             <div className="flex-1 min-w-0">
               <p className="text-[#BFBCFC]/60 text-[9px] font-bold uppercase tracking-[0.25em] mb-0.5">
                 Film Diary

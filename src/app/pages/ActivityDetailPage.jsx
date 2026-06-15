@@ -37,6 +37,7 @@ export function ActivityDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [addToListsOpen, setAddToListsOpen] = useState(false);
+  const [reviewExpanded, setReviewExpanded] = useState(false);
 
   const token = useMemo(
     () =>
@@ -188,7 +189,7 @@ export function ActivityDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0E14]">
-      <div className="container mx-auto px-4 max-w-4xl py-8">
+      <div className="container mx-auto px-4 max-w-6xl py-8">
 
         {/* Back */}
         <button
@@ -199,7 +200,7 @@ export function ActivityDetailPage() {
           Back
         </button>
 
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+        <div className="flex flex-col md:flex-row gap-8 md:gap-14 items-start">
 
           {/* ── LEFT: Poster + Trailer button ── */}
           <div className="flex-shrink-0 w-36 sm:w-44 md:w-52">
@@ -335,15 +336,25 @@ export function ActivityDetailPage() {
                   </button>
                 ) : (
                   <div>
-                    <p className="text-[#F8FAFC] text-sm leading-relaxed break-words">{data.reviewText}</p>
-                    {data.containsSpoilers && (
-                      <button
-                        onClick={() => setSpoilerRevealed(false)}
-                        className="mt-2 text-[#94A3B8]/50 hover:text-[#94A3B8] text-xs transition-colors"
-                      >
-                        Hide spoilers
-                      </button>
-                    )}
+                    <p className={`text-[#F8FAFC] text-sm leading-relaxed break-words ${!reviewExpanded ? "line-clamp-6" : ""}`}>{data.reviewText}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      {data.reviewText.length > 280 && (
+                        <button
+                          onClick={() => setReviewExpanded((v) => !v)}
+                          className="text-[#BFBCFC] text-xs font-medium hover:text-[#AFA9FF] transition-colors"
+                        >
+                          {reviewExpanded ? "Show less" : "Show more"}
+                        </button>
+                      )}
+                      {data.containsSpoilers && (
+                        <button
+                          onClick={() => setSpoilerRevealed(false)}
+                          className="text-[#94A3B8]/50 hover:text-[#94A3B8] text-xs transition-colors"
+                        >
+                          Hide spoilers
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-[#94A3B8]/60 text-sm">

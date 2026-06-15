@@ -11,6 +11,7 @@ import { useRefresh } from "../context/RefreshContext";
 
 const DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MAX_REVIEW_LENGTH = 5000;
 
 export function DatePicker({ value, onChange }) {
   const today = new Date();
@@ -236,6 +237,11 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
   const handleSubmit = async () => {
     if (!selectedMovie) return;
 
+    if (reviewText.trim().length > MAX_REVIEW_LENGTH) {
+      toast.error(`Maximum ${MAX_REVIEW_LENGTH} characters allowed.`);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const body = JSON.stringify({
@@ -453,8 +459,12 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="What did you think?"
                   rows={5}
-                  className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/40 outline-none resize-none"
+                  maxLength={MAX_REVIEW_LENGTH}
+                  className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/40 outline-none resize-none break-words"
                 />
+                <div className="text-right text-xs text-[#94A3B8] mt-1">
+                  {reviewText.length} / {MAX_REVIEW_LENGTH} characters
+                </div>
                 {reviewText.length > 0 && (
                   <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#BFBCFC]/10">
                     <button

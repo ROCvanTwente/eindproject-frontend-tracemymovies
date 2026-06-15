@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, Mail, Lock, Upload, Trash2, X, AlertCircle, Loader2, MapPin } from 'lucide-react';
+import { User, Mail, Lock, Upload, Trash2, X, AlertCircle, Loader2, MapPin, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ export function ProfilePage() {
         email: user?.email || '',
         location: user?.location || '',
         bio: user?.bio || '',
+        showFriends: user?.showFriends ?? true,
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
@@ -28,7 +29,10 @@ export function ProfilePage() {
         profilePicture: user?.profilePicture,
         location: user?.location || '',
         bio: user?.bio || '',
+        showFriends: user?.showFriends ?? true,
     });
+
+    const [savingShowFriends, setSavingShowFriends] = useState(false);
 
     const [reAuthModal, setReAuthModal] = useState({ open: false, purpose: null });
     const [reAuthPassword, setReAuthPassword] = useState('');
@@ -83,6 +87,7 @@ export function ProfilePage() {
             email: user.email || '',
             location: user.location || '',
             bio: user.bio || '',
+            showFriends: user.showFriends ?? true,
         }));
         setSavedData({
             username: user.username || '',
@@ -90,6 +95,7 @@ export function ProfilePage() {
             profilePicture: user.profilePicture,
             location: user.location || '',
             bio: user.bio || '',
+            showFriends: user.showFriends ?? true,
         });
         setProfilePicture(user.profilePicture);
     }, [user]);
@@ -160,6 +166,11 @@ export function ProfilePage() {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
 
+        if (formData.username.trim().length < 3) {
+            toast.error('Username must be at least 3 characters');
+            return;
+        }
+
         const usernameOrEmailChanged =
             formData.username !== savedData.username ||
             formData.email !== savedData.email;
@@ -187,6 +198,7 @@ export function ProfilePage() {
                         email: formData.email || user?.email,
                         location: formData.location || null,
                         bio: formData.bio || null,
+                        showFriends: formData.showFriends,
                     })
                 });
                 if (res.ok) {
@@ -205,6 +217,41 @@ export function ProfilePage() {
 
         // Username/email changes require password
         openReAuth('update');
+    };
+
+    const handleToggleShowFriends = async () => {
+        const newValue = !formData.showFriends;
+        setSavingShowFriends(true);
+        setFormData(prev => ({ ...prev, showFriends: newValue }));
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/profile`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({
+                    username: savedData.username || user?.username,
+                    email: savedData.email || user?.email,
+                    location: savedData.location || null,
+                    bio: savedData.bio || null,
+                    showFriends: newValue,
+                })
+            });
+            if (res.ok) {
+                updateUser({ showFriends: newValue });
+                setSavedData(prev => ({ ...prev, showFriends: newValue }));
+                toast.success(newValue ? 'Friends are now visible on your profile.' : 'Friends are now hidden from your profile.');
+            } else {
+                setFormData(prev => ({ ...prev, showFriends: !newValue }));
+                toast.error('Failed to update setting.');
+            }
+        } catch {
+            setFormData(prev => ({ ...prev, showFriends: !newValue }));
+            toast.error('Failed to update setting.');
+        } finally {
+            setSavingShowFriends(false);
+        }
     };
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -242,6 +289,7 @@ export function ProfilePage() {
                         currentPassword: reAuthPassword,
                         location: formData.location || null,
                         bio: formData.bio || null,
+                        showFriends: formData.showFriends,
                         profileImageBase64: pictureChanged
                             ? (profilePicture?.includes(",") ? profilePicture.split(",")[1] : profilePicture ?? null)
                             : null
@@ -405,11 +453,11 @@ export function ProfilePage() {
                                     </button>
                                 </div>
 
-                                <div>
-                                    <h3 className="text-lg font-heading font-bold text-[#F8FAFC] mb-0.5">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-lg font-heading font-bold text-[#F8FAFC] mb-0.5 break-words">
                                         {formData.username}
                                     </h3>
-                                    <p className="text-[#94A3B8] text-sm">
+                                    <p className="text-[#94A3B8] text-sm break-words">
                                         {formData.email}
                                     </p>
                                 </div>
@@ -425,8 +473,12 @@ export function ProfilePage() {
                                         type="text"
                                         value={formData.username}
                                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        maxLength={20}
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                     />
+                                    <p className={`text-[10px] text-right mt-0.5 ${formData.username.length >= 20 ? "text-red-400" : "text-[#94A3B8]/50"}`}>
+                                        {formData.username.length}/20
+                                    </p>
                                 </div>
 
                                 <div>
@@ -438,6 +490,7 @@ export function ProfilePage() {
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        maxLength={254}
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                     />
                                 </div>
@@ -508,6 +561,33 @@ export function ProfilePage() {
                             </form>
                         </div>
 
+                        {/* Privacy */}
+                        <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-lg md:rounded-xl p-4 md:p-6">
+                            <h2 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-3 md:mb-4">
+                                Privacy
+                            </h2>
+
+                            <button
+                                type="button"
+                                onClick={handleToggleShowFriends}
+                                disabled={savingShowFriends}
+                                className="w-full flex items-center justify-between gap-3 disabled:opacity-60"
+                            >
+                                <div className="flex items-center gap-3 text-left">
+                                    <Users className="w-4 h-4 text-[#94A3B8] flex-shrink-0" />
+                                    <div>
+                                        <p className="text-[#F8FAFC] text-sm font-medium">Show friends on profile</p>
+                                        <p className="text-[#94A3B8] text-xs mt-0.5">
+                                            When off, your friends list is hidden from everyone except you.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className={`w-9 h-5 rounded-full relative flex-shrink-0 transition-colors ${formData.showFriends ? "bg-[#BFBCFC]" : "bg-[#94A3B8]/30"}`}>
+                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${formData.showFriends ? "left-5" : "left-1"}`} />
+                                </div>
+                            </button>
+                        </div>
+
                         {/* Change Password */}
                         <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-lg md:rounded-xl p-4 md:p-6">
                             <h2 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-3 md:mb-4">
@@ -524,6 +604,7 @@ export function ProfilePage() {
                                         type="password"
                                         value={formData.currentPassword}
                                         onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                                        maxLength={128}
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                         placeholder="Enter current password"
                                     />
@@ -538,6 +619,7 @@ export function ProfilePage() {
                                         type="password"
                                         value={formData.newPassword}
                                         onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                                        maxLength={128}
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                         placeholder="Enter new password"
                                     />
@@ -552,6 +634,7 @@ export function ProfilePage() {
                                         type="password"
                                         value={formData.confirmPassword}
                                         onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                        maxLength={128}
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                         placeholder="Confirm new password"
                                     />

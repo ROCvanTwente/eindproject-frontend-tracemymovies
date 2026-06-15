@@ -176,6 +176,7 @@ export async function validateToken() {
             bio: profile.bio ?? null,
             isOnline: profile.isOnline ?? false,
             lastSeen: profile.lastSeen ?? null,
+            showFriends: profile.showFriends ?? true,
         };
     } catch {
         return getStoredUser();

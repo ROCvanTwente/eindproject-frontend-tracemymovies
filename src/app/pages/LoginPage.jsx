@@ -90,7 +90,6 @@ export function LoginPage() {
 
                             <input
                                 type="email"
-                                
                                 value={formData.email}
                                 onChange={(e) =>
                                     setFormData({
@@ -101,6 +100,8 @@ export function LoginPage() {
                                 className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
                                 placeholder="your@email.com"
                                 required
+                                maxLength={254}
+                                autoComplete="email"
                                 disabled={loading}
                             />
                         </div>
@@ -124,6 +125,8 @@ export function LoginPage() {
                                 className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all"
                                 placeholder="Enter your password"
                                 required
+                                maxLength={128}
+                                autoComplete="current-password"
                                 disabled={loading}
                             />
                         </div>
@@ -143,7 +146,6 @@ export function LoginPage() {
                                         })
                                     }
                                     className="w-4 h-4 rounded border-[#BFBCFC]/30 bg-[#0B0E14] checked:bg-[#BFBCFC]"
-                                    
                                     disabled={loading}
                                 />
 

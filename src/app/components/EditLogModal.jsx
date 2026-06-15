@@ -7,6 +7,8 @@ import { useRefresh } from "../context/RefreshContext";
 import { useNavigate } from "react-router";
 import { DatePicker } from "./WatchLogModal";
 
+const MAX_REVIEW_LENGTH = 5000;
+
 export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
   const auth = useAuth();
   const { triggerRefresh } = useRefresh();
@@ -51,6 +53,11 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
   const displayRating = hoverRating || rating;
 
   const handleSave = async () => {
+    if (reviewText.trim().length > MAX_REVIEW_LENGTH) {
+      toast.error(`Maximum ${MAX_REVIEW_LENGTH} characters allowed.`);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const res = await fetch(
@@ -174,8 +181,12 @@ export function EditLogModal({ isOpen, onClose, logData, onSaved }) {
               onChange={(e) => setReviewText(e.target.value)}
               placeholder="What did you think?"
               rows={3}
-              className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/50 outline-none resize-none"
+              maxLength={MAX_REVIEW_LENGTH}
+              className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/50 outline-none resize-none break-words"
             />
+            <div className="text-right text-xs text-[#94A3B8] mt-1">
+              {reviewText.length} / {MAX_REVIEW_LENGTH} characters
+            </div>
             {reviewText.length > 0 && (
               <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#BFBCFC]/10">
                 <button onClick={() => setContainsSpoilers(v => !v)} className={`w-4 h-4 rounded border flex items-center justify-center ${containsSpoilers ? "bg-[#FF61D2] border-[#FF61D2]" : "border-[#94A3B8]/40"}`}>
