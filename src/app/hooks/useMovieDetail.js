@@ -12,6 +12,7 @@ export function useMovieDetail(id, token) {
 
     const [recommendations, setRecommendations] = useState([]);
     const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+    const [streamingProviders, setStreamingProviders] = useState(null);
 
     const [isFavorite, setIsFavorite] = useState(false);
     const [isInWatchlist, setIsInWatchlist] = useState(false);
@@ -104,12 +105,32 @@ export function useMovieDetail(id, token) {
         }
     }, [id, RECOMMENDATIONS_URL]);
 
+    const fetchStreamingProviders = useCallback(async () => {
+        if (!id) return;
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/GetWatchProviders?id=${id}&region=NL`
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            const regionData = data?.results?.NL || data?.NL || data;
+            setStreamingProviders({
+                flatrate: regionData?.flatrate || [],
+                rent: regionData?.rent || [],
+                buy: regionData?.buy || [],
+            });
+        } catch {
+            // no providers shown on error
+        }
+    }, [id]);
+
     useEffect(() => {
         if (id) {
             fetchMovieData();
             fetchRecommendations();
+            fetchStreamingProviders();
         }
-    }, [id, fetchMovieData, fetchRecommendations]);
+    }, [id, fetchMovieData, fetchRecommendations, fetchStreamingProviders]);
 
     useEffect(() => {
         if (token && id) {
@@ -296,6 +317,7 @@ export function useMovieDetail(id, token) {
         error,
         recommendations,
         loadingRecommendations,
+        streamingProviders,
         isFavorite,
         isInWatchlist,
         isWatched,

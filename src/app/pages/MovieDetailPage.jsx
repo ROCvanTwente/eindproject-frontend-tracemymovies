@@ -40,6 +40,7 @@ export function MovieDetailPage() {
         error,
         recommendations,
         loadingRecommendations,
+        streamingProviders,
         isFavorite,
         isInWatchlist,
         isWatched,
@@ -88,6 +89,7 @@ export function MovieDetailPage() {
                 movie={movie}
                 loadingRecommendations={loadingRecommendations}
                 recommendations={recommendations}
+                streamingProviders={streamingProviders}
                 isWatched={isWatched}
                 isFavorite={isFavorite}
                 filmRating={filmRating}

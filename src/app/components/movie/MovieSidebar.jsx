@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Eye, Heart, Bookmark, Star, RefreshCw, Pencil } from "lucide-react";
 
+const TMDB_IMG = "https://image.tmdb.org/t/p/original";
+
 export function MovieSidebar({
   movie,
+  streamingProviders,
   isWatched,
   isFavorite,
   isInWatchlist,
@@ -156,6 +159,73 @@ export function MovieSidebar({
           ))}
         </div>
       </div>
+
+      {/* Where to Watch */}
+      {streamingProviders && (
+        (streamingProviders.flatrate?.length > 0 ||
+         streamingProviders.rent?.length > 0 ||
+         streamingProviders.buy?.length > 0) ? (
+          <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-2xl p-6">
+            <h3 className="text-xl font-bold font-heading text-[#F8FAFC] mb-4">Where to Watch</h3>
+
+            {streamingProviders.flatrate?.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#94A3B8] mb-2">Stream</p>
+                <div className="flex flex-wrap gap-2">
+                  {streamingProviders.flatrate.map((p) => (
+                    <div key={p.provider_id} className="flex flex-col items-center gap-1 w-14" title={p.provider_name}>
+                      <img
+                        src={`${TMDB_IMG}${p.logo_path}`}
+                        alt={p.provider_name}
+                        className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                      />
+                      <span className="text-[9px] text-[#94A3B8] text-center leading-tight line-clamp-2">{p.provider_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {streamingProviders.rent?.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#94A3B8] mb-2">Rent</p>
+                <div className="flex flex-wrap gap-2">
+                  {streamingProviders.rent.map((p) => (
+                    <div key={p.provider_id} className="flex flex-col items-center gap-1 w-14" title={p.provider_name}>
+                      <img
+                        src={`${TMDB_IMG}${p.logo_path}`}
+                        alt={p.provider_name}
+                        className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                      />
+                      <span className="text-[9px] text-[#94A3B8] text-center leading-tight line-clamp-2">{p.provider_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {streamingProviders.buy?.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#94A3B8] mb-2">Buy</p>
+                <div className="flex flex-wrap gap-2">
+                  {streamingProviders.buy.map((p) => (
+                    <div key={p.provider_id} className="flex flex-col items-center gap-1 w-14" title={p.provider_name}>
+                      <img
+                        src={`${TMDB_IMG}${p.logo_path}`}
+                        alt={p.provider_name}
+                        className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                      />
+                      <span className="text-[9px] text-[#94A3B8] text-center leading-tight line-clamp-2">{p.provider_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-[9px] text-[#94A3B8]/40 mt-4">Provided by JustWatch via TMDB</p>
+          </div>
+        ) : null
+      )}
     </div>
   );
 }
