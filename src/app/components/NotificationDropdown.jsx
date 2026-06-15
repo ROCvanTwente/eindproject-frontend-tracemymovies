@@ -95,7 +95,7 @@ export function NotificationDropdown() {
             </button>
 
             {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-[#151921] border border-[#BFBCFC]/20 rounded-2xl shadow-2xl overflow-hidden z-50">
+                <div className="fixed md:absolute left-4 right-4 top-14 md:inset-x-auto md:right-0 md:top-auto md:mt-2 md:w-[calc(100vw-2rem)] max-w-sm bg-[#151921] border border-[#BFBCFC]/20 rounded-2xl shadow-2xl overflow-hidden z-[60]">
                     <div className="px-4 py-3 border-b border-[#BFBCFC]/10 bg-[#1E2530]">
                         <h3 className="text-[#F8FAFC] font-bold">Notifications</h3>
                     </div>

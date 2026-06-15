@@ -65,7 +65,31 @@ export function Header() {
     addNotification: setAuthNotification,
   } = useAuth();
 
-  const { addNotification } = useNotifications();
+  const { addNotification, notifications } = useNotifications();
+
+  const [seenFriendRequestIds, setSeenFriendRequestIds] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem("seenFriendRequestIds");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  const friendRequestNotifs = notifications.filter(
+    (n) => n.type?.toLowerCase() === "friendrequest"
+  );
+
+  const pendingFriendRequests = friendRequestNotifs.filter(
+    (n) => !seenFriendRequestIds.has(n.id)
+  ).length;
+
+  const markFriendRequestsSeen = () => {
+    const allIds = friendRequestNotifs.map((n) => n.id);
+    const updated = new Set([...seenFriendRequestIds, ...allIds]);
+    setSeenFriendRequestIds(updated);
+    try {
+      sessionStorage.setItem("seenFriendRequestIds", JSON.stringify([...updated]));
+    } catch {}
+  };
 
   const navigate = useNavigate();
 
@@ -221,9 +245,7 @@ export function Header() {
               {/* AUTH CONTENT */}
               {isAuthenticated && (
                 <Fragment>
-                  <div className="hidden md:block">
-                    <NotificationDropdown />
-                  </div>
+                  <NotificationDropdown />
 
                   <NavLink
                     to="/messages"
@@ -337,14 +359,20 @@ export function Header() {
 
                   <NavLink
                     to="/FriendPage"
+                    onClick={markFriendRequestsSeen}
                     className={({ isActive }) =>
-                      `p-2 transition-colors duration-200 rounded-lg hidden md:block ${
+                      `relative p-2 transition-colors duration-200 rounded-lg hidden md:block ${
                         isActive ? "text-[#F8FAFC] bg-white/10" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
                       }`
                     }
                     title="Friends"
                   >
                     <Users className="w-5 h-5" />
+                    {pendingFriendRequests > 0 && (
+                      <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF61D2] text-[9px] font-bold text-white shadow-sm ring-2 ring-[#151921]">
+                        {pendingFriendRequests > 9 ? "9+" : pendingFriendRequests}
+                      </span>
+                    )}
                   </NavLink>
 
                   <button
@@ -475,6 +503,109 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* MOBILE MENU PANEL */}
+      {showMobileMenu && (
+        <div className="lg:hidden fixed top-14 left-0 right-0 bg-[#151921]/97 backdrop-blur-xl border-b border-[#BFBCFC]/15 z-40 max-h-[calc(100vh-56px)] overflow-y-auto">
+          <div className="container mx-auto px-4 py-3 space-y-1">
+            {[
+              { to: "/", label: "Home", end: true },
+              { to: "/movies", label: "Movies" },
+              ...(isAuthenticated ? [{ to: "/the-queue", label: "Lists" }] : []),
+            ].map(({ to, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                onClick={() => setShowMobileMenu(false)}
+                className={({ isActive }) =>
+                  `block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-[#BFBCFC]/15 text-[#F8FAFC]"
+                      : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                  }`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+
+            {isAuthenticated && (
+              <>
+                <div className="border-t border-[#BFBCFC]/10 my-2" />
+                <NavLink
+                  to="/messages"
+                  onClick={() => setShowMobileMenu(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      isActive ? "bg-white/10 text-[#F8FAFC]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                    }`
+                  }
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Messages
+                </NavLink>
+                <NavLink
+                  to="/FriendPage"
+                  onClick={() => { setShowMobileMenu(false); markFriendRequestsSeen(); }}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      isActive ? "bg-white/10 text-[#F8FAFC]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                    }`
+                  }
+                >
+                  <div className="relative">
+                    <Users className="w-4 h-4" />
+                    {pendingFriendRequests > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#FF61D2] text-[8px] font-bold text-white ring-1 ring-[#151921]">
+                        {pendingFriendRequests > 9 ? "9+" : pendingFriendRequests}
+                      </span>
+                    )}
+                  </div>
+                  Friends
+                  {pendingFriendRequests > 0 && (
+                    <span className="ml-auto bg-[#FF61D2]/20 text-[#FF61D2] text-xs font-bold px-2 py-0.5 rounded-full">
+                      {pendingFriendRequests}
+                    </span>
+                  )}
+                </NavLink>
+                <NavLink
+                  to="/likedmoviespage"
+                  onClick={() => setShowMobileMenu(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      isActive ? "text-[#FF61D2] bg-[#FF61D2]/10" : "text-[#94A3B8] hover:text-[#FF61D2] hover:bg-[#FF61D2]/10"
+                    }`
+                  }
+                >
+                  <Heart className="w-4 h-4" />
+                  Liked Movies
+                </NavLink>
+                <button
+                  onClick={() => { setShowMobileMenu(false); setShowWatchLogModal(true); }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5 transition-colors w-full text-left"
+                >
+                  <Plus className="w-4 h-4" />
+                  Log a Movie
+                </button>
+              </>
+            )}
+
+            {!isAuthenticated && (
+              <>
+                <div className="border-t border-[#BFBCFC]/10 my-2" />
+                <NavLink
+                  to="/login"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="block text-center bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-4 py-2.5 rounded-lg font-medium transition-all text-sm"
+                >
+                  Login
+                </NavLink>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* LOGOUT POPUP */}
       {showLogoutPopup && (

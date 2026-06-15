@@ -265,8 +265,8 @@ function BadgeCard({ badge, isSelected, onToggleSelect }) {
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHovered(true); }}
+      onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHovered(false); }}
       onClick={() => canSelect && onToggleSelect(badge.id)}
       style={{
         position: 'relative',
@@ -277,7 +277,7 @@ function BadgeCard({ badge, isSelected, onToggleSelect }) {
           ? `2px solid #BFBCFC`
           : `1px solid ${badge.earned ? t.cardBorder : 'rgba(255,255,255,0.12)'}`,
         borderRadius: 14,
-        padding: '14px 8px 10px',
+        padding: '12px 6px 8px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
         opacity: badge.earned ? 1 : 0.92,
         boxShadow: isSelected
@@ -443,7 +443,7 @@ function CategoryRow({ category, badges, selectedIds, onToggleSelect }) {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2" style={{ overflow: 'visible' }}>
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2" style={{ overflow: 'visible' }}>
         {sorted.map(b => (
           <BadgeCard
             key={b.id}

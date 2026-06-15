@@ -226,25 +226,25 @@ const FriendPage = () => {
       {/* HERO HEADER */}
       <div className="relative overflow-hidden border-b border-[#BFBCFC]/10">
         <div className="absolute inset-0 bg-gradient-to-br from-[#BFBCFC]/5 via-transparent to-[#44FFFF]/5 pointer-events-none" />
-        <div className="max-w-6xl mx-auto px-6 md:px-12 py-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-12 py-6 md:py-10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-[#BFBCFC] text-xs font-bold uppercase tracking-widest mb-2">Social</p>
-              <h1 className="text-4xl md:text-5xl font-bold text-white">Friends</h1>
-              <p className="text-[#94A3B8] mt-2 text-sm">Connect and stay updated with your movie community</p>
+              <h1 className="text-3xl md:text-5xl font-bold text-white">Friends</h1>
+              <p className="text-[#94A3B8] mt-1 text-sm">Connect and stay updated with your movie community</p>
             </div>
-            <div className="flex gap-3">
-              <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl px-5 py-3 text-center min-w-[72px]">
-                <p className="text-2xl font-bold text-[#BFBCFC]">{friends.length}</p>
+            <div className="flex gap-2 flex-wrap">
+              <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl px-4 py-2.5 text-center min-w-[60px]">
+                <p className="text-xl font-bold text-[#BFBCFC]">{friends.length}</p>
                 <p className="text-[#94A3B8] text-xs mt-0.5">Friends</p>
               </div>
-              <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl px-5 py-3 text-center min-w-[72px]">
-                <p className="text-2xl font-bold text-[#44FFFF]">{onlineFriends.length}</p>
+              <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl px-4 py-2.5 text-center min-w-[60px]">
+                <p className="text-xl font-bold text-[#44FFFF]">{onlineFriends.length}</p>
                 <p className="text-[#94A3B8] text-xs mt-0.5">Online</p>
               </div>
               {friendRequests.length > 0 && (
-                <div className="bg-[#FF61D2]/10 border border-[#FF61D2]/20 rounded-2xl px-5 py-3 text-center min-w-[72px]">
-                  <p className="text-2xl font-bold text-[#FF61D2]">{friendRequests.length}</p>
+                <div className="bg-[#FF61D2]/10 border border-[#FF61D2]/20 rounded-2xl px-4 py-2.5 text-center min-w-[60px]">
+                  <p className="text-xl font-bold text-[#FF61D2]">{friendRequests.length}</p>
                   <p className="text-[#94A3B8] text-xs mt-0.5">Requests</p>
                 </div>
               )}
@@ -253,10 +253,10 @@ const FriendPage = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 md:px-12 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-12 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* LEFT COLUMN */}
-        <div className="lg:col-span-1 space-y-5">
+        {/* LEFT COLUMN — requests & compact list */}
+        <div className="lg:col-span-1 space-y-5 order-2 lg:order-1">
 
           {/* INCOMING REQUESTS */}
           <div className="bg-[#151921] border border-[#BFBCFC]/10 rounded-3xl overflow-hidden">
@@ -334,7 +334,7 @@ const FriendPage = () => {
                         description: `Cancel request to ${r.userName}?`,
                         action: { label: 'Cancel', onClick: () => handleCancelRequest(r.userId) },
                       }); }}
-                      className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                       title="Cancel request"
                     >
                       <XIcon size={14} />
@@ -391,7 +391,7 @@ const FriendPage = () => {
                         description: `Do you really want to remove ${f.userName} from your friends list?`,
                         action: { label: 'Remove', onClick: () => handleRemoveFriend(f.userId) },
                       }); }}
-                      className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      className="w-7 h-7 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                       title="Remove friend"
                     >
                       <UserMinus size={14} />
@@ -412,8 +412,8 @@ const FriendPage = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* RIGHT COLUMN — search & friends grid */}
+        <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
 
           {/* SEARCH */}
           <div>
@@ -445,7 +445,7 @@ const FriendPage = () => {
               ) : suggestions.map((user) => {
                 const status = getRelationshipStatus(user.id);
                 return (
-                  <div key={user.id} onClick={() => navigate('/user/' + user.id)} className="flex items-center gap-4 p-5 bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl hover:border-[#BFBCFC]/25 transition-all cursor-pointer">
+                  <div key={user.id} onClick={() => navigate('/user/' + user.id)} className="flex items-center gap-3 p-4 bg-[#151921] border border-[#BFBCFC]/10 rounded-2xl hover:border-[#BFBCFC]/25 transition-all cursor-pointer flex-wrap">
                     <Avatar name={user.userName} src={user.profileImageBase64} size="lg" />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-[#F8FAFC]">{user.userName}</p>
@@ -520,7 +520,7 @@ const FriendPage = () => {
                         description: `Do you really want to remove ${f.userName} from your friends list?`,
                         action: { label: 'Remove', onClick: () => handleRemoveFriend(f.userId) },
                       }); }}
-                      className="w-8 h-8 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      className="w-8 h-8 text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 rounded-xl flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                     >
                       <UserMinus size={15} />
                     </button>
