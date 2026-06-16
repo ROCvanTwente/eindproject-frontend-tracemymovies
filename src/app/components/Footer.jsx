@@ -90,7 +90,7 @@ export function Footer() {
           <div>
             <h4 className="text-[#F8FAFC] font-bold text-xs tracking-widest uppercase mb-4">About</h4>
             <p className="text-[#475569] text-xs leading-relaxed mb-3">
-              TraceMyMovies is a third-year graduation project built by students at ROC van Twente. It is not a real commercial service — no data is sold, no payments are processed.
+              TraceMyMovies is a third-year graduation project built by students at ROC van Twente inspired by the great letterboxd. It is not a real commercial service — no data is sold, no payments are processed.
             </p>
             <p className="text-[#475569] text-xs leading-relaxed mb-5">
               Film data is provided by TMDB. This product is not endorsed or certified by TMDB.
