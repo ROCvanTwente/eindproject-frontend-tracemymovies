@@ -59,9 +59,10 @@ async function register(formData) {
             username: userData.username,
             id: userData.id,
             isAdmin: userData.isAdmin || false,
+            isGoogleUser: true,
         }, true);
         const fullUser = await validateToken();
-        setUser(fullUser);
+        setUser({ ...fullUser, isGoogleUser: true });
         startHeartbeat();
     }
 
