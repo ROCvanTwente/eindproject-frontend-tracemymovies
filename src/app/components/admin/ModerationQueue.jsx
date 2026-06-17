@@ -81,9 +81,9 @@ export function ModerationQueue() {
     if (!modSearch.trim()) return true;
     const q = modSearch.toLowerCase();
     const text = r.originalText?.toLowerCase() || '';
-    const authorName = (r.author?.userName || r.userName || r.reporterName || r.authorUserId || r.userId || '').toLowerCase();
+    const searchTargetNames = (r.author?.userName || r.authorName || r.userName || r.reporterName || r.authorUserId || r.reporterUserId || r.userId || '').toLowerCase();
     const reasonLabels = r.reasons?.map(rs => rs.label).join(", ").toLowerCase() || '';
-    return text.includes(q) || authorName.includes(q) || reasonLabels.includes(q);
+    return text.includes(q) || searchTargetNames.includes(q) || reasonLabels.includes(q);
   });
 
   if (loading) {
@@ -134,12 +134,17 @@ export function ModerationQueue() {
             const reviewId = report.targetId;
             const reviewText = report.originalText || 'No review content available.';
             
-            // Kijk eerst of we een echte naam krijgen, anders vallen we terug op het ID
-            const authorName = report.author?.userName || report.userName || report.reporterName;
-            const authorId = report.authorUserId || report.userId;
+            const reporterId = report.reporterUserId || report.userId;
+            const reporterName = report.reporterName || report.userName;
+            const displayReporter = reporterName 
+              ? `@${reporterName} (ID: ${reporterId})` 
+              : (reporterId ? `ID: ${reporterId}` : 'Unknown User');
+
+            const authorId = report.authorUserId;
+            const authorName = report.author?.userName || report.authorName;
             const displayAuthor = authorName 
-              ? `@${authorName}` 
-              : (authorId ? `ID: ${authorId}` : 'Unknown User');
+              ? `@${authorName} (ID: ${authorId})` 
+              : (authorId ? `ID: ${authorId}` : 'Unknown Author');
               
             const reasonList = report.reasons && report.reasons.length > 0 
               ? report.reasons.map(r => `${r.label} (${r.count}x)`).join(', ') 
@@ -164,7 +169,8 @@ export function ModerationQueue() {
                         <span className="text-sm font-bold text-[#F8FAFC]">{targetTypeTitle}</span>
                         <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border bg-orange-400/15 text-orange-300 border-orange-400/30">Reported</span>
                       </div>
-                      <p className="text-sm text-[#94A3B8]">Reported by <span className="text-[#BFBCFC] font-semibold">{displayAuthor}</span></p>
+                      <p className="text-sm text-[#94A3B8] mb-0.5">Reported by: <span className="text-[#BFBCFC] font-semibold">{displayReporter}</span></p>
+                      <p className="text-sm text-[#94A3B8]">Author of review: <span className="text-[#BFBCFC] font-semibold">{displayAuthor}</span></p>
                     </div>
                   </div>
                   {/* Threat Panel */}

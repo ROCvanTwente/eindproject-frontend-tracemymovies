@@ -1,6 +1,6 @@
 // src/pages/AdminPage.jsx
 import { useState } from 'react';
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminContentFrame } from '../components/admin/AdminContentFrame';
 import { EditUserRoleModal } from '../components/admin/EditUserRoleModal';
@@ -57,19 +57,6 @@ export function AdminPage() {
                   className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-12 pr-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] text-sm"
                 />
               </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <button className="relative p-2 hover:bg-[#BFBCFC]/10 rounded-lg">
-                <Bell className="w-5 h-5 text-[#94A3B8]" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-[#FF61D2] rounded-full"></span>
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 hover:bg-[#BFBCFC]/10 rounded-lg text-[#94A3B8]">
-                <div className="w-8 h-8 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center text-[#0B0E14] font-bold text-xs">
-                  AD
-                </div>
-                <ChevronDown className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </header>
