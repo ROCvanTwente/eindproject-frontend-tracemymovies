@@ -19,7 +19,7 @@ export default function ChatNotification({ messageInfo, setMessageInfo }) {
             <h1 className="ms-4">{messageInfo.senderUserName}</h1>
             <button className="absolute text-red-500 top-0 right-0 p-3 cursor-pointer" onClick={() => setMessageInfo(null)}><X /></button>
           </div>
-          <p>{messageInfo.message}</p>
+        <p>{messageInfo.message.length > 30 ? messageInfo.message.substring(0, 30) + "..." : messageInfo.message}</p>
           <p>{messageInfo.timeSended}</p>
         </div>
     )

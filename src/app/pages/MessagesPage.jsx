@@ -46,6 +46,19 @@ export function MessagesPage() {
         }
     });
 
+    const handleDeleteMessage = useCallback(async (messageId) => {
+        try {
+            await connection.invoke(
+                "DeleteMessage",
+                messageId
+            );
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setMessageText('');
+        }
+    });
+
     const getCorrectImgMessage = useCallback((senderId) => {
         if (senderId == auth.user.userId && auth.user.profilePicture) {
             return <img
@@ -179,7 +192,8 @@ export function MessagesPage() {
 
     useEffect(() => {
         if (!connection) return
-        connection.off("ReceiveMessage")
+        connection.off("ReceiveMessage");
+        connection.off("receiveDeleteMessage");
         connection.on("ReceiveMessage", (senderId, messageId, message, timeSended, isRead) => {
             if (selectedFriend.userId == senderId || auth.user.userId == senderId) {
                 setMessages((prev) => [
@@ -210,7 +224,22 @@ export function MessagesPage() {
                 connection.invoke("GetTotalNotReadMessages", "");
             }
         });
-    }, [selectedFriend, lastMessages, connection])
+
+        connection.on("receiveDeleteMessage", (messageId) => {
+            setMessages(prev => {
+                return prev.filter(message => message.messageId !== messageId)
+            })
+            const headers = { 'Authorization': `Bearer ${token}` };
+            fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLastMessages`, { headers })
+                .then((r) => r.ok ? r.json() : [])
+                .then((data) => {
+                    console.log(data)
+                    setLastMessages(data);
+                })
+                .catch((err) => console.log(err));
+            connection.invoke("GetTotalNotReadMessages", "");
+        });
+    }, [selectedFriend, lastMessages, connection, auth])
 
     useEffect(() => {
         const chatDiv = document.querySelector("#chatDiv");
@@ -348,7 +377,7 @@ export function MessagesPage() {
                                     {messages.map((message) => (
                                         <div
                                             key={message.messageId}
-                                            className={`flex gap-2 items-end ${message.senderId === auth.user.userId ? 'justify-end' : 'justify-start'}`}
+                                            className={`relative flex gap-2 items-end ${message.senderId === auth.user.userId ? 'justify-end' : 'justify-start'}`}
                                         >
                                             <Link
                                                 to={`/user/${message.senderId == auth.user.userId ? auth.user.userId : selectedFriend.userId}`}
@@ -383,25 +412,15 @@ export function MessagesPage() {
                                                         </div>
                                                     </Link>
                                                 )}
-                                                {message.senderId == auth.user.userId && (
-                                                    <>
-                                                        <EllipsisVertical className='h-4 w-4 absolute right-1 cursor-pointer' />
-                                                        <div
-                                                            className={`flex absolute right-1 top-7 flex-col z-99 rounded-lg border border-1
-                                                        ${message.senderId == auth.user.userId ?
-                                                                    'bg-[#BFBCFC] text-[#0B0E14]' :
-                                                                    'bg-[#0B0E14] text-[#F8FAFC]'
-                                                                }`}
-                                                        >
-                                                            <button className='flex cursor-pointer p-1 rounded-lg hover:bg-[#A8A3FF]'><Pencil className='w-4 me-1' /> Aanpassen</button>
-                                                            <button className='flex cursor-pointer p-1 rounded-lg hover:bg-[#A8A3FF]'><Trash className='w-4 me-1' />Verwijderen</button>
-                                                        </div>
-                                                    </>
-                                                )}
                                                 <p className="text-sm">{message.message}</p>
                                                 <p className={`text-xs mt-1 text-[#94A3B8]`}>{message.timeSended}</p>
                                             </div>
-                                            {message.senderId == auth.user.userId && <span className='text-[#736afc]'>{message.isRead ? <CheckCheck /> : <Check />}</span>}
+                                            {message.senderId == auth.user.userId && (
+                                                <div className='flex flex-col justify-between'>
+                                                    <span className='absolute top-0 text-[#736afc] cursor-pointer' onClick={() => handleDeleteMessage(message.messageId)}><Trash className='h-4' /></span>
+                                                    <span className='text-[#736afc]'>{message.isRead ? <CheckCheck /> : <Check />}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
