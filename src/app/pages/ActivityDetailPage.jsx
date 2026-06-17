@@ -38,6 +38,8 @@ export function ActivityDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [addToListsOpen, setAddToListsOpen] = useState(false);
   const [reviewExpanded, setReviewExpanded] = useState(false);
+  const [reviewLiked, setReviewLiked] = useState(false);
+  const [reviewLikesCount, setReviewLikesCount] = useState(0);
 
   const token = useMemo(
     () =>
@@ -71,6 +73,8 @@ export function ActivityDetailPage() {
       setMyIsWatched(detail.myIsWatched ?? false);
       setMyWatchCount(detail.myWatchCount ?? 0);
       setIsInWatchlist(detail.myIsInWatchlist ?? false);
+      setReviewLikesCount(detail.reviewLikes ?? 0);
+      setReviewLiked(detail.isReviewLikedByMe ?? false);
 
       // Fetch trailer only once
       if (!trailerKey) {
@@ -104,6 +108,27 @@ export function ActivityDetailPage() {
       loadData(idChanged);
     }
   }, [id, token, refreshKey]);
+
+  const handleLikeReview = async () => {
+    if (!token || !data?.reviewId) return;
+    const next = !reviewLiked;
+    setReviewLiked(next);
+    setReviewLikesCount((p) => p + (next ? 1 : -1));
+    try {
+      const endpoint = next ? "AddLike" : "RemoveLike";
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/review/${endpoint}?reviewId=${data.reviewId}`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) {
+        setReviewLiked(!next);
+        setReviewLikesCount((p) => p + (next ? -1 : 1));
+      }
+    } catch {
+      setReviewLiked(!next);
+      setReviewLikesCount((p) => p + (next ? -1 : 1));
+    }
+  };
 
   const handleEyeToggle = async () => {
     if (data?.isOwnLog) {
@@ -368,10 +393,14 @@ export function ActivityDetailPage() {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-[#94A3B8]/60 text-sm">
-                  <Heart className={`w-4 h-4 ${(data.reviewLikes ?? 0) > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
-                  <span>{(data.reviewLikes ?? 0) > 0 ? `${data.reviewLikes} like${data.reviewLikes !== 1 ? "s" : ""}` : "No likes yet"}</span>
-                </div>
+                <button
+                  onClick={handleLikeReview}
+                  disabled={data.isOwnLog}
+                  className={`flex items-center gap-2 text-sm transition-colors ${reviewLiked ? "text-[#FF61D2]" : "text-[#94A3B8]/60 hover:text-[#FF61D2]/70"} ${data.isOwnLog || !data.reviewId ? "cursor-default pointer-events-none" : "cursor-pointer"}`}
+                >
+                  <Heart className={`w-4 h-4 ${reviewLiked ? "fill-current" : reviewLikesCount > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
+                  <span>{reviewLikesCount > 0 ? `${reviewLikesCount} like${reviewLikesCount !== 1 ? "s" : ""}` : "No likes yet"}</span>
+                </button>
               </div>
             )}
 
