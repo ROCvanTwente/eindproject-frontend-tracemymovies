@@ -3,16 +3,12 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminContentFrame } from '../components/admin/AdminContentFrame';
-import { EditUserRoleModal } from '../components/admin/EditUserRoleModal';
-import { BanUserModal } from '../components/admin/BanUserModal';
 import { EditGenresModal } from '../components/admin/EditGenresModal';
 
 export function AdminPage() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [chartPeriod, setChartPeriod] = useState('month');
-  const [editRoleUser, setEditRoleUser] = useState(null);
-  const [banUser, setBanUser] = useState(null);
   const [editGenresMovie, setEditGenresMovie] = useState(null);
 
   // Growth Datasets
@@ -70,29 +66,12 @@ export function AdminPage() {
             userGrowthData={activeChartDataset}
             topMovies={topMovies}
             movieUpdates={movieUpdates}
-            setEditRoleUser={setEditRoleUser}
-            setBanUser={setBanUser}
             setEditGenresMovie={setEditGenresMovie}
           />
         </main>
       </div>
 
       {/* Global Managed Dialog Layers */}
-      <EditUserRoleModal
-        isOpen={editRoleUser !== null}
-        onClose={() => setEditRoleUser(null)}
-        userName={editRoleUser?.name || ''}
-        currentRole={editRoleUser?.role || 'User'}
-        onSave={(role) => console.log(role)}
-      />
-
-      <BanUserModal
-        isOpen={banUser !== null}
-        onClose={() => setBanUser(null)}
-        userName={banUser?.name || ''}
-        onBan={(dur, res, note) => console.log(dur, res, note)}
-      />
-
       <EditGenresModal
         isOpen={editGenresMovie !== null}
         onClose={() => setEditGenresMovie(null)}

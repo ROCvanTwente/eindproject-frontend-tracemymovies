@@ -150,8 +150,13 @@ export function ModerationQueue() {
               <p className="text-sm text-[#94A3B8]">Author of review: <span className="text-[#BFBCFC] font-semibold">{displayAuthor}</span></p>
             </div>
           </div>
-          <div className="bg-[#0F1219] border border-[#BFBCFC]/10 rounded-xl px-4 py-3 flex flex-wrap gap-4 items-start"><div className="flex-1 min-w-0"><p className="text-[10px] text-[#4B5563] uppercase tracking-widest font-mono mb-2">Report Reason</p><span className="inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded-md border border-red-500/30 text-red-400 bg-red-500/8"><AlertTriangle className="w-2.5 h-2.5" />{reasonList}</span></div></div>
-          <div className="bg-[#0B0E14] border border-[#BFBCFC]/10 rounded-xl p-4"><p className="text-[10px] text-[#4B5563] uppercase tracking-widest font-mono mb-2.5">Review Content</p><p className="text-sm text-[#94A3B8] leading-relaxed">{reviewText}</p></div>
+          <div className="bg-[#0F1219] border border-[#BFBCFC]/10 rounded-xl px-4 py-3 flex flex-wrap gap-4 items-start">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-[#4B5563] uppercase tracking-widest font-mono mb-2">Report Reason</p>
+              <div className="flex items-start gap-1 text-xs font-mono px-2 py-0.5 rounded-md border border-red-500/30 text-red-400 bg-red-500/8"><AlertTriangle className="w-2.5 h-2.5 flex-shrink-0 mt-0.5" /><span>{reasonList}</span></div>
+            </div>
+          </div>
+          <div className="bg-[#0B0E14] border border-[#BFBCFC]/10 rounded-xl p-4"><p className="text-[10px] text-[#4B5563] uppercase tracking-widest font-mono mb-2.5">Review Content</p><p className="text-sm text-[#94A3B8] leading-relaxed break-words">{reviewText}</p></div>
           {!isDeleted && (<div className="flex items-center justify-end gap-2 pt-1"><button onClick={() => handleDismiss(reportId)} className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#94A3B8] border border-[#2A3042] rounded-lg hover:border-[#3D4A5C] hover:text-[#F8FAFC] transition-all"><XCircle className="w-3.5 h-3.5" />Dismiss Flag</button><button onClick={() => openDeleteModal(reviewId, authorName, reviewText, reportId)} className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-500 transition-all shadow-lg shadow-red-900/30"><Trash2 className="w-3.5 h-3.5" />Remove Review</button></div>)}
         </div>
       </div>

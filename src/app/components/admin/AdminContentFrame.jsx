@@ -3,10 +3,15 @@ import { Users, Film, Eye, ArrowUp, RefreshCw, Calendar, Tag, Star, Image, FileT
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import { ModerationQueue } from './ModerationQueue';
+import { UserManagement } from './UserManagement';
 
-export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, userGrowthData, topMovies, movieUpdates }) {
+export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, userGrowthData, topMovies, movieUpdates, setEditGenresMovie }) {
   if (currentView === 'moderation') {
     return <ModerationQueue />;
+  }
+
+  if (currentView === 'users') {
+    return <UserManagement />;
   }
 
   if (currentView !== 'dashboard') {
