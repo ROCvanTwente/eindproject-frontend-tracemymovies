@@ -1,44 +1,47 @@
-import { jsx as _jsx } from "react/jsx-runtime";  
-import { createBrowserRouter } from 'react-router';  
-import { Layout } from './components/Layout';  
-import { HomePage } from './pages/HomePage';  
-import { SearchPage } from './pages/SearchPage';  
-import { MoviesPage } from './pages/MoviesPage';  
-import { MovieDetailPage } from './pages/MovieDetailPage';  
-import { MyListsPage } from './pages/MyListsPage';  
-import { ListDetailPage } from './pages/ListDetailPage';  
-import { CreateListPage } from './pages/CreateListPage';  
-import { ProfilePage } from './pages/ProfilePage';  
-import { AnalyticsPage } from './pages/AnalyticsPage';  
-import { MessagesPage } from './pages/MessagesPage';  
-import { AdminPage } from './pages/AdminPage';  
-import { RegisterPage } from './pages/RegisterPage';  
-import { LoginPage } from './pages/LoginPage';  
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage';  
-import { ResetPasswordPage } from './pages/ResetPasswordPage';  
-import { VerifyEmailPage } from './pages/VerifyEmailPage';  
-import { EmergencyResetPage } from './pages/EmergencyResetPage';  
-import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';  
-import { ConfirmEmailChangeRequestPage } from './pages/ConfirmEmailChangeRequestPage';  
-import { ConfirmDeletePage } from './pages/ConfirmDeletePage';  
-import { UserProfilePage } from './pages/UserProfilePage';  
-import { AboutPage } from './pages/AboutPage';  
-import { NotFoundPage } from './pages/NotFoundPage';  
-import { ServerErrorPage } from './pages/ServerErrorPage';  
-import FriendPage from './pages/FriendPage';  
-import AllFriendsPage from './pages/AllFriendsPage';  
-import LikedMoviesPage from './pages/LikedMoviesPage';  
-import { AllActivityPage } from './pages/AllActivityPage';  
-import { ActivityDetailPage } from './pages/ActivityDetailPage';  
-import { WatchedPage } from './pages/WatchedPage';  
-import { WatchlistPage } from './pages/WatchlistPage';  
-import { BadgesPage } from './pages/BadgesPage';  
-import { ActorPage } from './pages/ActorPage';  
-import { ReviewsPage } from './pages/ReviewsPage';  
-import { DiaryPage } from './pages/DiaryPage';  
-import { MovieFriendsActivityPage } from './pages/MovieFriendsActivityPage';  
-import { ProtectedRoute } from './components/ProtectedRoute'; 
-import { FeaturedListsPage } from './pages/FeaturedListsPage'; 
+import { jsx as _jsx } from "react/jsx-runtime";
+import { createBrowserRouter } from 'react-router';
+import { Layout } from './components/Layout';
+import { HomePage } from './pages/HomePage';
+import { SearchPage } from './pages/SearchPage';
+import { MoviesPage } from './pages/MoviesPage';
+import { MovieDetailPage } from './pages/MovieDetailPage';
+import { MyListsPage } from './pages/MyListsPage';
+import { ListDetailPage } from './pages/ListDetailPage';
+import { CreateListPage } from './pages/CreateListPage';
+import { TheQueuePage } from './pages/TheQueuePage';
+import { ProfilePage } from './pages/ProfilePage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
+import { MessagesPage } from './pages/MessagesPage';
+import { AdminPage } from './pages/AdminPage';
+// import { WeeklyFavoritesPage } from './pages/WeeklyFavoritesPage';
+// import { GlobalMovieDNAPage } from './pages/GlobalMovieDNAPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { LoginPage } from './pages/LoginPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { EmergencyResetPage } from './pages/EmergencyResetPage';
+import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
+import { ConfirmEmailChangeRequestPage } from './pages/ConfirmEmailChangeRequestPage';
+import { ConfirmDeletePage } from './pages/ConfirmDeletePage';
+import { UserProfilePage } from './pages/UserProfilePage';
+import { AboutPage } from './pages/AboutPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { ServerErrorPage } from './pages/ServerErrorPage';
+import FriendPage from './pages/FriendPage';
+import AllFriendsPage from './pages/AllFriendsPage';
+import LikedMoviesPage from './pages/LikedMoviesPage';
+import { AllActivityPage } from './pages/AllActivityPage';
+import { ActivityDetailPage } from './pages/ActivityDetailPage';
+import { WatchedPage } from './pages/WatchedPage';
+import { WatchlistPage } from './pages/WatchlistPage';
+import { BadgesPage } from './pages/BadgesPage';
+import { ActorPage } from './pages/ActorPage';
+import { ReviewsPage } from './pages/ReviewsPage';
+import { DiaryPage } from './pages/DiaryPage';
+import { MovieFriendsActivityPage } from './pages/MovieFriendsActivityPage';
+import { FeaturedListsPage } from './pages/FeaturedListsPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
     {
@@ -49,14 +52,10 @@ export const router = createBrowserRouter([
                 index: true,
                 element: _jsx(HomePage, {}),
             },
-            // PUBLIC ROUTES
+            // ── PUBLIC ROUTES ──
             {
                 path: 'search',
                 element: _jsx(SearchPage, {}),
-            },
-            {
-                path: 'featured-lists',
-                element: _jsx(FeaturedListsPage, {}),
             },
             {
                 path: 'movies',
@@ -74,17 +73,25 @@ export const router = createBrowserRouter([
                 path: 'movie/:id/friends-activity',
                 element: _jsx(ProtectedRoute, { children: _jsx(MovieFriendsActivityPage, {}) }),
             },
+            // {
+            //     path: 'weekly-favorites',
+            //     element: _jsx(WeeklyFavoritesPage, {}),
+            // },
+            // {
+            //     path: 'global-dna',
+            //     element: _jsx(GlobalMovieDNAPage, {}),
+            // },
             {
                 path: 'about',
                 element: _jsx(AboutPage, {}),
             },
             {
                 path: 'register',
-                element: _jsx(ProtectedRoute, { children: _jsx(RegisterPage, {}) }),
+                element: _jsx(RegisterPage, {}),
             },
             {
                 path: 'login',
-                element: _jsx(ProtectedRoute, { children: _jsx(LoginPage, {}) }),
+                element: _jsx(LoginPage, {}),
             },
             {
                 path: 'forgot-password',
@@ -114,7 +121,8 @@ export const router = createBrowserRouter([
                 path: 'confirm-delete',
                 element: _jsx(ConfirmDeletePage, {}),
             },
-            // PROTECTED ROUTES
+
+            // ── PROTECTED ROUTES ──
             {
                 path: 'LikedMoviesPage',
                 element: _jsx(ProtectedRoute, { children: _jsx(LikedMoviesPage, {}) }),
@@ -154,6 +162,10 @@ export const router = createBrowserRouter([
             {
                 path: 'list/:id/edit',
                 element: _jsx(ProtectedRoute, { children: _jsx(CreateListPage, {}) }),
+            },
+            {
+                path: 'the-queue',
+                element: _jsx(ProtectedRoute, { children: _jsx(TheQueuePage, {}) }),
             },
             {
                 path: 'my-profile',
@@ -226,6 +238,10 @@ export const router = createBrowserRouter([
             {
                 path: 'diary',
                 element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
+            },
+            {
+                path: 'featured-lists',
+                element: _jsx(ProtectedRoute, { children: _jsx(FeaturedListsPage, {}) }),
             },
             {
                 path: 'user/:userId/diary',

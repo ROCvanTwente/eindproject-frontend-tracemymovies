@@ -171,13 +171,6 @@ export function MyListsPage() {
                 <p className="text-[#94A3B8] mb-6">
                   Create your first custom list to organize your favorite movies
                 </p>
-                <button
-                  onClick={() => navigate("/list/new")}
-                  className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all inline-flex items-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Create Your First List
-                </button>
               </>
             )}
           </div>
