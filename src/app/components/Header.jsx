@@ -202,7 +202,7 @@ export function Header() {
                   { to: "/", label: "Home", end: true },
                   { to: "/movies", label: "Movies" },
                   { to: "/about", label: "About" },
-                  ...(isAuthenticated ? [{ to: "/the-queue", label: "Lists" }] : []),
+                  ...(isAuthenticated ? [{ to: "/featured-lists", label: "Lists" }] : []),
                 ].map(({ to, label, end }) => (
                   <NavLink
                     key={to}
@@ -425,7 +425,7 @@ export function Header() {
 
                       {[
                         { to: "/my-profile", label: "Profile" },
-                        { to: "/my-lists", label: "Lists" },
+                        { to: "/featured-lists", label: "Lists" },
                         { to: "/watchlist", label: "Watchlist" },
                         { to: "/profile", label: "Account" },
                         { to: "/messages", label: "Messages" },
@@ -532,7 +532,7 @@ export function Header() {
               { to: "/", label: "Home", end: true },
               { to: "/movies", label: "Movies" },
               { to: "/about", label: "About" },
-              ...(isAuthenticated ? [{ to: "/the-queue", label: "Lists" }] : []),
+              ...(isAuthenticated ? [{ to: "/featured-lists", label: "Lists" }] : []),
             ].map(({ to, label, end }) => (
               <NavLink
                 key={to}
