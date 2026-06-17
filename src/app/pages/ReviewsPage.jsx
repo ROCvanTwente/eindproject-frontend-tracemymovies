@@ -16,6 +16,35 @@ export function ReviewsPage() {
   const [ownerUsername, setOwnerUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [likedReviews, setLikedReviews] = useState({});
+
+  const handleLike = async (reviewId, currentLikes) => {
+    if (!token || !reviewId) return;
+    const wasLiked = !!likedReviews[reviewId];
+    const next = !wasLiked;
+    setLikedReviews((p) => ({ ...p, [reviewId]: next }));
+    setReviews((prev) =>
+      prev.map((r) => r.reviewId === reviewId ? { ...r, likes: (r.likes ?? 0) + (next ? 1 : -1) } : r)
+    );
+    try {
+      const endpoint = next ? "AddLike" : "RemoveLike";
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/review/${endpoint}?reviewId=${reviewId}`,
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) {
+        setLikedReviews((p) => ({ ...p, [reviewId]: wasLiked }));
+        setReviews((prev) =>
+          prev.map((r) => r.reviewId === reviewId ? { ...r, likes: (r.likes ?? 0) + (next ? -1 : 1) } : r)
+        );
+      }
+    } catch {
+      setLikedReviews((p) => ({ ...p, [reviewId]: wasLiked }));
+      setReviews((prev) =>
+        prev.map((r) => r.reviewId === reviewId ? { ...r, likes: (r.likes ?? 0) + (next ? -1 : 1) } : r)
+      );
+    }
+  };
 
   // Filters
   const [ratingFilter, setRatingFilter] = useState(null);
@@ -44,7 +73,11 @@ export function ReviewsPage() {
           : `${import.meta.env.VITE_API_BASE_URL}/Log/MyAllReviews`;
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;
-        setReviews(await res.json());
+        const data = await res.json();
+        setReviews(data);
+        const initialLiked = {};
+        data.forEach((r) => { if (r.isLikedByMe) initialLiked[r.reviewId] = true; });
+        setLikedReviews(initialLiked);
 
         if (isPublic) {
           const profRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${userId}`, {
@@ -94,9 +127,7 @@ export function ReviewsPage() {
     return (
       <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
         <div className="relative w-20 h-20">
-          <div className="absolute inset-0 rounded-full border-2 border-[#FF61D2]/20 flex items-center justify-center">
-            <AlignLeft className="w-8 h-8 text-[#FF61D2] animate-pulse" />
-          </div>
+
           <div className="absolute inset-0 rounded-full border-t-2 border-[#FF61D2] animate-spin" />
         </div>
       </div>
@@ -122,9 +153,6 @@ export function ReviewsPage() {
           </Link>
 
           <div className="flex items-center gap-4 md:gap-6">
-            <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#FF61D2]/25 to-[#BFBCFC]/10 rounded-2xl flex items-center justify-center border border-[#FF61D2]/30 shadow-lg shadow-[#FF61D2]/10 flex-shrink-0">
-              <AlignLeft className="w-6 h-6 md:w-7 md:h-7 text-[#FF61D2]" />
-            </div>
 
             <div className="flex-1">
               <h1 className="text-2xl md:text-4xl font-black text-[#F8FAFC] leading-none tracking-tight">
@@ -214,28 +242,17 @@ export function ReviewsPage() {
       <div className="container mx-auto px-4 max-w-4xl py-6 md:py-8">
         {reviews.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-24 h-24 bg-[#FF61D2]/8 rounded-full flex items-center justify-center border border-[#FF61D2]/15 mb-6">
-              <AlignLeft className="w-10 h-10 text-[#FF61D2]/30" />
-            </div>
             <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">
               {isPublic ? `${ownerUsername ?? "This user"} hasn't written any reviews yet` : "No reviews yet"}
             </h2>
             {!isPublic && (
               <>
                 <p className="text-[#94A3B8] text-sm max-w-xs">Log films and add a review to see them here.</p>
-                <Link
-                  to="/search"
-                  className="mt-6 inline-flex items-center gap-2 bg-gradient-to-r from-[#FF61D2] to-[#BFBCFC] text-[#0B0E14] font-bold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
-                >
-                  <Film className="w-4 h-4" />
-                  Discover Movies
-                </Link>
               </>
             )}
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <AlignLeft className="w-10 h-10 text-[#FF61D2]/20 mb-4" />
             <p className="text-[#94A3B8] text-sm">No reviews match the selected filters.</p>
             <button
               onClick={() => { setRatingFilter(null); setYearFilter(null); }}
@@ -295,10 +312,14 @@ export function ReviewsPage() {
 
                     <ReviewTextBlock text={review.reviewText} containsSpoilers={review.containsSpoilers} />
 
-                    <div className="mt-3 flex items-center gap-2 text-[#94A3B8]/60 text-sm">
-                      <Heart className={`w-4 h-4 ${(review.likes ?? 0) > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
+                    <button
+                      onClick={() => isPublic && handleLike(review.reviewId, review.likes)}
+                      disabled={!isPublic}
+                      className={`mt-3 flex items-center gap-2 text-sm transition-colors ${likedReviews[review.reviewId] ? "text-[#FF61D2]" : "text-[#94A3B8]/60 hover:text-[#FF61D2]/70"} ${!isPublic || !review.reviewId ? "cursor-default pointer-events-none" : "cursor-pointer"}`}
+                    >
+                      <Heart className={`w-4 h-4 ${likedReviews[review.reviewId] ? "fill-current" : (review.likes ?? 0) > 0 ? "fill-current text-[#FF61D2]/70" : ""}`} />
                       <span>{(review.likes ?? 0) > 0 ? `${review.likes} like${review.likes !== 1 ? "s" : ""}` : "No likes yet"}</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
               ))}
