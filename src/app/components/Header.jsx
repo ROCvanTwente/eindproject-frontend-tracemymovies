@@ -235,13 +235,17 @@ export function Header() {
                 />
               </form>
 
-              {/* Mobile search */}
-              <Link
-                to="/search"
-                className="lg:hidden p-2 text-[#64748B] hover:text-[#F8FAFC] transition-colors rounded-xl hover:bg-white/5"
-              >
-                <Search className="w-5 h-5" />
-              </Link>
+              {/* Desktop search */}
+              <form onSubmit={handleSearch} className="relative hidden lg:block mr-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#475569] w-3.5 h-3.5 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search films..."
+                  className="bg-white/5 text-[#F8FAFC] placeholder:text-[#475569] pl-9 pr-4 py-1.5 rounded-full border border-white/8 focus:outline-none focus:border-[#BFBCFC]/40 focus:bg-white/8 w-48 text-sm transition-all duration-200"
+                />
+              </form>
 
               {/* AUTH CONTENT */}
               {isAuthenticated && (
