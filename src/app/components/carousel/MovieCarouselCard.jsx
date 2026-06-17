@@ -109,7 +109,7 @@ export function MovieCarouselCard({ movie, index, showRanking, showReleaseDate, 
             <div className={`relative overflow-hidden rounded-xl aspect-[2/3] bg-[#151921] border transition-all duration-300 ${
                 isWatched
                     ? 'border-[#44FFFF]/20 group-hover:border-[#44FFFF]/50 group-hover:shadow-md group-hover:shadow-[#44FFFF]/10'
-                    : 'border-white/5 group-hover:border-[#BFBCFC]/30 group-hover:shadow-md group-hover:shadow-[#BFBCFC]/10'
+                    : 'border-white/5 group-hover:border-[#44FFFF]/30 group-hover:shadow-md group-hover:shadow-[#44FFFF]/10'
             }`}>
 
                 {/* Ranking badge top-3 */}
@@ -128,8 +128,8 @@ export function MovieCarouselCard({ movie, index, showRanking, showReleaseDate, 
 
                 {/* Rating badge (when not showing release date) */}
                 {!showReleaseDate && rating && (
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-black/75 backdrop-blur-sm text-[#FFD700] px-1.5 py-0.5 rounded-md text-[10px] font-bold">
-                        <Star className="w-2.5 h-2.5 fill-[#FFD700]" />
+                    <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-black/75 backdrop-blur-sm text-[#44FFFF] px-1.5 py-0.5 rounded-md text-[10px] font-bold">
+                        <Star className="w-2.5 h-2.5 fill-[#44FFFF]" />
                         {rating}
                     </div>
                 )}

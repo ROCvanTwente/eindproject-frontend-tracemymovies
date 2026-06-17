@@ -142,8 +142,8 @@ function MovieSlide({ movie, navigate }) {
                 🔥 Trending
               </span>
               {rating && (
-                <span className="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm border border-[#FFD700]/20 text-[#FFD700] px-2 py-0.5 rounded-full text-[10px] font-bold">
-                  <Star className="w-2.5 h-2.5 fill-[#FFD700]" />
+                <span className="inline-flex items-center gap-1 bg-black/40 backdrop-blur-sm border border-[#44FFFF]/20 text-[#44FFFF] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                  <Star className="w-2.5 h-2.5 fill-[#44FFFF]" />
                   {rating}
                 </span>
               )}
