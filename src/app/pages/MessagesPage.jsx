@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, use } from 'react';
-import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film, Check, CheckCheck } from 'lucide-react';
+import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film, Check, CheckCheck, EllipsisVertical, Pencil, Trash } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from "../context/AuthContext";
 import * as signalR from "@microsoft/signalr";
@@ -17,7 +17,7 @@ export function MessagesPage() {
 
     const handleSendMessage = useCallback(async (e) => {
         e.preventDefault();
-        if (!messageText.trim())
+        if (!messageText.trim() || messageText.length > 4000)
             return;
         try {
             await connection.invoke(
@@ -33,9 +33,6 @@ export function MessagesPage() {
     });
 
     const handleLiveIsRead = useCallback(async (senderId, messageId) => {
-        console.log(senderId)
-        console.log(messageId)
-
         try {
             await connection.invoke(
                 "LiveIsRead",
@@ -87,7 +84,7 @@ export function MessagesPage() {
                 setFilterMyFriends(data);
             })
             .catch((err) => console.log(err));
-        
+
         fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLastMessages`, { headers })
             .then((r) => r.ok ? r.json() : [])
             .then((data) => {
@@ -122,19 +119,6 @@ export function MessagesPage() {
                                 }
                             });
                         });
-
-                        setLastMessages(prev => {
-                            return prev.map(lastmessage => {
-                                if (lastmessage.senderId == senderId) {
-                                    return {
-                                        ...lastMessages,
-                                        isRead: true,
-                                        totalNotReadMessages: 0
-                                    }
-                                }
-                                return (lastmessage);
-                            })
-                        });
                     });
                 })
                 .catch((err) => console.error(err));
@@ -161,8 +145,24 @@ export function MessagesPage() {
             .then((data) => {
                 setMessages(data);
                 console.log(data)
+                if (lastMessages.length != 0) {
+                    setLastMessages(prev => {
+                        return prev.map(lastmessage => {
+                            if (lastmessage.friendId == selectedFriend.userId) {
+                                return {
+                                    ...lastmessage,
+                                    isRead: true,
+                                    totalNotReadMessages: 0
+                                }
+                            }
+                            return (lastmessage);
+                        })
+                    });
+                }
+
                 if (data[data.length - 1]?.senderId != auth.user.userId) {
                     handleLiveIsRead(selectedFriend.userId, 0);
+                    connection.invoke("GetTotalNotReadMessages", "");
                 }
             })
             .catch((err) => console.log(err));
@@ -189,13 +189,28 @@ export function MessagesPage() {
             }
 
             if (selectedFriend.userId == senderId) {
-                console.log("Stuur NU DE LIVE EVENT")
+                console.log("Stuur NU DE LIVE EVENT: IsRead")
                 handleLiveIsRead(selectedFriend.userId, messageId);
             } else if (auth.user.userId != senderId) {
                 console.log("Het us van de andere vriend")
+                console.log(lastMessages)
+                setLastMessages(prev => {
+                    return prev.map(lastmessage => {
+                        if (lastmessage.friendId == senderId) {
+                            return {
+                                ...lastmessage,
+                                message: message,
+                                isRead: false,
+                                totalNotReadMessages: lastmessage.totalNotReadMessages + 1
+                            };
+                        }
+                        return (lastmessage);
+                    });
+                });
+                connection.invoke("GetTotalNotReadMessages", "");
             }
         });
-    }, [selectedFriend, connection])
+    }, [selectedFriend, lastMessages, connection])
 
     useEffect(() => {
         const chatDiv = document.querySelector("#chatDiv");
@@ -273,7 +288,10 @@ export function MessagesPage() {
                                             <div className='flex row justify-between items-center'>
                                                 <p
                                                     className={`text-[#94A3B8] text-sm truncate ${(lastMessages.length != 0 && !lastMessages.find(lm => lm.friendId == friend.userId)?.isRead && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId) && "font-black"}`}>
-                                                    {lastMessages.length != 0 && lastMessages.find(lm => lm.friendId == friend.userId)?.message}
+                                                    {lastMessages.length != 0 && (lastMessages.find(lm => lm.friendId == friend.userId)?.message?.length > 30 ?
+                                                        lastMessages.find(lm => lm.friendId == friend.userId)?.message?.substring(0, 30) + "..." :
+                                                        lastMessages.find(lm => lm.friendId == friend.userId)?.message
+                                                    )}
                                                 </p>
                                                 <div className='flex justify-center bg-[#ff61d2] rounded-full w-[10%]'>{(lastMessages.length != 0
                                                     && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages != 0
@@ -343,7 +361,7 @@ export function MessagesPage() {
                                                 className={`max-w-[70%] ${message.senderId == auth.user.userId
                                                     ? 'bg-[#BFBCFC] text-[#0B0E14]'
                                                     : 'bg-[#0B0E14] text-[#F8FAFC]'
-                                                    } rounded-2xl px-4 py-2`}
+                                                    } relative rounded-2xl px-4 py-3 break-all`}
                                             >
                                                 {message.movieReference && (
                                                     <Link
@@ -365,10 +383,25 @@ export function MessagesPage() {
                                                         </div>
                                                     </Link>
                                                 )}
+                                                {message.senderId == auth.user.userId && (
+                                                    <>
+                                                        <EllipsisVertical className='h-4 w-4 absolute right-1 cursor-pointer' />
+                                                        <div
+                                                            className={`flex absolute right-1 top-7 flex-col z-99 rounded-lg border border-1
+                                                        ${message.senderId == auth.user.userId ?
+                                                                    'bg-[#BFBCFC] text-[#0B0E14]' :
+                                                                    'bg-[#0B0E14] text-[#F8FAFC]'
+                                                                }`}
+                                                        >
+                                                            <button className='flex cursor-pointer p-1 rounded-lg hover:bg-[#A8A3FF]'><Pencil className='w-4 me-1' /> Aanpassen</button>
+                                                            <button className='flex cursor-pointer p-1 rounded-lg hover:bg-[#A8A3FF]'><Trash className='w-4 me-1' />Verwijderen</button>
+                                                        </div>
+                                                    </>
+                                                )}
                                                 <p className="text-sm">{message.message}</p>
                                                 <p className={`text-xs mt-1 text-[#94A3B8]`}>{message.timeSended}</p>
-                                                {message.senderId == auth.user.userId && <span>{message.isRead ? <CheckCheck /> : <Check />}</span>}
                                             </div>
+                                            {message.senderId == auth.user.userId && <span className='text-[#736afc]'>{message.isRead ? <CheckCheck /> : <Check />}</span>}
                                         </div>
                                     ))}
                                 </div>
@@ -379,6 +412,7 @@ export function MessagesPage() {
                                         <input
                                             type="text"
                                             value={messageText}
+                                            maxLength={4000}
                                             onChange={(e) => setMessageText(e.target.value)}
                                             placeholder="Type a message..."
                                             className="flex-1 bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20"
@@ -390,6 +424,7 @@ export function MessagesPage() {
                                             <Send className="w-5 h-5" />
                                         </button>
                                     </div>
+                                    <p className={`text-xs mt-3 ${messageText.length == 4000 ? "text-[#fa5252]" : "text-[#AFA9FF]"}`}>{messageText ? messageText.length : 0}/4000 karakters</p>
                                 </form>
                             </>
                         ) : (

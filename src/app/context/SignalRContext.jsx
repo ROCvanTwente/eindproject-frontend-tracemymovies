@@ -90,6 +90,7 @@ export function SignalRProvider({ children }) {
       } else {
         console.log("GEKREGEN VIA CONTEXT, Message is " + message)
         setMessageInfo({ senderId, messageId, message, timeSended, senderUserName, profileImg })
+        connectionChat.invoke("GetTotalNotReadMessages", "");
       }
     });
 
