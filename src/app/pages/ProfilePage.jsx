@@ -33,6 +33,7 @@ export function ProfilePage() {
     });
 
     const [savingShowFriends, setSavingShowFriends] = useState(false);
+    const [usernameError, setUsernameError] = useState('');
 
     const [reAuthModal, setReAuthModal] = useState({ open: false, purpose: null });
     const [reAuthPassword, setReAuthPassword] = useState('');
@@ -166,57 +167,61 @@ export function ProfilePage() {
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
 
+        setUsernameError('');
+
         if (formData.username.trim().length < 3) {
             toast.error('Username must be at least 3 characters');
             return;
         }
 
-        const usernameOrEmailChanged =
-            formData.username !== savedData.username ||
-            formData.email !== savedData.email;
-
+        const usernameChanged = formData.username !== savedData.username;
+        const emailChanged = formData.email !== savedData.email;
         const locationOrBioChanged =
             (formData.location || '') !== (savedData.location || '') ||
             (formData.bio || '') !== (savedData.bio || '');
 
-        if (!usernameOrEmailChanged && !locationOrBioChanged) {
+        if (!usernameChanged && !emailChanged && !locationOrBioChanged) {
             toast.warning("No changes to save.");
             return;
         }
 
-        // Location/bio can be saved without password
-        if (locationOrBioChanged && !usernameOrEmailChanged) {
-            try {
-                const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/profile`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${getToken()}`
-                    },
-                    body: JSON.stringify({
-                        username: formData.username || user?.username,
-                        email: formData.email || user?.email,
-                        location: formData.location || null,
-                        bio: formData.bio || null,
-                        showFriends: formData.showFriends,
-                    })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    updateUser({ location: formData.location, bio: formData.bio });
-                    setSavedData(prev => ({ ...prev, location: formData.location, bio: formData.bio }));
-                    toast.success('Profile updated!');
-                } else {
-                    toast.error('Update failed.');
-                }
-            } catch {
-                toast.error('Update failed.');
-            }
+        // Email changes still require password via reAuth
+        if (emailChanged) {
+            openReAuth('update');
             return;
         }
 
-        // Username/email changes require password
-        openReAuth('update');
+        // Username and/or location/bio — save directly without password
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/profile`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({
+                    username: formData.username,
+                    email: formData.email || user?.email,
+                    location: formData.location || null,
+                    bio: formData.bio || null,
+                    showFriends: formData.showFriends,
+                })
+            });
+            if (res.ok) {
+                updateUser({ username: formData.username, location: formData.location, bio: formData.bio });
+                setSavedData(prev => ({ ...prev, username: formData.username, location: formData.location, bio: formData.bio }));
+                toast.success('Profile updated!');
+            } else {
+                const err = await res.json().catch(() => null);
+                if (err?.message?.toLowerCase().includes('username')) {
+                    setUsernameError(err.message);
+                } else {
+                    toast.error(err?.message ?? 'Update failed.');
+                }
+            }
+        } catch {
+            toast.error('Update failed.');
+        }
     };
 
     const handleToggleShowFriends = async () => {
@@ -472,13 +477,16 @@ export function ProfilePage() {
                                     <input
                                         type="text"
                                         value={formData.username}
-                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        onChange={(e) => { setFormData({ ...formData, username: e.target.value }); setUsernameError(''); }}
                                         maxLength={20}
                                         className="w-full bg-[#0B0E14] text-[#F8FAFC] px-3 py-2 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all text-sm"
                                     />
                                     <p className={`text-[10px] text-right mt-0.5 ${formData.username.length >= 20 ? "text-red-400" : "text-[#94A3B8]/50"}`}>
                                         {formData.username.length}/20
                                     </p>
+                                    {usernameError && (
+                                        <p className="text-red-400 text-xs mt-1">{usernameError}</p>
+                                    )}
                                 </div>
 
                                 <div>
