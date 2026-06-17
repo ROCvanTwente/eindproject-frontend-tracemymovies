@@ -240,31 +240,49 @@ function OwnProfileView() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
 
-          {/* Quick Links — mobile: top | desktop: col 3 row 1 */}
-          <div className="order-1 lg:col-start-3 lg:row-start-1 lg:pt-8">
-            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+          {/* Sidebar — mobile: order 1 (top) | desktop: col 3 flex column */}
+          <div className="order-1 lg:order-none lg:col-start-3 lg:row-start-1 flex flex-col gap-6">
+            <div className="lg:pt-8">
+              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                </div>
+                <div className="p-2">
+                  {[
+                    { to: "/watchlist", icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: "/diary", icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: "/analytics", icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                    { to: "/my-lists", icon: <List className="w-3.5 h-3.5" />, label: "My Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: "/likedmoviespage", icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                    { to: "/badges", icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  ].map(({ to, icon, label, color, bg }) => (
+                    <Link key={to} to={to} className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
+                      <span className={`transition-colors ${color}`}>{icon}</span>
+                      {label}
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <div className="p-2">
-                {[
-                  { to: "/watchlist", icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                  { to: "/diary", icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                  { to: "/analytics", icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
-                  { to: "/my-lists", icon: <List className="w-3.5 h-3.5" />, label: "My Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                  { to: "/likedmoviespage", icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
-                  { to: "/badges", icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                ].map(({ to, icon, label, color, bg }) => (
-                  <Link key={to} to={to} className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
-                    <span className={`transition-colors ${color}`}>{icon}</span>
-                    {label}
-                  </Link>
-                ))}
+            </div>
+
+            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to="/my-lists" className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
+              </div>
+              <div className="p-2 divide-y divide-white/5">
+                {recentLists.length > 0 ? (
+                  recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/list/${list.listId}`} />
+                  ))
+                ) : (
+                  <p className="text-[#94A3B8]/40 text-xs italic px-3 py-2.5">No lists yet.</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Main content — mobile: second | desktop: col 1-2 row 1 */}
+          {/* Main content — mobile: order 2 | desktop: col 1-2 row 1 */}
           <div className="order-2 lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-8">
 
             {/* Favourite Films */}
@@ -411,7 +429,7 @@ function OwnProfileView() {
                 ) : (
                   <div>
                     {recentReviews.map((review, idx) => (
-                      <ReviewCard key={review.logId} review={review} index={idx} total={recentReviews.length} showInteractions />
+                      <ReviewCard key={review.logId} review={review} index={idx} total={recentReviews.length} showInteractions isOwnReview />
                     ))}
                   </div>
                 )}
@@ -420,27 +438,8 @@ function OwnProfileView() {
 
           </div>
 
-          {/* Recent Lists — mobile: third | desktop: col 3 row 2 */}
-          <div className="order-3 lg:col-start-3 lg:row-start-2">
-            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <Link to="/my-lists" className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
-              </div>
-              <div className="p-2 divide-y divide-white/5">
-                {recentLists.length > 0 ? (
-                  recentLists.map((list) => (
-                    <RecentListCard key={list.listId} list={list} to={`/list/${list.listId}`} />
-                  ))
-                ) : (
-                  <p className="text-[#94A3B8]/40 text-xs italic px-3 py-2.5">No lists yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Friends — mobile: last | desktop: col 1-2 row 2 */}
-          <div className="order-4 lg:col-span-2 lg:col-start-1 lg:row-start-2">
+          {/* Friends — mobile: order 3 | desktop: col 1-2 row 2 */}
+          <div className="order-3 lg:col-span-2 lg:col-start-1 lg:row-start-2">
             <FriendsSection friends={friends} linkTo="/friends" />
           </div>
 
@@ -567,31 +566,51 @@ function PublicProfileView({ id }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
 
-          {/* Quick Links — mobile: top | desktop: col 3 row 1 */}
-          <div className="order-1 lg:col-start-3 lg:row-start-1 lg:pt-8">
-            <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+          {/* Sidebar — mobile: order 1 (top) | desktop: col 3 flex column */}
+          <div className="order-1 lg:order-none lg:col-start-3 lg:row-start-1 flex flex-col gap-6">
+            <div className="lg:pt-8">
+              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                </div>
+                <div className="p-2">
+                  {[
+                    { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/diary`, icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/analytics`, icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                    { to: `/user/${id}/lists`, icon: <List className="w-3.5 h-3.5" />, label: "Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                    { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  ].map(({ to, icon, label, color, bg }) => (
+                    <Link key={to} to={to} className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
+                      <span className={`transition-colors ${color}`}>{icon}</span>
+                      {label}
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <div className="p-2">
-                {[
-                  { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                  { to: `/user/${id}/diary`, icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                  { to: `/user/${id}/analytics`, icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
-                  { to: `/user/${id}/lists`, icon: <List className="w-3.5 h-3.5" />, label: "Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                  { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
-                  { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
-                ].map(({ to, icon, label, color, bg }) => (
-                  <Link key={to} to={to} className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
-                    <span className={`transition-colors ${color}`}>{icon}</span>
-                    {label}
-                  </Link>
-                ))}
+            </div>
+
+            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to={`/user/${id}/lists`} className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
               </div>
+              {recentLists.length > 0 ? (
+                <div className="p-2 divide-y divide-white/5">
+                  {recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/user/${id}/list/${list.listId}`} />
+                  ))}
+                </div>
+              ) : (
+                <div className="px-4 py-3">
+                  <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Main content — mobile: second | desktop: col 1-2 row 1 */}
+          {/* Main content — mobile: order 2 | desktop: col 1-2 row 1 */}
           <div className="order-2 lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-8">
 
             {/* Favourite Films */}
@@ -684,29 +703,8 @@ function PublicProfileView({ id }) {
 
           </div>
 
-          {/* Recent Lists — mobile: third | desktop: col 3 row 2 */}
-          <div className="order-3 lg:col-start-3 lg:row-start-2">
-            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <Link to={`/user/${id}/lists`} className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
-              </div>
-              {recentLists.length > 0 ? (
-                <div className="p-2 divide-y divide-white/5">
-                  {recentLists.map((list) => (
-                    <RecentListCard key={list.listId} list={list} to={`/user/${id}/list/${list.listId}`} />
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-3">
-                  <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* FriendsSection — mobile: last | desktop: col 1-2 row 2 */}
-          <div className="order-4 lg:col-span-2 lg:col-start-1 lg:row-start-2">
+          {/* Friends — mobile: order 3 | desktop: col 1-2 row 2 */}
+          <div className="order-3 lg:col-span-2 lg:col-start-1 lg:row-start-2">
             <FriendsSection friends={publicFriends} />
           </div>
 
