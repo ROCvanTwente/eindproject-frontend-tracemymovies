@@ -299,7 +299,7 @@ export function ProfilePosterCard({
 
             {/* Menu items */}
             <div className="py-0.5">
-              {hasLogOrReview && (
+              {(logIdProp ?? autoLatestLogId) && (
                 <button
                   onClick={() => { setMenuOpen(false); navigate(`/log/${logIdProp ?? autoLatestLogId}`); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"

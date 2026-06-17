@@ -30,6 +30,7 @@ export function Header() {
   }, [searchParams]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showWatchLogModal, setShowWatchLogModal] = useState(false);
 
   // LOGOUT POPUP
@@ -120,10 +121,11 @@ export function Header() {
   }, []);
 
   // SEARCH
-  const handleSearch = (e) => {
+  const handleSearch = (e, closeMobileSearch = false) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      if (closeMobileSearch) setShowMobileSearch(false);
     }
   };
 
@@ -236,12 +238,12 @@ export function Header() {
               </form>
 
               {/* Mobile search */}
-              <Link
-                to="/search"
-                className="lg:hidden p-2 text-[#64748B] hover:text-[#F8FAFC] transition-colors rounded-xl hover:bg-white/5"
+              <button
+                onClick={() => { setShowMobileSearch(!showMobileSearch); setShowMobileMenu(false); }}
+                className={`lg:hidden p-2 transition-colors rounded-xl ${showMobileSearch ? "text-[#BFBCFC] bg-white/8" : "text-[#64748B] hover:text-[#F8FAFC] hover:bg-white/5"}`}
               >
-                <Search className="w-5 h-5" />
-              </Link>
+                {showMobileSearch ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+              </button>
 
               {/* AUTH CONTENT */}
               {isAuthenticated && (
@@ -491,7 +493,7 @@ export function Header() {
 
               {/* MOBILE MENU BUTTON */}
               <button
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                onClick={() => { setShowMobileMenu(!showMobileMenu); setShowMobileSearch(false); }}
                 className="lg:hidden p-2 text-[#64748B] hover:text-[#F8FAFC] transition-colors rounded-xl hover:bg-white/5 ml-0.5"
               >
                 {showMobileMenu ? (
@@ -504,6 +506,23 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* MOBILE SEARCH PANEL */}
+      {showMobileSearch && (
+        <div className="lg:hidden fixed top-[76px] left-0 right-0 bg-[#0D1117]/98 backdrop-blur-xl border-b border-white/8 z-40 px-4 py-3">
+          <form onSubmit={(e) => handleSearch(e, true)} className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#475569] w-4 h-4 pointer-events-none" />
+            <input
+              autoFocus
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search films..."
+              className="w-full bg-white/5 text-[#F8FAFC] placeholder:text-[#475569] pl-10 pr-4 py-2.5 rounded-full border border-white/8 focus:outline-none focus:border-[#BFBCFC]/40 focus:bg-white/8 text-sm transition-all"
+            />
+          </form>
+        </div>
+      )}
 
       {/* MOBILE MENU PANEL */}
       {showMobileMenu && (
