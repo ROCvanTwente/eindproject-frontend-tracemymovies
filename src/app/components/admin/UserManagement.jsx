@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Shield, AlertCircle, Search, Download, AlertTriangle, CheckCircle, Clock, XCircle, MoreVertical, Key, LogOut } from 'lucide-react';
+import { X, Shield, AlertCircle, Search, Download, AlertTriangle, CheckCircle, Clock, XCircle, MoreVertical, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { PaginationControls } from './PaginationControls';
-import { BanUserModal } from './BanUserModal';
 
 export function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -15,7 +14,6 @@ export function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalServerEntries, setTotalServerEntries] = useState(0);
   const [localEditUser, setLocalEditUser] = useState(null);
-  const [localBanUser, setLocalBanUser] = useState(null);
   const itemsPerPage = 10;
 
   const getToken = () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
@@ -82,19 +80,39 @@ export function UserManagement() {
   };
 
   const handleBulkExport = () => toast.success(`Exporting ${selectedUsers.size} users...`);
-  const handleBulkBan = () => toast.error(`Banning ${selectedUsers.size} users...`);
-  const handleResetPassword = (id) => toast.success(`Password reset email sent to user`);
-  const handleForceLogout = (id) => toast.info(`User session terminated`);
+  const handleBulkBan = () => toast.info(`Bulk ban is coming soon!`);
   
+  const handleResetPassword = async (id) => {
+    const user = users.find(u => u.id === id);
+    setOpenUserActions(null);
+    
+    if (!user || !user.email) {
+      toast.error("Could not find user email.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      if (res.ok) {
+        toast.success(`Password reset email sent to ${user.email}`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.message || 'Failed to send reset email');
+      }
+    } catch (err) {
+      console.error("Error sending reset email:", err);
+      toast.error('Network error while sending reset email');
+    }
+  };
+
   const handleEditRole = (id) => {
     const user = users.find(u => u.id === id);
     if (user) setLocalEditUser({ id: user.id, name: user.userName, role: user.role });
-    setOpenUserActions(null);
-  };
-
-  const handleBanUser = (id) => {
-    const user = users.find(u => u.id === id);
-    if (user) setLocalBanUser({ id: user.id, name: user.userName });
     setOpenUserActions(null);
   };
 
@@ -134,36 +152,6 @@ export function UserManagement() {
       toast.error('Network error while updating role');
     } finally {
       setLocalEditUser(null);
-    }
-  };
-
-  const handleConfirmBan = async (duration, reason, notes) => {
-    if (!localBanUser) return;
-    
-    try {
-      const token = getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${localBanUser.id}/ban`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ duration, reason, notes })
-      });
-      
-      const data = await res.json().catch(() => ({}));
-      
-      if (res.ok) {
-        toast.success(data.message || `User ${localBanUser.name} has been banned.`);
-        setUsers(prev => prev.map(u => u.id === localBanUser.id ? { ...u, status: 'Banned' } : u));
-      } else {
-        toast.error(data.message || 'Failed to ban user.');
-      }
-    } catch (err) {
-      console.error("Error banning user:", err);
-      toast.error('Network error while banning user.');
-    } finally {
-      setLocalBanUser(null);
     }
   };
 
@@ -221,7 +209,7 @@ export function UserManagement() {
               className="px-4 py-2 bg-[#FF61D2]/10 hover:bg-[#FF61D2]/20 text-[#FF61D2] rounded-lg font-medium transition-all flex items-center gap-2 border border-[#FF61D2]/30"
             >
               <AlertTriangle className="w-4 h-4" />
-              Bulk Ban
+              Bulk Ban <span className="text-[10px] ml-1 px-1.5 py-0.5 bg-[#FF61D2]/20 rounded-md">Soon</span>
             </button>
           </div>
         </div>
@@ -357,32 +345,23 @@ export function UserManagement() {
                                   <p className="text-xs text-[#94A3B8] group-hover:text-[#44FFFF]/70">Send reset email</p>
                                 </div>
                               </button>
-                              <button
-                                onClick={() => handleForceLogout(user.id)}
-                                className="w-full px-4 py-3 text-left text-[#F8FAFC] hover:bg-gradient-to-r hover:from-[#94A3B8]/15 hover:to-[#94A3B8]/5 transition-all duration-200 flex items-center gap-3 text-sm group"
-                              >
-                                <div className="w-8 h-8 rounded-lg bg-[#94A3B8]/10 group-hover:bg-[#94A3B8]/20 flex items-center justify-center transition-all">
-                                  <LogOut className="w-4 h-4 text-[#94A3B8] group-hover:text-[#F8FAFC]" />
-                                </div>
-                                <div className="flex-1">
-                                  <p className="font-medium">Force Logout</p>
-                                  <p className="text-xs text-[#94A3B8] group-hover:text-[#F8FAFC]/70">End session now</p>
-                                </div>
-                              </button>
                             </div>
 
                             <div className="h-px bg-gradient-to-r from-transparent via-[#FF61D2]/30 to-transparent my-1"></div>
 
                             <div className="py-1">
                               <button
-                                onClick={() => handleBanUser(user.id)}
+                                onClick={() => {
+                                  toast.info('User banning is coming soon!');
+                                  setOpenUserActions(null);
+                                }}
                                 className="w-full px-4 py-3 text-left text-[#FF61D2] hover:bg-gradient-to-r hover:from-[#FF61D2]/15 hover:to-[#FF61D2]/5 transition-all duration-200 flex items-center gap-3 text-sm group"
                               >
                                 <div className="w-8 h-8 rounded-lg bg-[#FF61D2]/10 group-hover:bg-[#FF61D2]/20 flex items-center justify-center transition-all">
                                   <AlertTriangle className="w-4 h-4 text-[#FF61D2]" />
                                 </div>
                                 <div className="flex-1">
-                                  <p className="font-medium">Ban User</p>
+                                  <p className="font-medium">Ban User <span className="text-[10px] ml-1 px-1.5 py-0.5 bg-[#FF61D2]/20 rounded-md">Coming Soon</span></p>
                                   <p className="text-xs text-[#FF61D2]/70 group-hover:text-[#FF61D2]">Restrict access</p>
                                 </div>
                               </button>
@@ -414,13 +393,6 @@ export function UserManagement() {
           userName={localEditUser?.name}
           currentRole={localEditUser?.role}
           onSave={handleSaveRole}
-        />
-
-        <BanUserModal
-          isOpen={!!localBanUser}
-          onClose={() => setLocalBanUser(null)}
-          userName={localBanUser?.name}
-          onBan={handleConfirmBan}
         />
       </div>
     </div>
@@ -487,7 +459,7 @@ export function EditUserRoleModal({ isOpen, onClose, userName, currentRole, onSa
               className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20"
             >
               <option value="User">User</option>
-              <option value="Mod">Moderator</option>
+              <option value="Moderator">Moderator</option>
               <option value="Admin">Admin</option>
             </select>
           </div>
