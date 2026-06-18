@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Star, AlertTriangle } from 'lucide-react';
 import { updateReview, deleteReview } from "../../services/reviews";
 import { getToken } from "../../services/auth";
 import { toast } from 'sonner';
 
 export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingReview }) {
-    const [rating, setRating] = useState(existingReview?.rating ?? existingReview?.score ?? 0);
-    const [content, setContent] = useState(existingReview?.reviewText ?? existingReview?.content ?? existingReview?.text ?? '');
-    const initialSpoiler = existingReview ? (existingReview?.containsSpoilers ?? existingReview?.spoiler ?? existingReview?.containSpoilers ?? false) : false;
-    const [spoiler, setSpoiler] = useState(initialSpoiler);
+    const [rating, setRating] = useState(0);
+    const [content, setContent] = useState('');
+    const [spoiler, setSpoiler] = useState(false);
 
-    const MAX_REVIEW_LENGTH = 500;
+    const MAX_REVIEW_LENGTH = 5000;
+
+    // Update de formulier velden wanneer de bestaande review binnenkomt en de modal opent
+    useEffect(() => {
+        if (isOpen && existingReview) {
+            setRating(existingReview.rating ?? existingReview.score ?? 0);
+            // Gebruik 'Review' met een hoofdletter (of de fallbacks) om het veld uit de db te tonen
+            setContent(existingReview.Review ?? existingReview.review ?? existingReview.reviewText ?? existingReview.content ?? existingReview.text ?? '');
+            setSpoiler(existingReview.containsSpoilers ?? existingReview.spoiler ?? existingReview.containSpoilers ?? false);
+        }
+    }, [isOpen, existingReview]);
 
     if (!isOpen) return null;
 
@@ -22,7 +31,7 @@ export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingRevi
         }
 
         if (content.trim().length > MAX_REVIEW_LENGTH) {
-            toast.error(`Maximaal ${MAX_REVIEW_LENGTH} tekens toegestaan.`);
+            toast.error(`Maximum ${MAX_REVIEW_LENGTH} characters allowed.`);
             return;
         }
 

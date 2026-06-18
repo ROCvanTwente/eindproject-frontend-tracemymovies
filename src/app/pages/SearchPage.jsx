@@ -83,9 +83,12 @@ function MovieTvRow({ item, onClick }) {
 }
 
 
-function PersonRow({ item }) {
+function PersonRow({ item, navigate }) {
     return (
-        <div className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group">
+        <div
+            onClick={() => navigate(`/actor/${item.id}`)}
+            className="flex gap-4 py-5 border-b border-[#BFBCFC]/10 last:border-none group cursor-pointer"
+        >
             {/* Profile photo */}
             <div className="w-16 flex-none rounded-lg overflow-hidden bg-[#0B0E14] aspect-[2/3]">
                 {item.profile ? (
@@ -105,7 +108,7 @@ function PersonRow({ item }) {
             {/* Info */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
                 <div className="flex items-baseline gap-2 mb-1">
-                    <h3 className="text-[#F8FAFC] font-bold text-base">{item.name}</h3>
+                    <h3 className="text-[#F8FAFC] font-bold text-base group-hover:text-[#FF61D2] transition-colors">{item.name}</h3>
                     {item.department && (
                         <span className="text-[#FF61D2] text-xs font-semibold">{item.department}</span>
                     )}
@@ -206,7 +209,7 @@ function UserRow({ item, navigate }) {
 
 
 function ResultRow({ item, navigate }) {
-    if (item.type === 'person')     return <PersonRow item={item} />;
+    if (item.type === 'person')     return <PersonRow item={item} navigate={navigate} />;
     if (item.type === 'company')    return <CompanyRow item={item} />;
     if (item.type === 'collection') return <CollectionRow item={item} onClick={() => {}} />;
     if (item.type === 'user')       return <UserRow item={item} navigate={navigate} />;
@@ -311,14 +314,14 @@ export function SearchPage() {
                 <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
                     <AlertCircle className="w-10 h-10 text-red-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#F8FAFC] mb-3">Verbinding mislukt</h2>
-                <p className="text-[#94A3B8] mb-10 max-w-md">Kon geen resultaten ophalen. Controleer of de API actief is.</p>
+                <h2 className="text-2xl font-bold text-[#F8FAFC] mb-3">Connection failed</h2>
+                <p className="text-[#94A3B8] mb-10 max-w-md">Could not fetch results. Check if the API is running.</p>
                 <button
                     onClick={() => urlQuery ? fetchSearch(urlQuery) : fetchBrowse()}
                     className="flex items-center gap-3 bg-[#44FFFF] text-[#0B0E14] py-4 px-10 rounded-2xl font-bold hover:scale-105 transition-all"
                 >
                     <RefreshCw className="w-5 h-5" />
-                    Opnieuw proberen
+                    Try again
                 </button>
             </div>
         );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   Heart,
@@ -6,7 +6,6 @@ import {
   List,
   Calendar,
   Eye,
-  Clock,
   Film,
   X,
   Search,
@@ -17,172 +16,119 @@ import {
   UserPlus,
   RotateCw,
   AlignLeft,
+  Shield,
+  Pencil,
+  Bookmark,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useRefresh } from "../context/RefreshContext";
+import { useSignalR } from "../context/SignalRContext";
 import { ProfilePosterCard } from "../components/ProfilePosterCard";
+import { BadgeChip } from "../components/BadgesSection";
+import { FavouriteSearchModal } from "../components/profile/FavouriteSearchModal";
+import { ProfilePictureModal } from "../components/profile/ProfilePictureModal";
+import { FriendsSection } from "../components/profile/FriendsSection";
+import { ActivityPosterItem } from "../components/profile/ActivityPosterItem";
+import { ReviewCard } from "../components/profile/ReviewCard";
+import { useOwnProfileData } from "../hooks/useOwnProfileData";
+import { usePublicProfileData } from "../hooks/usePublicProfileData";
+
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAAALAAAAAABAAEAAAICRAEAOw==";
+
+function BioText({ bio }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!bio) return null;
+  const isLong = bio.length > 160;
+
+  return (
+    <div className="mb-2 max-w-sm">
+      <p className={`text-[#94A3B8] text-sm leading-relaxed break-words ${!expanded ? "line-clamp-3" : ""}`}>
+        {bio}
+      </p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="text-[#BFBCFC] text-xs font-medium hover:text-[#AFA9FF] transition-colors mt-0.5"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function RecentListCard({ list, to }) {
+  const posters = (list.previewPosters ?? []).filter(Boolean).slice(0, 6);
+
+  return (
+    <Link to={to} className="group block px-1 py-2 rounded-lg hover:bg-[#44FFFF]/6 transition-all">
+      <div className="flex items-center h-32">
+        {posters.length > 0 ? (
+          posters.map((poster, i) => (
+            <div
+              key={i}
+              className={`w-24 h-32 rounded-md overflow-hidden border-2 border-[#151921] shadow-lg shadow-black/40 ${i > 0 ? "-ml-12" : ""}`}
+              style={{ zIndex: i + 1 }}
+            >
+              <img src={poster} alt="" className="w-full h-full object-cover" loading="lazy" />
+            </div>
+          ))
+        ) : (
+          <div className="w-24 h-32 rounded-md bg-[#0B0E14]" />
+        )}
+      </div>
+      <div className="flex items-center justify-end mt-1.5 px-0.5">
+        <span className="text-[#94A3B8]/40 text-xs flex-shrink-0">
+          {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
+        </span>
+      </div>
+    </Link>
+  );
+}
 
 export function UserProfilePage() {
   const { id } = useParams();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  if (!id || id === user?.id) return <OwnProfileView />;
+  return <PublicProfileView id={id} />;
+}
+
+// ── OWN PROFILE ──────────────────────────────────────────────────────────────
+
+function OwnProfileView() {
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [favoriteMovies, setFavoriteMovies] = useState([]);
-  const [favoritesLoading, setFavoritesLoading] = useState(true);
-  const [likedMoviesCount, setLikedMoviesCount] = useState(0);
-  const [watchedMoviesCount, setWatchedMoviesCount] = useState(0);
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [activityLoading, setActivityLoading] = useState(true);
+  const {
+    favoriteMovies, favoritesLoading,
+    watchedMoviesCount, watchedThisYear, listsCount, recentLists,
+    recentActivity, activityLoading,
+    recentReviews, recentReviewsLoading,
+    friends, badges, selectedBadges, isAdmin,
+    addFavorite, removeFavorite, swapFavorites,
+  } = useOwnProfileData();
+
+  const [targetSlot, setTargetSlot] = useState(0);
+  const [draggedSlot, setDraggedSlot] = useState(null);
+  const [dragOverSlot, setDragOverSlot] = useState(null);
+  const [dragPos, setDragPos] = useState(null);
+  const transparentImgRef = useRef(null);
+  const dragInfoRef = useRef({ width: 0, height: 0, offsetX: 0, offsetY: 0 });
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [pictureModalOpen, setPictureModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [duplicateError, setDuplicateError] = useState("");
 
-  const isOwnProfile = !id;
-  const { refreshKey } = useRefresh();
-  const [publicProfile, setPublicProfile] = useState(null);
-  const [publicLoading, setPublicLoading] = useState(!isOwnProfile);
-
-  const getToken = () =>
-    localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
-
-  // OTHER USER PROFILE
   useEffect(() => {
-    if (isOwnProfile) return;
-    const fetchPublicProfile = async () => {
-      try {
-        setPublicLoading(true);
-        const token = getToken();
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/PublicProfile/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!res.ok) return;
-        setPublicProfile(await res.json());
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setPublicLoading(false);
-      }
-    };
-    fetchPublicProfile();
-  }, [id, isOwnProfile]);
+    if (draggedSlot === null) return;
+    const handleDragOver = (e) => setDragPos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("dragover", handleDragOver);
+    return () => window.removeEventListener("dragover", handleDragOver);
+  }, [draggedSlot]);
 
-  // FAVORITES
-  useEffect(() => {
-    if (!isOwnProfile) return;
-    const fetchFavorites = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-
-        const idsRes = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/Favorites`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!idsRes.ok) return;
-
-        const ids = await idsRes.json();
-        const top4 = ids.slice(0, 4);
-
-        const movies = await Promise.all(
-          top4.map((movieId) =>
-            fetch(
-              `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/GetMovieDetails?id=${movieId}`
-            ).then((r) => (r.ok ? r.json() : null))
-          )
-        );
-        setFavoriteMovies(movies.filter(Boolean));
-      } catch (error) {
-        console.error("Error fetching favorite movies:", error);
-      } finally {
-        setFavoritesLoading(false);
-      }
-    };
-    fetchFavorites();
-  }, [isOwnProfile, refreshKey]);
-
-  // LIKED MOVIES COUNT
-  useEffect(() => {
-    if (!isOwnProfile) return;
-    const fetchLikedCount = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMoviesCount`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        setLikedMoviesCount(data.count ?? 0);
-      } catch (error) {
-        console.error("Error fetching liked movies count:", error);
-      }
-    };
-    fetchLikedCount();
-  }, [isOwnProfile, refreshKey]);
-
-  // WATCHED MOVIES COUNT (unique films)
-  useEffect(() => {
-    if (!isOwnProfile) return;
-    const fetchWatchedCount = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/Activity/WatchedCount`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        setWatchedMoviesCount(data.count ?? 0);
-      } catch (error) {
-        console.error("Error fetching watched count:", error);
-      }
-    };
-    fetchWatchedCount();
-  }, [isOwnProfile, refreshKey]);
-
-  // RECENT ACTIVITY
-  useEffect(() => {
-    if (!isOwnProfile) return;
-    const fetchRecentActivity = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/UserActivity/Recent`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!response.ok) return;
-
-        const data = await response.json();
-        const sorted = (Array.isArray(data) ? data : [data])
-          .sort((a, b) => new Date(b.loggedDate) - new Date(a.loggedDate));
-        setRecentActivity(sorted);
-      } catch (error) {
-        console.error("Error fetching recent activity:", error);
-      } finally {
-        setActivityLoading(false);
-      }
-    };
-    fetchRecentActivity();
-  }, [isOwnProfile, refreshKey]);
-
-  // SEARCH FAVORITES MODAL
   useEffect(() => {
     if (!searchModalOpen) return;
     const q = searchQuery.trim();
@@ -194,201 +140,33 @@ export function UserProfilePage() {
         );
         const data = await res.json();
         setSearchResults(Array.isArray(data) ? data : []);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
+      } catch { setSearchResults([]); }
+      finally { setSearchLoading(false); }
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, searchModalOpen]);
 
-  const addFavorite = async (movie) => {
-    if (favoriteMovies.length >= 4) return;
-    if (favoriteMovies.some((m) => m.id === movie.id)) {
-      setDuplicateError(`"${movie.title}" is already in your favourites.`);
-      return;
-    }
-    setDuplicateError("");
-    setSearchModalOpen(false);
-    setFavoriteMovies((prev) => [...prev, movie]);
-    try {
-      const token = getToken();
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/Favorites/${movie.id}`,
-        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-    } catch {
-      setFavoriteMovies((prev) => prev.filter((m) => m.id !== movie.id));
-    }
-  };
-
-  const removeFavorite = async (movieId) => {
-    const token = getToken();
-    if (!token) return;
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Favorites/${movieId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setFavoriteMovies((prev) => prev.filter((m) => m.id !== movieId));
-  };
-
-  const openSearch = () => {
+  const openSearch = (slotIndex) => {
+    setTargetSlot(slotIndex);
     setSearchQuery("");
     setSearchResults([]);
     setDuplicateError("");
     setSearchModalOpen(true);
   };
 
+  const handleAddFavourite = async (movie) => {
+    const firstEmpty = favoriteMovies.findIndex((m) => m === null);
+    const slot = firstEmpty !== -1 ? firstEmpty : targetSlot;
+    const result = await addFavorite(movie, slot);
+    if (result.error) { setDuplicateError(result.error); return; }
+    setSearchModalOpen(false);
+    setDuplicateError("");
+  };
+
+  const displayBadges = selectedBadges ?? [];
+
   const displayName = user?.username || user?.email || "User";
   const avatarLetter = displayName.charAt(0).toUpperCase();
-
-  // ── OTHER USER'S PROFILE ──
-  if (!isOwnProfile) {
-    if (publicLoading) {
-      return (
-        <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
-          <div className="relative w-16 h-16">
-            <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20" />
-            <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
-          </div>
-        </div>
-      );
-    }
-    if (!publicProfile) {
-      return (
-        <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
-          <p className="text-[#94A3B8]">User not found.</p>
-        </div>
-      );
-    }
-    const pub = publicProfile;
-    const pubLetter = pub.username?.charAt(0).toUpperCase() || "?";
-    return (
-      <div className="min-h-screen py-6 md:py-8">
-        <div className="container mx-auto px-4 max-w-7xl">
-
-          {/* Profile Header */}
-          <div className="mb-6">
-            <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-              <div className="relative flex-shrink-0">
-                {pub.profilePicture ? (
-                  <img src={pub.profilePicture} alt={pub.username} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg" />
-                ) : (
-                  <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
-                    <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{pubLetter}</span>
-                  </div>
-                )}
-                <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
-              </div>
-
-              <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">{pub.username}</h1>
-                <p className="text-[#BFBCFC] text-sm md:text-base mb-3">@{pub.username}</p>
-                <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" />
-                    Member of TraceMyMovies
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center">
-                {[
-                  { label: "WATCHED", value: pub.watchedCount, to: `/user/${id}/watched` },
-                  { label: "LIKED", value: pub.likedCount, to: `/user/${id}/liked` },
-                  { label: "LISTS", value: "—" },
-                ].map(({ label, value, to }, i, arr) => (
-                  <div key={label} className="flex items-center">
-                    <div
-                      onClick={() => to && navigate(to)}
-                      className={`px-5 text-center transition-transform duration-100 ${to ? "cursor-pointer group active:scale-95" : ""}`}
-                    >
-                      <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#FF61D2]" : "text-[#F8FAFC]"}`}>{value}</p>
-                      <p className="text-[#94A3B8] text-xs uppercase tracking-widest">{label}</p>
-                    </div>
-                    {i < arr.length - 1 && <div className="w-px h-10 bg-[#BFBCFC]/15" />}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
-            <div className="lg:col-span-2 space-y-8">
-
-              {/* Favourite Films */}
-              <div>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
-                  <Heart className="w-3.5 h-3.5" fill="currentColor" />
-                  Favourite Films
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => {
-                    const movie = pub.favorites[i];
-                    return movie ? (
-                      <ProfilePosterCard
-                        key={movie.id}
-                        movieId={movie.id}
-                        poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                        title={movie.title}
-                      />
-                    ) : (
-                      <div key={`empty-${i}`} className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]" />
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
-                    Recent Activity
-                  </h2>
-                  {pub.recentActivity.length > 4 && (
-                    <Link to={`/user/${id}/watched`} className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">
-                      All →
-                    </Link>
-                  )}
-                </div>
-                {pub.recentActivity.length === 0 ? (
-                  <p className="text-[#94A3B8] text-sm">No recent activity.</p>
-                ) : (
-                  <div className="grid grid-cols-4 gap-3">
-                    {pub.recentActivity.slice(0, 4).map((activity, idx) => (
-                      <div key={idx} className="flex flex-col gap-1.5">
-                        <ProfilePosterCard
-                          movieId={activity.id}
-                          poster={activity.poster}
-                          title={activity.movieTitle}
-                          to={`/log/${activity.logId}`}
-                        />
-                        <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 px-0.5 flex-wrap">
-                          {activity.userRating > 0 && (
-                            <div className="grid grid-cols-5 gap-[2px]">
-                              {[1,2,3,4,5,6,7,8,9,10].map((n) => (
-                                <Star key={n} className={`w-2 h-2 ${n <= activity.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
-                              ))}
-                            </div>
-                          )}
-                          {activity.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
-                          {activity.hasReview && <AlignLeft className="w-3 h-3 text-[#94A3B8]" />}
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen py-6 md:py-8">
@@ -397,60 +175,63 @@ export function UserProfilePage() {
         {/* Profile Header */}
         <div className="mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            <div className="relative flex-shrink-0">
+            <div
+              className="relative flex-shrink-0 cursor-pointer group"
+              onClick={() => setPictureModalOpen(true)}
+            >
               {user?.profilePicture ? (
-                <img
-                  src={user.profilePicture}
-                  alt={displayName}
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg"
-                />
+                <img src={user.profilePicture} alt={displayName} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg transition-opacity group-hover:opacity-80" />
               ) : (
-                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
-                  <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">
-                    {avatarLetter}
-                  </span>
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30 transition-opacity group-hover:opacity-80">
+                  <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{avatarLetter}</span>
                 </div>
               )}
               <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
             </div>
 
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC] mb-1">
-                {displayName}
-              </h1>
-              <p className="text-[#BFBCFC] text-sm md:text-base mb-3">
-                @{user?.username || "user"}
-              </p>
-              <div className="flex flex-wrap items-center gap-4 text-[#94A3B8] text-sm">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" />
-                  Member of TraceMyMovies
-                </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <h1 className="text-2xl md:text-3xl font-black text-[#F8FAFC] leading-none">{displayName}</h1>
+                {isAdmin && (
+                                <span
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 text-red-300 border border-red-500/60"
+                                    style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25) 0%, rgba(239,68,68,0.15) 100%)', boxShadow: '0 0 10px rgba(239,68,68,0.5), 0 0 20px rgba(239,68,68,0.25), inset 0 0 8px rgba(239,68,68,0.1)' }}
+                                >
+                                    <Shield className="w-3 h-3 text-red-400" />Admin
+                                </span>
+                            )}
+                {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
+                <Link to="/profile" className="hidden md:flex ml-4 items-center gap-1.5 px-4 py-2 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 whitespace-nowrap">
+                  <Pencil className="w-3 h-3" />
+                  Edit Profile
+                </Link>
               </div>
+              <BioText bio={user?.bio} />
+              {user?.location && (
+                <div className="flex items-center gap-1.5 text-[#94A3B8] text-xs">
+                  <MapPin className="w-3.5 h-3.5 text-[#BFBCFC]/50" />
+                  <span className="uppercase tracking-wide">{user.location}</span>
+                </div>
+              )}
+              <Link to="/profile" className="md:hidden flex items-center justify-center gap-1.5 px-4 py-2 mt-3 rounded-md bg-[#BFBCFC]/10 hover:bg-[#BFBCFC]/20 border border-[#BFBCFC]/20 hover:border-[#BFBCFC]/45 text-[#BFBCFC] text-[10px] font-bold uppercase tracking-widest transition-all duration-200 w-fit">
+                <Pencil className="w-3 h-3" />
+                Edit Profile
+              </Link>
             </div>
 
-            {/* Stats */}
             <div className="flex items-center">
               {[
-                { label: "WATCHED", value: watchedMoviesCount, onClick: () => navigate('/watched') },
-                { label: "LIKED", value: likedMoviesCount, onClick: () => navigate('/likedmoviespage') },
-                { label: "LISTS", value: "—" },
+                { label: "FILMS", value: watchedMoviesCount, onClick: () => navigate("/watched") },
+                { label: "THIS YEAR", value: watchedThisYear, onClick: () => navigate("/diary") },
+                { label: "LISTS", value: listsCount, onClick: () => navigate("/my-lists") },
+                { label: "FRIENDS", value: friends.length, onClick: () => navigate("/friends") },
               ].map(({ label, value, onClick }, i, arr) => (
                 <div key={label} className="flex items-center">
-                  <div
-                    onClick={onClick}
-                    className={`px-5 text-center ${onClick ? 'cursor-pointer group' : ''}`}
-                  >
-                    <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${onClick ? 'text-[#F8FAFC] group-hover:text-[#FF61D2]' : 'text-[#F8FAFC]'}`}>
-                      {value}
-                    </p>
-                    <p className="text-[#94A3B8] text-xs uppercase tracking-widest">
-                      {label}
-                    </p>
+                  <div onClick={onClick} className={`px-5 text-center ${onClick ? "cursor-pointer group" : ""}`}>
+                    <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${onClick ? "text-[#F8FAFC] group-hover:text-[#44FFFF]" : "text-[#F8FAFC]"}`}>{value}</p>
+                    <p className="text-[#94A3B8] text-xs uppercase tracking-widest">{label}</p>
                   </div>
-                  {i < arr.length - 1 && (
-                    <div className="w-px h-10 bg-[#BFBCFC]/15" />
-                  )}
+                  {i < arr.length - 1 && <div className="w-px h-10 bg-[#BFBCFC]/15" />}
                 </div>
               ))}
             </div>
@@ -458,109 +239,425 @@ export function UserProfilePage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
-          <div className="lg:col-span-2 space-y-8">
 
-            {/* Liked Films */}
-            <div
-              onClick={() => navigate('/likedmoviespage')}
-              className="cursor-pointer"
-            >
+          {/* Sidebar — mobile: order 1 (top) | desktop: col 3 flex column */}
+          <div className="order-1 lg:order-none lg:col-start-3 lg:row-start-1 flex flex-col gap-6">
+            <div className="lg:pt-8">
+              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                </div>
+                <div className="p-2">
+                  {[
+                    { to: "/watchlist", icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: "/diary", icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: "/analytics", icon: <Star className="w-3.5 h-3.5" />, label: "Movie DNA & Analytics", color: "group-hover:text-[#44FFFF]", bg: "group-hover:bg-[#44FFFF]/8" },
+                    { to: "/my-lists", icon: <List className="w-3.5 h-3.5" />, label: "My Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: "/likedmoviespage", icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                    { to: "/badges", icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  ].map(({ to, icon, label, color, bg }) => (
+                    <Link key={to} to={to} className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
+                      <span className={`transition-colors ${color}`}>{icon}</span>
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to="/my-lists" className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
+              </div>
+              <div className="p-2 divide-y divide-white/5">
+                {recentLists.length > 0 ? (
+                  recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/list/${list.listId}`} />
+                  ))
+                ) : (
+                  <p className="text-[#94A3B8]/40 text-xs italic px-3 py-2.5">No lists yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Main content — mobile: order 2 | desktop: col 1-2 row 1 */}
+          <div className="order-2 lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-8">
+
+            {/* Favourite Films */}
+            <div>
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
-                <Heart className="w-3.5 h-3.5" fill="currentColor" />
                 Favourite Films
               </h2>
-
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                {Array.from({ length: 4 }).map((_, i) => {
+                {[0, 1, 2, 3].map((i) => {
                   const movie = favoritesLoading ? undefined : favoriteMovies[i];
+                  const isDragging = draggedSlot === i;
+                  const isDragOver = dragOverSlot === i;
+                  const dropProps = {
+                    onDragOver: (e) => { e.preventDefault(); setDragOverSlot(i); },
+                    onDragLeave: () => setDragOverSlot(null),
+                    onDrop: (e) => {
+                      e.preventDefault();
+                      setDragOverSlot(null);
+                      if (draggedSlot === null || draggedSlot === i) return;
+                      swapFavorites(draggedSlot, i);
+                      setDraggedSlot(null);
+                    },
+                  };
                   return movie ? (
-                    <div key={movie.id} className="relative group">
-                      <ProfilePosterCard
-                        movieId={movie.id}
-                        poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                        title={movie.title}
-                      />
-                      {isOwnProfile && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); removeFavorite(movie.id); }}
-                          className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10"
-                        >
-                          <X className="w-3.5 h-3.5 text-white" />
-                        </button>
-                      )}
+                    <div key={`slot-${i}`}
+                      className={`relative group transition-all duration-150 ${isDragging ? "opacity-0" : ""} ${isDragOver && draggedSlot !== i ? "ring-2 ring-[#FF61D2]/60 rounded-xl scale-[1.02]" : ""}`}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedSlot(i);
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        dragInfoRef.current = {
+                          width: rect.width,
+                          height: rect.height,
+                          offsetX: e.clientX - rect.left,
+                          offsetY: e.clientY - rect.top,
+                        };
+                        setDragPos({ x: e.clientX, y: e.clientY });
+                        if (transparentImgRef.current) e.dataTransfer.setDragImage(transparentImgRef.current, 0, 0);
+                      }}
+                      onDragEnd={() => { setDraggedSlot(null); setDragOverSlot(null); setDragPos(null); }}
+                      {...dropProps}
+                    >
+                      <ProfilePosterCard movieId={movie.id} poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} title={movie.title} />
+                      <button onClick={(e) => { e.stopPropagation(); removeFavorite(i); }}
+                        className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-[#FF61D2] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm z-10">
+                        <X className="w-3.5 h-3.5 text-white" />
+                      </button>
                     </div>
                   ) : favoritesLoading ? (
                     <div key={`skel-${i}`} className="w-full aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
-                  ) : isOwnProfile ? (
-                    <button
-                      key={`empty-${i}`}
-                      onClick={(e) => { e.stopPropagation(); openSearch(); }}
-                      className="group relative w-full aspect-[2/3] rounded-lg border border-dashed border-[#BFBCFC]/20 hover:border-[#FF61D2]/50 hover:bg-[#FF61D2]/5 transition-all duration-300 flex flex-col items-center justify-center gap-2"
-                    >
-                      <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
-                        <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
-                      </div>
-                      <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
-                    </button>
                   ) : (
-                    <div
-                      key={`empty-${i}`}
-                      className="bg-[#151921]/50 border border-dashed border-[#BFBCFC]/10 rounded-xl aspect-[2/3]"
-                    />
+                    <div key={`empty-${i}`}
+                      className={`relative group w-full aspect-[2/3] rounded-lg border border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-2 ${isDragOver ? "border-[#FF61D2]/60 bg-[#FF61D2]/8 scale-[1.02]" : "border-[#BFBCFC]/20 hover:border-[#FF61D2]/50 hover:bg-[#FF61D2]/5"}`}
+                      {...dropProps}
+                    >
+                      <button onClick={(e) => { e.stopPropagation(); openSearch(i); }} className="flex flex-col items-center justify-center gap-2 w-full h-full">
+                        <div className="w-10 h-10 rounded-full border border-dashed border-[#BFBCFC]/25 group-hover:border-[#FF61D2]/60 flex items-center justify-center transition-all duration-300 group-hover:bg-[#FF61D2]/10">
+                          <Plus className="w-4 h-4 text-[#94A3B8] group-hover:text-[#FF61D2] transition-all duration-300 group-hover:rotate-90" />
+                        </div>
+                        <span className="text-[#94A3B8] text-xs group-hover:text-[#FF61D2] transition-colors duration-200">Add</span>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
+
+              <img
+                ref={transparentImgRef}
+                src={TRANSPARENT_PIXEL}
+                alt=""
+                style={{ position: "fixed", top: -1, left: -1, width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+              />
+
+              {draggedSlot !== null && dragPos && favoriteMovies[draggedSlot] && (
+                <div className="fixed inset-0 z-[100] pointer-events-none">
+                  <div
+                    style={{
+                      position: "fixed",
+                      top: 0,
+                      left: 0,
+                      width: dragInfoRef.current.width,
+                      height: dragInfoRef.current.height,
+                      transform: `translate(${dragPos.x - dragInfoRef.current.offsetX}px, ${dragPos.y - dragInfoRef.current.offsetY}px)`,
+                    }}
+                    className="rounded-lg overflow-hidden shadow-2xl shadow-black/60 ring-2 ring-[#BFBCFC]"
+                  >
+                    <img
+                      src={`https://image.tmdb.org/t/p/w500${favoriteMovies[draggedSlot].poster_path}`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Recent Activity */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-[#44FFFF]" />
                   Recent Activity
                 </h2>
-                {recentActivity.length > 4 && (
-                  <Link
-                    to="/activity"
-                    className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest"
-                  >
-                    All →
-                  </Link>
-                )}
+                <Link to="/diary" className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">All</Link>
               </div>
-
               {activityLoading ? (
                 <div className="grid grid-cols-4 gap-3">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />
-                  ))}
+                  {[0,1,2,3].map((i) => <div key={i} className="aspect-[2/3] rounded-lg bg-[#151921] animate-pulse" />)}
                 </div>
               ) : recentActivity.length === 0 ? (
                 <p className="text-[#94A3B8] text-sm">No recent activity found.</p>
               ) : (
                 <div className="grid grid-cols-4 gap-3">
                   {recentActivity.slice(0, 4).map((activity, idx) => (
+                    <ActivityPosterItem key={idx} activity={activity} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Reviews */}
+            {(recentReviewsLoading || recentReviews.length > 0) && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                    Recent Reviews
+                  </h2>
+                  <Link to="/reviews" className="text-xs text-[#94A3B8] hover:text-[#FF61D2] transition-colors font-medium uppercase tracking-widest">All</Link>
+                </div>
+                {recentReviewsLoading ? (
+                  <div className="space-y-6">
+                    {[0, 1].map((i) => (
+                      <div key={i} className="flex gap-5">
+                        <div className="w-28 aspect-[2/3] rounded-lg bg-[#151921] animate-pulse flex-none" />
+                        <div className="flex-1 space-y-2 pt-1">
+                          <div className="h-5 bg-[#151921] animate-pulse rounded w-3/4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-1/3" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-full mt-4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-5/6" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-4/5" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    {recentReviews.map((review, idx) => (
+                      <ReviewCard key={review.logId} review={review} index={idx} total={recentReviews.length} showInteractions isOwnReview />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
+
+          {/* Friends — mobile: order 3 | desktop: col 1-2 row 2 */}
+          <div className="order-3 lg:col-span-2 lg:col-start-1 lg:row-start-2">
+            <FriendsSection friends={friends} linkTo="/friends" />
+          </div>
+
+        </div>
+      </div>
+
+      {searchModalOpen && (
+        <FavouriteSearchModal
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          searchResults={searchResults}
+          searchLoading={searchLoading}
+          duplicateError={duplicateError}
+          onAdd={handleAddFavourite}
+          onClose={() => setSearchModalOpen(false)}
+        />
+      )}
+
+      <ProfilePictureModal
+        isOpen={pictureModalOpen}
+        onClose={() => setPictureModalOpen(false)}
+        src={user?.profilePicture}
+        name={displayName}
+      />
+    </div>
+  );
+}
+
+// ── PUBLIC PROFILE ────────────────────────────────────────────────────────────
+
+function PublicProfileView({ id }) {
+  const navigate = useNavigate();
+  const { isUserOnline } = useSignalR();
+  const { user } = useAuth();
+  const { publicProfile, publicLoading, publicRecentReviews, publicRecentReviewsLoading, publicFriends, badges, selectedBadges, isAdmin, listsCount, recentLists } = usePublicProfileData(id);
+  const [pictureModalOpen, setPictureModalOpen] = useState(false);
+
+  const displayBadges = selectedBadges ?? [];
+
+  if (publicLoading) {
+    return (
+      <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-2 border-[#BFBCFC]/20" />
+          <div className="absolute inset-0 rounded-full border-t-2 border-[#BFBCFC] animate-spin" />
+        </div>
+      </div>
+    );
+  }
+  if (!publicProfile) {
+    return (
+      <div className="min-h-screen py-6 md:py-8 flex items-center justify-center">
+        <p className="text-[#94A3B8]">User not found.</p>
+      </div>
+    );
+  }
+
+  const pub = publicProfile;
+  const pubLetter = pub.username?.charAt(0).toUpperCase() || "?";
+
+  return (
+    <div className="min-h-screen py-6 md:py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+
+        {/* Profile Header */}
+        <div className="mb-6">
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+            <div
+              className="relative flex-shrink-0 cursor-pointer group"
+              onClick={() => setPictureModalOpen(true)}
+            >
+              {pub.profilePicture ? (
+                <img src={pub.profilePicture} alt={pub.username} className="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-[#BFBCFC]/30 shadow-lg transition-opacity group-hover:opacity-80" />
+              ) : (
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30 transition-opacity group-hover:opacity-80">
+                  <span className="text-[#0B0E14] font-bold text-3xl md:text-5xl">{pubLetter}</span>
+                </div>
+              )}
+              {isUserOnline(pub?.userId ?? user?.id, pub?.isOnline ?? user?.isOnline) && (
+                <div className="absolute bottom-2 right-2 w-5 h-5 bg-[#44FFFF] rounded-full border-4 border-[#151921]" />
+              )}
+            </div>
+
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h1 className="text-2xl md:text-3xl font-bold font-heading text-[#F8FAFC]">{pub.username}</h1>
+                {isAdmin && (
+                                <span
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold flex-shrink-0 text-red-300 border border-red-500/60"
+                                    style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25) 0%, rgba(239,68,68,0.15) 100%)', boxShadow: '0 0 10px rgba(239,68,68,0.5), 0 0 20px rgba(239,68,68,0.25), inset 0 0 8px rgba(239,68,68,0.1)' }}
+                                >
+                                    <Shield className="w-3 h-3 text-red-400" />Admin
+                                </span>
+                            )}
+                {displayBadges.map(b => <BadgeChip key={b.id} badge={b} />)}
+              </div>
+              <BioText bio={pub.bio} />
+              {pub.location && (
+                <div className="flex items-center gap-1.5 text-[#94A3B8] text-sm">
+                  <MapPin className="w-4 h-4" />
+                  {pub.location}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center">
+              {[
+                { label: "FILMS", value: pub.watchedCount, to: `/user/${id}/watched` },
+                { label: "THIS YEAR", value: pub.watchedThisYear ?? 0, to: `/user/${id}/diary` },
+                { label: "LISTS", value: listsCount, to: `/user/${id}/lists` },
+                { label: "FRIENDS", value: pub.friendCount, ...(pub.showFriends ? { to: `/user/${id}/friends` } : {}) },
+              ].map(({ label, value, to }, i, arr) => (
+                <div key={label} className="flex items-center">
+                  <div onClick={() => to && navigate(to)} className={`px-5 text-center transition-transform duration-100 ${to ? "cursor-pointer group active:scale-95" : ""}`}>
+                    <p className={`text-2xl md:text-3xl font-bold font-data mb-0.5 transition-colors duration-200 ${to ? "text-[#F8FAFC] group-hover:text-[#44FFFF]" : "text-[#F8FAFC]"}`}>{value}</p>
+                    <p className="text-[#94A3B8] text-xs uppercase tracking-widest">{label}</p>
+                  </div>
+                  {i < arr.length - 1 && <div className="w-px h-10 bg-[#BFBCFC]/15" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-10">
+
+          {/* Sidebar — mobile: order 1 (top) | desktop: col 3 flex column */}
+          <div className="order-1 lg:order-none lg:col-start-3 lg:row-start-1 flex flex-col gap-6">
+            <div className="lg:pt-8">
+              <div className="bg-[#151921]/80 border border-[#BFBCFC]/10 rounded-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#BFBCFC]/8 flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
+                </div>
+                <div className="p-2">
+                  {[
+                    { to: `/user/${id}/watchlist`, icon: <Bookmark className="w-3.5 h-3.5" />, label: "Watchlist", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/diary`, icon: <BookOpen className="w-3.5 h-3.5" />, label: "Diary", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/lists`, icon: <List className="w-3.5 h-3.5" />, label: "Lists", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                    { to: `/user/${id}/liked`, icon: <Heart className="w-3.5 h-3.5" />, label: "Liked Films", color: "group-hover:text-[#FF61D2]", bg: "group-hover:bg-[#FF61D2]/8" },
+                    { to: `/user/${id}/badges`, icon: <Shield className="w-3.5 h-3.5" />, label: "Badges", color: "group-hover:text-[#BFBCFC]", bg: "group-hover:bg-[#BFBCFC]/8" },
+                  ].map(({ to, icon, label, color, bg }) => (
+                    <Link key={to} to={to} className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] transition-all text-sm ${bg}`}>
+                      <span className={`transition-colors ${color}`}>{icon}</span>
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#151921]/80 border border-[#44FFFF]/10 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#44FFFF]/8 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
+                <Link to={`/user/${id}/lists`} className="text-[#44FFFF]/50 text-xs font-bold hover:text-[#44FFFF] transition-colors uppercase tracking-wider">All</Link>
+              </div>
+              {recentLists.length > 0 ? (
+                <div className="p-2 divide-y divide-white/5">
+                  {recentLists.map((list) => (
+                    <RecentListCard key={list.listId} list={list} to={`/user/${id}/list/${list.listId}`} />
+                  ))}
+                </div>
+              ) : (
+                <div className="px-4 py-3">
+                  <p className="text-[#94A3B8]/40 text-xs italic">No lists yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main content — mobile: order 2 | desktop: col 1-2 row 1 */}
+          <div className="order-2 lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-8">
+
+            {/* Favourite Films */}
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4 flex items-center gap-2">
+                Favourite Films
+              </h2>
+              {(pub.favorites ?? []).filter(Boolean).length === 0 ? (
+                <p className="text-[#94A3B8] text-sm">This user hasn't added any favourite films yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  {(pub.favorites ?? []).filter(Boolean).map((movie) => (
+                    <ProfilePosterCard
+                      key={movie.id}
+                      movieId={movie.id}
+                      poster={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                      title={movie.title}
+                      to={movie.latestLogId ? `/log/${movie.latestLogId}` : `/movie/${movie.id}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Activity */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                  Recent Activity
+                </h2>
+                <Link to={`/user/${id}/diary`} className="text-xs text-[#94A3B8] hover:text-[#44FFFF] transition-colors font-medium uppercase tracking-widest">All</Link>
+              </div>
+              {pub.recentActivity.length === 0 ? (
+                <p className="text-[#94A3B8] text-sm">No recent activity.</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-3">
+                  {pub.recentActivity.slice(0, 4).map((activity, idx) => (
                     <div key={idx} className="flex flex-col gap-1.5">
-                      <ProfilePosterCard
-                        movieId={activity.id}
-                        poster={activity.poster}
-                        title={activity.movieTitle}
-                        to={`/log/${activity.logId}`}
-                        isWatchedProp={true}
-                        isLikedProp={activity.isLiked}
-                        hasActivityProp={true}
-                      />
-                      {/* Icons + log link */}
-                      <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 flex-wrap px-0.5">
+                      <ProfilePosterCard movieId={activity.id} poster={activity.poster} title={activity.movieTitle} to={`/log/${activity.logId}`} />
+                      <Link to={`/log/${activity.logId}`} className="flex items-center gap-1 px-0.5 flex-wrap">
                         {activity.userRating > 0 && (
-                          <div className="grid grid-cols-5 gap-0.5">
+                          <div className="grid grid-cols-5 gap-[2px]">
                             {[1,2,3,4,5,6,7,8,9,10].map((n) => (
-                              <Star key={n} className={`w-2.5 h-2.5 ${n <= activity.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
+                              <Star key={n} className={`w-2 h-2 ${n <= activity.userRating ? "text-[#44FFFF] fill-[#44FFFF]" : "text-[#94A3B8]/20"}`} />
                             ))}
                           </div>
                         )}
                         {activity.isLiked && <Heart className="w-3 h-3 text-[#FF61D2] fill-[#FF61D2]" />}
-                        {activity.isRewatch && <RotateCw className="w-3 h-3 text-[#44FFFF]" />}
                         {activity.hasReview && <AlignLeft className="w-3 h-3 text-[#94A3B8]" />}
                       </Link>
                     </div>
@@ -569,155 +666,56 @@ export function UserProfilePage() {
               )}
             </div>
 
-            {/* Friends */}
-            <div className="bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-1 pb-3 border-b border-[#BFBCFC]/10">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-[#BFBCFC]">
-                  Following
-                </h2>
-                <span className="text-[#94A3B8] text-sm font-data">4</span>
-              </div>
-              <div className="flex items-center gap-3 pt-3">
-                {[
-                  { letter: "A", color: "from-[#BFBCFC] to-[#44FFFF]" },
-                  { letter: "J", color: "from-[#FF61D2] to-[#BFBCFC]" },
-                  { letter: "M", color: "from-[#44FFFF] to-[#BFBCFC]" },
-                  { letter: "S", color: "from-[#44FFFF] to-[#FF61D2]" },
-                ].map(({ letter, color }) => (
-                  <div
-                    key={letter}
-                    className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-200 flex-shrink-0 shadow-md`}
-                  >
-                    <span className="text-[#0B0E14] font-bold text-sm">{letter}</span>
+            {/* Recent Reviews */}
+            {(publicRecentReviewsLoading || publicRecentReviews.length > 0) && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] flex items-center gap-2">
+                    Recent Reviews
+                  </h2>
+                  <Link to={`/user/${id}/reviews`} className="text-xs text-[#94A3B8] hover:text-[#FF61D2] transition-colors font-medium uppercase tracking-widest">All</Link>
+                </div>
+                {publicRecentReviewsLoading ? (
+                  <div className="space-y-6">
+                    {[0, 1].map((i) => (
+                      <div key={i} className="flex gap-5">
+                        <div className="w-28 aspect-[2/3] rounded-lg bg-[#151921] animate-pulse flex-none" />
+                        <div className="flex-1 space-y-2 pt-1">
+                          <div className="h-5 bg-[#151921] animate-pulse rounded w-3/4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-1/3" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-full mt-4" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-5/6" />
+                          <div className="h-3 bg-[#151921] animate-pulse rounded w-4/5" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div>
+                    {publicRecentReviews.map((review, idx) => (
+                      <ReviewCard key={review.logId} review={review} index={idx} total={publicRecentReviews.length} />
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
+
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-8 pt-8">
-
-            {/* Quick links */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFBCFC]">Quick links</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#BFBCFC]/30 to-transparent" />
-              </div>
-              <div className="space-y-0.5">
-                <Link to="/analytics" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Star className="w-3.5 h-3.5 group-hover:text-[#44FFFF] transition-colors" />
-                  Movie DNA & Analytics
-                </Link>
-                <Link to="/my-lists" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <List className="w-3.5 h-3.5 group-hover:text-[#BFBCFC] transition-colors" />
-                  My Lists
-                </Link>
-                <Link to="/likedmoviespage" className="flex items-center gap-2.5 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors text-sm py-2 group">
-                  <Heart className="w-3.5 h-3.5 group-hover:text-[#FF61D2] transition-colors" />
-                  Liked Films
-                </Link>
-              </div>
-            </div>
-
-            {/* Recent Lists */}
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#44FFFF]">Recent Lists</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-[#44FFFF]/30 to-transparent" />
-              </div>
-              <div className="space-y-1">
-                {[
-                  { name: "Top 10 Sci-Fi", count: 10 },
-                  { name: "Favourite Thrillers", count: 7 },
-                  { name: "Must Watch 2024", count: 15 },
-                ].map((list) => (
-                  <div key={list.name} className="flex items-center justify-between cursor-pointer group py-1.5">
-                    <span className="text-[#94A3B8] text-sm group-hover:text-[#F8FAFC] transition-colors">{list.name}</span>
-                    <span className="text-[#94A3B8]/40 text-xs tabular-nums">{list.count}</span>
-                  </div>
-                ))}
-              </div>
-              <Link to="/my-lists" className="mt-3 inline-flex items-center gap-1 text-[#44FFFF]/50 text-xs hover:text-[#44FFFF] transition-colors">
-                View all →
-              </Link>
-            </div>
+          {/* Friends — mobile: order 3 | desktop: col 1-2 row 2 */}
+          <div className="order-3 lg:col-span-2 lg:col-start-1 lg:row-start-2">
+            <FriendsSection friends={publicFriends} />
           </div>
+
         </div>
       </div>
 
-      {/* Search Modal */}
-      {searchModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#151921] border border-[#BFBCFC]/20 rounded-xl w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-[#BFBCFC]/10">
-              <h3 className="text-[#F8FAFC] font-bold font-heading">Search for a film</h3>
-              <button
-                onClick={() => setSearchModalOpen(false)}
-                className="w-7 h-7 rounded-full hover:bg-[#BFBCFC]/10 flex items-center justify-center"
-              >
-                <X className="w-4 h-4 text-[#94A3B8]" />
-              </button>
-            </div>
-            <div className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Search for a film..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#0B0E14] border border-[#BFBCFC]/15 rounded-lg pl-9 pr-4 py-2.5 text-[#F8FAFC] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#BFBCFC]/40"
-                />
-              </div>
-
-              {duplicateError && (
-                <p className="mt-2 text-xs text-[#FF61D2] bg-[#FF61D2]/10 border border-[#FF61D2]/20 rounded-lg px-3 py-2">
-                  {duplicateError}
-                </p>
-              )}
-
-              <div className="mt-3 max-h-80 overflow-y-auto space-y-1">
-                {searchLoading && (
-                  <div className="flex justify-center py-6">
-                    <Loader2 className="w-5 h-5 text-[#BFBCFC] animate-spin" />
-                  </div>
-                )}
-                {!searchLoading && searchQuery && searchResults.length === 0 && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">No films found.</p>
-                )}
-                {!searchLoading && !searchQuery && (
-                  <p className="text-[#94A3B8] text-sm text-center py-6">Type a film title to search.</p>
-                )}
-                {searchResults.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => addFavorite(m)}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#BFBCFC]/10 transition-colors text-left"
-                  >
-                    {m.poster_path ? (
-                      <img
-                        src={`https://image.tmdb.org/t/p/w92${m.poster_path}`}
-                        alt={m.title}
-                        className="w-9 h-14 object-cover rounded flex-none"
-                      />
-                    ) : (
-                      <div className="w-9 h-14 bg-[#0B0E14] rounded flex-none flex items-center justify-center">
-                        <Film className="w-4 h-4 text-[#94A3B8]" />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-[#F8FAFC] text-sm font-medium truncate">{m.title}</p>
-                      <p className="text-[#94A3B8] text-xs">{m.release_date?.slice(0, 4)}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProfilePictureModal
+        isOpen={pictureModalOpen}
+        onClose={() => setPictureModalOpen(false)}
+        src={pub.profilePicture}
+        name={pub.username}
+      />
     </div>
   );
 }

@@ -1,3 +1,20 @@
+@keyframes shimmer {
+  0%   { left: -100%; }
+  60%  { left: 150%; }
+  100% { left: 150%; }
+}
+
+@keyframes galaxyRotate {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes mythicPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1.0; transform: scale(1.08); }
+}
+
 /* Add this to your global CSS file */
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
