@@ -73,6 +73,10 @@ export const router = createBrowserRouter([
                 path: 'movie/:id/friends-activity',
                 element: _jsx(ProtectedRoute, { children: _jsx(MovieFriendsActivityPage, {}) }),
             },
+            {
+                path: 'featured-lists',
+                element: _jsx(FeaturedListsPage, {}),
+            },
             // {
             //     path: 'weekly-favorites',
             //     element: _jsx(WeeklyFavoritesPage, {}),
@@ -238,10 +242,6 @@ export const router = createBrowserRouter([
             {
                 path: 'diary',
                 element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
-            },
-            {
-                path: 'featured-lists',
-                element: _jsx(ProtectedRoute, { children: _jsx(FeaturedListsPage, {}) }),
             },
             {
                 path: 'user/:userId/diary',
