@@ -40,6 +40,7 @@ import { ActorPage } from './pages/ActorPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { DiaryPage } from './pages/DiaryPage';
 import { MovieFriendsActivityPage } from './pages/MovieFriendsActivityPage';
+import { FeaturedListsPage } from './pages/FeaturedListsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -237,6 +238,10 @@ export const router = createBrowserRouter([
             {
                 path: 'diary',
                 element: _jsx(ProtectedRoute, { children: _jsx(DiaryPage, {}) }),
+            },
+            {
+                path: 'featured-lists',
+                element: _jsx(ProtectedRoute, { children: _jsx(FeaturedListsPage, {}) }),
             },
             {
                 path: 'user/:userId/diary',
