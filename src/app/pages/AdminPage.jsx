@@ -1,15 +1,43 @@
 // src/pages/AdminPage.jsx
 import { useState } from 'react';
 import { Search } from 'lucide-react';
+import { Link } from 'react-router';
+import { useAuth } from '../context/AuthContext';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminContentFrame } from '../components/admin/AdminContentFrame';
 import { EditGenresModal } from '../components/admin/EditGenresModal';
 
 export function AdminPage() {
+  const { user, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [chartPeriod, setChartPeriod] = useState('month');
   const [editGenresMovie, setEditGenresMovie] = useState(null);
+
+  // Show a loading indicator until we are sure who the user is
+  if (isLoading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-[#0B0E14] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#BFBCFC] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // If there is no user, or the role is not Admin/Moderator, show the 404 page
+  if (!user || (user.role !== 'Admin' && user.role !== 'Moderator')) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-[#0B0E14] flex flex-col items-center justify-center p-8 text-center">
+        <h1 className="text-7xl font-black text-[#F8FAFC] mb-4">404</h1>
+        <h2 className="text-2xl font-bold text-[#BFBCFC] mb-4">Page Not Found</h2>
+        <p className="text-[#94A3B8] max-w-md mx-auto mb-8">
+          The page you are looking for doesn't exist or you don't have permission to access it.
+        </p>
+        <Link to="/" className="px-6 py-3 bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] font-bold rounded-xl transition-all">
+          Return to Home
+        </Link>
+      </div>
+    );
+  }
 
   // Growth Datasets
   const userGrowthDataMonth = [
