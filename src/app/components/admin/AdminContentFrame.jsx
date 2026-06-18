@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { toast } from 'sonner';
 import { ModerationQueue } from './ModerationQueue';
 import { UserManagement } from './UserManagement';
+import { SystemSettingsPage } from './SystemSettingsPage';
 
 export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, userGrowthData, topMovies, movieUpdates, setEditGenresMovie }) {
   if (currentView === 'moderation') {
@@ -12,6 +13,10 @@ export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, us
 
   if (currentView === 'users') {
     return <UserManagement />;
+  }
+
+  if (currentView === 'settings') {
+    return <SystemSettingsPage />;
   }
 
   if (currentView !== 'dashboard') {
