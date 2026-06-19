@@ -3,6 +3,7 @@ import { Award, Plus, Trash2, Search, X, Loader2, Info, AlertTriangle, Film, Ali
 import { toast } from 'sonner';
 import { TIER, CATEGORY_TIERS } from '../../utils/badgeTiers';
 import { BADGE_OVERRIDES } from '../BadgesSection';
+import { PaginationControls } from './PaginationControls';
 
 const CATEGORY_META = {
   watched:    { Icon: Film,      label: 'Films Watched',   color: '#BFBCFC' },
@@ -65,6 +66,13 @@ export function BadgeController() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const itemsPerPage = 6;
+
+  const [sortBy, setSortBy] = useState('id');
+  const [sortOrder, setSortOrder] = useState('asc');
+
   const [form, setForm] = useState({
     badgeStringId: '',
     name: '',
@@ -81,14 +89,23 @@ export function BadgeController() {
     setLoading(true);
     try {
       const token = getToken();
-      const response = await fetch(`${baseUrl}/Badge/admin/list`, {
+      const response = await fetch(`${baseUrl}/Badge/admin/list?pageNumber=${currentPage}&pageSize=${itemsPerPage}&search=${searchQuery}&sortBy=${sortBy}&sortOrder=${sortOrder}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       if (response.ok) {
         const data = await response.json();
-        setBadges(data);
+        const returnedBadges = data.badges || [];
+        const returnedTotal = data.totalEntries || 0;
+        
+        setBadges(returnedBadges);
+        setTotalEntries(returnedTotal);
+        
+        // If we are on a page > 1 and it returned 0 badges, go back one page
+        if (currentPage > 1 && returnedBadges.length === 0 && returnedTotal > 0) {
+          setCurrentPage(prev => Math.max(1, prev - 1));
+        }
       } else {
         toast.error("Failed to load badges from server.");
       }
@@ -102,7 +119,7 @@ export function BadgeController() {
 
   useEffect(() => {
     fetchBadges();
-  }, []);
+  }, [currentPage, searchQuery, sortBy, sortOrder]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -205,11 +222,8 @@ export function BadgeController() {
     }
   };
 
-  const filteredBadges = badges.filter(b => 
-    (b.badgeName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (b.badgeStringId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (b.badgeDescription || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBadges = badges;
+  const totalPages = Math.max(1, Math.ceil(totalEntries / itemsPerPage));
 
   return (
     <div className="space-y-6">
@@ -232,19 +246,55 @@ export function BadgeController() {
       </div>
 
       {/* Filters/Toolbar */}
-      <div className="bg-[#151921] border border-[#BFBCFC]/10 p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search badges by name, ID or description..."
-            className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-12 pr-4 py-2.5 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] text-sm"
-          />
+      <div className="bg-[#151921] border border-[#BFBCFC]/10 p-4 rounded-2xl flex flex-col lg:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:max-w-3xl flex-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search badges by name, ID or description..."
+              className="w-full bg-[#0B0E14] text-[#F8FAFC] pl-12 pr-4 py-2.5 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] text-sm"
+            />
+          </div>
+
+          <div className="flex gap-2.5">
+            {/* Sort Select */}
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-[#0B0E14] text-[#F8FAFC] px-4 py-2.5 rounded-xl border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] text-sm"
+            >
+              <option value="id">Sort by ID</option>
+              <option value="name">Sort by Name</option>
+              <option value="tier">Sort by Tier</option>
+              <option value="category">Sort by Category</option>
+              <option value="threshold">Sort by Threshold</option>
+            </select>
+
+            {/* Sort Order Button */}
+            <button
+              onClick={() => {
+                setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                setCurrentPage(1);
+              }}
+              className="bg-[#0B0E14] hover:bg-[#BFBCFC]/5 text-[#BFBCFC] px-4 py-2.5 rounded-xl border border-[#BFBCFC]/15 text-sm font-semibold transition-colors flex items-center gap-1.5 uppercase shrink-0"
+              title={sortOrder === 'asc' ? 'Sort Ascending' : 'Sort Descending'}
+            >
+              {sortOrder}
+            </button>
+          </div>
         </div>
-        <div className="text-xs text-[#94A3B8] font-medium bg-[#0B0E14] px-4 py-2 rounded-xl border border-[#BFBCFC]/5">
-          Total Badges: <span className="text-[#BFBCFC] font-bold font-mono">{filteredBadges.length}</span> / <span className="text-[#94A3B8] font-mono">{badges.length}</span>
+
+        <div className="text-xs text-[#94A3B8] font-medium bg-[#0B0E14] px-4 py-2 rounded-xl border border-[#BFBCFC]/5 shrink-0 self-end lg:self-auto">
+          Total Badges: <span className="text-[#BFBCFC] font-bold font-mono">{totalEntries}</span>
         </div>
       </div>
 
@@ -336,6 +386,17 @@ export function BadgeController() {
             );
           })}
         </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          totalPages={totalPages}
+          itemsPerPage={itemsPerPage}
+          totalEntries={totalEntries}
+        />
       )}
 
       {/* Add Badge Modal */}

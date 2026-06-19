@@ -114,6 +114,7 @@ export function AdminContentFrame({
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-[#F8FAFC]">User Growth Trends</h3>
             <div className="flex gap-1 bg-[#0B0E14] p-1 rounded-xl border border-[#BFBCFC]/15">
+              <button onClick={() => setChartPeriod('week')} className={`px-3 py-1 rounded-lg text-xs ${chartPeriod === 'week' ? 'bg-[#BFBCFC] text-[#0B0E14] font-semibold' : 'text-[#94A3B8]'}`}>Week</button>
               <button onClick={() => setChartPeriod('month')} className={`px-3 py-1 rounded-lg text-xs ${chartPeriod === 'month' ? 'bg-[#BFBCFC] text-[#0B0E14] font-semibold' : 'text-[#94A3B8]'}`}>Month</button>
               <button onClick={() => setChartPeriod('year')} className={`px-3 py-1 rounded-lg text-xs ${chartPeriod === 'year' ? 'bg-[#BFBCFC] text-[#0B0E14] font-semibold' : 'text-[#94A3B8]'}`}>Year</button>
             </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, ChevronDown, Plus, RefreshCw, MoreVertical, Check, Clock, Trash2, Edit, X, Film, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { PaginationControls } from './PaginationControls';
 
 const GENRES = [
   "Action", "Adventure", "Animation", "Comedy", "Crime",
@@ -82,7 +83,7 @@ export function MovieCatalog() {
     setLoading(true);
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/Get100Movies?page=${page}&sort=popular&desc=true${searchQuery ? `&search=${searchQuery}` : ''}`
+        `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/Get100Movies?page=${page}&pageSize=100&sort=popular&desc=true${searchQuery ? `&search=${searchQuery}` : ''}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -149,6 +150,7 @@ export function MovieCatalog() {
     } else {
       setSelectedGenres([...selectedGenres, genre]);
     }
+    setPage(0);
   };
 
   // Filter movies locally by selected genres
@@ -302,7 +304,10 @@ export function MovieCatalog() {
                 type="text"
                 placeholder="Search movies by title, director, or ID..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(0);
+                }}
                 className="bg-[#151921] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#F8FAFC] placeholder-[#475569] focus:outline-none focus:border-[#BFBCFC]/40 transition-all w-full"
               />
             </div>
@@ -376,7 +381,10 @@ export function MovieCatalog() {
               </span>
             ))}
             <button
-              onClick={() => setSelectedGenres([])}
+              onClick={() => {
+                setSelectedGenres([]);
+                setPage(0);
+              }}
               className="text-[#94A3B8] hover:text-[#BFBCFC] text-xs underline cursor-pointer ml-1"
             >
               Clear all
@@ -518,6 +526,17 @@ export function MovieCatalog() {
           </table>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={page + 1}
+          setCurrentPage={(p) => setPage(p - 1)}
+          totalPages={totalPages}
+          itemsPerPage={100}
+          totalEntries={totalCount}
+        />
+      )}
 
       {/* Add Movie Modal */}
       {showAddModal && (
