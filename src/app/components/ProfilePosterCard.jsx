@@ -7,6 +7,7 @@ import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
 import { WatchLogModal } from "./WatchLogModal";
 import { AddToListsModal } from "./AddToListsModal";
+import { getReviewsEnabled } from "../services/reviews";
 
 export function ProfilePosterCard({
   movieId,
@@ -27,6 +28,17 @@ export function ProfilePosterCard({
   const navigate = useNavigate();
   const auth = useAuth();
   const { triggerRefresh } = useRefresh();
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchReviewsEnabled = async () => {
+      try {
+        const enabled = await getReviewsEnabled();
+        setReviewsEnabled(enabled);
+      } catch {}
+    };
+    fetchReviewsEnabled();
+  }, []);
 
   const token = useMemo(
     () =>
@@ -362,13 +374,15 @@ export function ProfilePosterCard({
                   onClick={() => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(true); setPreModalHasWatched(true); setPreModalLogId(null); setPreModalRating(filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
                 >
-                  Review or log film again...
+                  {reviewsEnabled ? "Review or log film again..." : "Log film again..."}
                 </button>
                 <button
                   onClick={() => { setPreModalDate(latestWatchedDate); setPreModalReviewText(latestReviewText); setPreModalIsRewatch(false); setPreModalHasWatched(true); setPreModalLogId(logIdProp ?? autoLatestLogId); setPreModalRating(logIdProp ? specificLogRating : filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
                 >
-                  {latestReviewText ? "Edit review..." : "Add review..."}
+                  {reviewsEnabled 
+                    ? (latestReviewText ? "Edit review..." : "Add review...") 
+                    : "Edit log entry..."}
                 </button>
               </div>
             </div>

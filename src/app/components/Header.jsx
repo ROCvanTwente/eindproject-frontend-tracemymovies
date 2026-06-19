@@ -446,7 +446,7 @@ export function Header() {
                         </NavLink>
                       ))}
 
-                      {user.isAdmin && (
+                      {(user.role === 'Admin' || user.role === 'Moderator') && (
                         <NavLink
                           to="/admin"
                           onClick={() => setShowUserMenu(false)}

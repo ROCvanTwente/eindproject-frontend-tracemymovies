@@ -1,7 +1,6 @@
 const API_URL = `${import.meta.env.VITE_API_BASE_URL}/auth`;
  
 const TOKEN_KEY = "auth_token";
-const USER_KEY = "auth_user";
  
 export function getToken() {
     return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
@@ -17,24 +16,9 @@ export function setToken(token, remember = true) {
  
 export function removeToken() {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(USER_KEY);
 }
  
-export function setStoredUser(user, remember = false) {
-    if (remember) {
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-    } else {
-        sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-    }
-}
- 
-export function getStoredUser() {
-    const user = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
-    return user ? JSON.parse(user) : null;
-}
-
 export function decodeJwtPayload(token) {
     try {
         const parts = token.split('.');
@@ -50,13 +34,6 @@ export function decodeJwtPayload(token) {
 }
 
 export function getCurrentUserId() {
-    const stored = getStoredUser();
-    if (stored) {
-        if (stored.id != null) return stored.id;
-        if (stored.userId != null) return stored.userId;
-        if (stored.userID != null) return stored.userID;
-    }
-
     const token = getToken();
     if (!token) return null;
 
@@ -97,13 +74,6 @@ export async function login({ email, password, remember = false }) {
  
     setToken(data.token, remember);
  
-    setStoredUser({
-        email,
-        username: data.username || email.split("@")[0],
-        id: data.id,
-        isAdmin: data.isAdmin || false
-    }, remember);
- 
     return data;
 }
  
@@ -136,12 +106,6 @@ export async function register({
 
     if (!data.requiresVerification) {
         setToken(data.token, remember);
-        setStoredUser({
-            email,
-            username: data.username || username,
-            id: data.id,
-            isAdmin: data.isAdmin || false
-        }, remember);
     }
 
     return data;
@@ -151,24 +115,39 @@ export async function validateToken() {
     const token = getToken();
     if (!token) return null;
  
+    const payload = decodeJwtPayload(token);
+    // Haal de rol uit de token claims (beveiligd door je C# API)
+    const role = payload ? (payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload.role || "User") : "User";
+
     try {
         const res = await fetch(`${API_URL}/profile`, {
             headers: { Authorization: `Bearer ${token}` }
         });
  
         if (!res.ok) {
+            if (res.status === 503) {
+                return payload ? {
+                    id: payload.sub || payload.nameid || payload.id,
+                    userId: payload.sub || payload.nameid || payload.id,
+                    username: payload.unique_name || payload.name,
+                    email: payload.email,
+                    role: role,
+                    token: token
+                } : null;
+            }
             removeToken();
             return null;
         }
  
         const profile = await res.json();
-        const stored = getStoredUser() ?? {};
  
         return {
-            ...stored,
+            id: profile.id,
             userId: profile.id,
             username: profile.userName,
             email: profile.email,
+            role: role,
+            token: token,
             profilePicture: profile.profileImageBase64
                 ? `data:image/jpeg;base64,${profile.profileImageBase64}`
                 : null,
@@ -179,7 +158,14 @@ export async function validateToken() {
             showFriends: profile.showFriends ?? true,
         };
     } catch {
-        return getStoredUser();
+        return payload ? {
+            id: payload.sub || payload.nameid || payload.id,
+            userId: payload.sub || payload.nameid || payload.id,
+            username: payload.unique_name || payload.name,
+            email: payload.email,
+            role: role,
+            token: token
+        } : null;
     }
 }
  

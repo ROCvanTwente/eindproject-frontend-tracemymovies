@@ -5,16 +5,32 @@ import {
     logout as logoutService,
     validateToken,
     setToken,
-    setStoredUser,
-    getStoredUser,
-    getToken
+    getToken,
+    decodeJwtPayload
 } from "../services/auth";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(() => getStoredUser());
-    const [isLoading, setIsLoading] = useState(() => !getStoredUser());
+    // Decodeer de token direct bij het laden om de basis user data paraat te hebben
+    const getInitialUser = () => {
+        const token = getToken();
+        if (!token) return null;
+        const payload = decodeJwtPayload(token);
+        if (!payload) return null;
+        
+        const role = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload.role || "User";
+        return {
+            id: payload.sub || payload.nameid || payload.id,
+            email: payload.email,
+            username: payload.unique_name || payload.name,
+            role: role,
+            token: token
+        };
+    };
+
+    const [user, setUser] = useState(getInitialUser);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         initAuth();
@@ -40,29 +56,25 @@ async function register(formData) {
     const res = await registerService(formData);
 
     if (!res.requiresVerification) {
+        const payload = decodeJwtPayload(res.token);
+        const role = payload ? (payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || payload.role || "User") : "User";
         setUser({
+            id: payload?.sub || payload?.nameid || payload?.id || res.id,
             email: formData.email,
             username: res.username || formData.username,
-            id: res.id ?? null,
-            token: res.token,
-            isAdmin: res.isAdmin ?? false
+            role: role,
+            token: res.token
         });
+        startHeartbeat();
     }
 
     return res;
 }
 
-    async function loginWithToken(token, userData) {
+    async function loginWithToken(token) {
         setToken(token, true);
-        setStoredUser({
-            email: userData.email,
-            username: userData.username,
-            id: userData.id,
-            isAdmin: userData.isAdmin || false,
-            isGoogleUser: true,
-        }, true);
         const fullUser = await validateToken();
-        setUser({ ...fullUser, isGoogleUser: true });
+        setUser(fullUser);
         startHeartbeat();
     }
 
@@ -108,10 +120,6 @@ async function register(formData) {
     function updateUser(updates) {
         setUser((prev) => {
             const updated = { ...prev, ...updates };
-            const remember = !!localStorage.getItem("auth_token");
-            // Sla profilePicture NIET op in localStorage — base64 is te groot en maakt alles traag
-            const { profilePicture, ...storableUser } = updated;
-            setStoredUser(storableUser, remember);
             return updated;
         });
     }

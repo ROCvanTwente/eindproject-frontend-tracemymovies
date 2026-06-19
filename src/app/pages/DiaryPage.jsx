@@ -8,6 +8,7 @@ import { AddToListsModal } from "../components/AddToListsModal";
 import { MovieFilters, useMovieFilters } from "../components/MovieFilters";
 import { ReviewPagination } from "../components/review/ReviewPagination";
 import { toast } from "sonner";
+import { getReviewsEnabled } from "../services/reviews";
 
 const getToken = () => localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -58,6 +59,17 @@ export function DiaryPage() {
   const [logModalConfig, setLogModalConfig] = useState({});
   const [menuHoverRating, setMenuHoverRating] = useState(0);
   const [addToListsOpen, setAddToListsOpen] = useState(false);
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchReviewsEnabled = async () => {
+      try {
+        const enabled = await getReviewsEnabled();
+        setReviewsEnabled(enabled);
+      } catch {}
+    };
+    fetchReviewsEnabled();
+  }, []);
   const [page, setPage] = useState(0);
   const rightPanelRef = useRef(null);
   const dotsButtonRef = useRef(null);
@@ -926,7 +938,7 @@ export function DiaryPage() {
                           }}
                           className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
                         >
-                          Add review...
+                          {reviewsEnabled ? "Add review..." : "Edit log entry..."}
                         </button>
                       )}
                     </>
@@ -958,7 +970,7 @@ export function DiaryPage() {
                       onClick={() => { setDotsMenuOpen(false); setEditEntry(selected); }}
                       className="w-full text-left px-4 py-2.5 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 transition-colors cursor-pointer"
                     >
-                      Add review...
+                      {reviewsEnabled ? "Add review..." : "Edit entry..."}
                     </button>
                   )}
                   <button

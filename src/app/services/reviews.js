@@ -13,6 +13,20 @@ export const getReviewsVoorFilm = async (movieId) => {
     }
 };
 
+export const getReviewsEnabled = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/Review/AreReviewsEnabled`);
+        if (!response.ok) {
+            return true;
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Fout bij ophalen review status:", error);
+        return true;
+    }
+};
+
+
 export const addReview = async (reviewData, token) => {
     try {
         const response = await fetch(`${API_BASE_URL}/Review/AddReview`, {
@@ -25,13 +39,18 @@ export const addReview = async (reviewData, token) => {
         });
 
         if (!response.ok) {
-            throw new Error("Kon review niet plaatsen");
+            let errMsg = "Kon review niet plaatsen";
+            try {
+                const text = await response.text();
+                if (text) errMsg = text;
+            } catch (_) {}
+            throw new Error(errMsg);
         }
 
         return await response.json();
     } catch (error) {
         console.error("Fout bij plaatsen review:", error);
-        return null;
+        throw error;
     }
 };
 
@@ -51,6 +70,26 @@ export const deleteReview = async (reviewId, token) => {
         return true;
     } catch (error) {
         console.error("Fout bij verwijderen review:", error);
+        return false;
+    }
+};
+
+export const adminDeleteReview = async (reviewId, token) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/reports/${reviewId}`, {
+            method: "DELETE",
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error("Kon review niet verwijderen via admin");
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Fout bij admin verwijderen review:", error);
         return false;
     }
 };
@@ -236,7 +275,12 @@ export const updateReview = async (reviewId, reviewData, token) => {
         });
 
         if (!response.ok) {
-            throw new Error("Could not update review");
+            let errMsg = "Could not update review";
+            try {
+                const text = await response.text();
+                if (text) errMsg = text;
+            } catch (_) {}
+            throw new Error(errMsg);
         }
 
         try {
@@ -250,6 +294,6 @@ export const updateReview = async (reviewId, reviewData, token) => {
         }
     } catch (error) {
         console.error("Error updating review:", error);
-        return null;
+        throw error;
     }
 };
