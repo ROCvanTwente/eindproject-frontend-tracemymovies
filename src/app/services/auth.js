@@ -125,6 +125,16 @@ export async function validateToken() {
         });
  
         if (!res.ok) {
+            if (res.status === 503) {
+                return payload ? {
+                    id: payload.sub || payload.nameid || payload.id,
+                    userId: payload.sub || payload.nameid || payload.id,
+                    username: payload.unique_name || payload.name,
+                    email: payload.email,
+                    role: role,
+                    token: token
+                } : null;
+            }
             removeToken();
             return null;
         }

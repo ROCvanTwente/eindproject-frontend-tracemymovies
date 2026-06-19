@@ -372,7 +372,7 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
 
             await refreshReviews();
         } catch (error) {
-            toast.error(error.message || "Could not post review. Check if the API is running on https://localhost:7112 and if you are logged in.");
+            toast.error(error.message || "Could not post review. Check if the API is running and if you are logged in.");
         } finally {
             setIsSubmitting(false);
         }

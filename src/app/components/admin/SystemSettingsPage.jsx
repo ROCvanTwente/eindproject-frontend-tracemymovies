@@ -53,7 +53,7 @@ export function SystemSettingsPage() {
   const [isPurgingCache, setIsPurgingCache] = useState(false);
 
   const token = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7245/api";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch settings from backend on load
   const fetchSettings = async () => {

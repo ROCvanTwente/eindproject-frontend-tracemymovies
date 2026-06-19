@@ -1,5 +1,5 @@
-﻿import { Outlet, useLocation } from 'react-router';
-import { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router';
+import { useEffect, useState } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { ApiKeyBanner } from './ApiKeyBanner';
@@ -7,6 +7,8 @@ import { Toaster } from 'sonner';
 import { BadgeProvider } from '../context/BadgeContext';
 import { BadgeChecker } from './BadgeChecker';
 import { BadgeUnlockOverlay } from './BadgeUnlockOverlay';
+import { useAuth } from '../context/AuthContext';
+import { MaintenancePage } from './MaintenancePage';
 
 function ScrollToTop() {
     const { pathname } = useLocation();
@@ -15,6 +17,57 @@ function ScrollToTop() {
 }
 
 export function Layout() {
+    const { user } = useAuth();
+    const location = useLocation();
+    const [isMaintenance, setIsMaintenance] = useState(false);
+
+    const checkMaintenance = async () => {
+        try {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL;
+            const token = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const res = await fetch(`${baseUrl}/auth/profile`, { headers });
+            if (res.status === 503) {
+                setIsMaintenance(true);
+            } else {
+                setIsMaintenance(false);
+            }
+        } catch (err) {
+            // Keep current state on network/connectivity errors
+        }
+    };
+
+    useEffect(() => {
+        checkMaintenance();
+
+        // Intercept global fetches to capture 503 status code (Maintenance Mode) on the fly
+        const originalFetch = window.fetch;
+        window.fetch = async (...args) => {
+            try {
+                const response = await originalFetch(...args);
+                if (response.status === 503) {
+                    setIsMaintenance(true);
+                }
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        };
+
+        return () => {
+            window.fetch = originalFetch;
+        };
+    }, []);
+
+    const isStaff = user?.role === "Admin" || user?.role === "Moderator" || user?.role === "Mod";
+    const onLoginPage = location.pathname === "/login";
+
+    if (isMaintenance && !isStaff && !onLoginPage) {
+        return (
+            <MaintenancePage onRetry={checkMaintenance} />
+        );
+    }
+
     return (
         <BadgeProvider>
             <div className="min-h-screen bg-[#0B0E14] text-[#F8FAFC]">

@@ -49,7 +49,7 @@ export function AdminPage() {
       setLoadingStats(true);
       try {
         const token = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7245/api";
+        const baseUrl = import.meta.env.VITE_API_BASE_URL;
         const response = await fetch(`${baseUrl}/admin/dashboard-stats`, {
           headers: {
             Authorization: `Bearer ${token}`,

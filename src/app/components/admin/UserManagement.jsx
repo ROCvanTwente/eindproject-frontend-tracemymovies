@@ -6,7 +6,7 @@ import { PaginationControls } from './PaginationControls';
 import { BanUserModal } from './BanUserModal';
 
 export function UserManagement() {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7245/api";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

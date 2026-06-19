@@ -5,7 +5,7 @@ import { deleteReview } from '../../services/reviews';
 import { DeleteReviewModal } from '../review/DeleteReviewModal';
 
 export function ModerationQueue() {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7245/api";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modSearch, setModSearch] = useState('');
