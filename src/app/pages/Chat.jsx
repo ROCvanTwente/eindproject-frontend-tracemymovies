@@ -9,7 +9,7 @@ function Chat() {
 
     useEffect(() => {
         const newConnection = new signalR.HubConnectionBuilder()
-            .withUrl("https://localhost:7153/chatHub") // API URL
+            .withUrl(import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") + "/chatHub") // API URL
             .configureLogging(signalR.LogLevel.Information)
             .withAutomaticReconnect()
             .build();

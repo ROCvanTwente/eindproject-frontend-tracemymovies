@@ -33,6 +33,7 @@ export function MovieDetailContent({
   hasReview,
   hasLog,
   isLoggedIn,
+  reviewsEnabled,
 }) {
   return (
     <div className="container mx-auto px-4 max-w-7xl -mt-12 md:-mt-16 relative z-10 pb-16">
@@ -107,6 +108,7 @@ export function MovieDetailContent({
           hasReview={hasReview}
           hasLog={hasLog}
           isLoggedIn={isLoggedIn}
+          reviewsEnabled={reviewsEnabled}
         />
       </div>
     </div>

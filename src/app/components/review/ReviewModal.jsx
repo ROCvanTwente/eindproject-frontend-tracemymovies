@@ -43,15 +43,18 @@ export function ReviewModal({ isOpen, onClose, onSaved, movieTitle, existingRevi
             containsSpoilers: !!spoiler,
         };
 
-        const res = await updateReview(reviewId, payload, token);
-        if (res) {
-            toast.success('Review updated.');
-            if (onSaved) onSaved(res);
-            onClose();
-            return;
+        try {
+            const res = await updateReview(reviewId, payload, token);
+            if (res) {
+                toast.success('Review updated.');
+                if (onSaved) onSaved(res);
+                onClose();
+                return;
+            }
+            toast.error('Could not update review.');
+        } catch (error) {
+            toast.error(error.message || 'Could not update review.');
         }
-
-        toast.error('Could not update review.');
         onClose();
     };
 

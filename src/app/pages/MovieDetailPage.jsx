@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
 import {
@@ -17,10 +17,24 @@ import { MovieDetailError } from "../components/movie/MovieDetailError";
 import { MovieDetailContent } from "../components/movie/MovieDetailContent";
 import { useMovieDetail } from "../hooks/useMovieDetail";
 import { useAuth } from "../context/AuthContext";
+import { getReviewsEnabled } from "../services/reviews";
 
 export function MovieDetailPage() {
     const { id } = useParams();
     const auth = useAuth();
+    const [reviewsEnabled, setReviewsEnabled] = useState(true);
+
+    useEffect(() => {
+        const fetchReviewsEnabled = async () => {
+            try {
+                const enabled = await getReviewsEnabled();
+                setReviewsEnabled(enabled);
+            } catch (err) {
+                console.error("Error fetching reviews enabled status:", err);
+            }
+        };
+        fetchReviewsEnabled();
+    }, []);
 
     const token = useMemo(() => {
         return (
@@ -116,6 +130,7 @@ export function MovieDetailPage() {
                 hasReview={!!latestReviewText}
                 hasLog={!!latestLogId}
                 isLoggedIn={!!token}
+                reviewsEnabled={reviewsEnabled}
             />
 
             <TrailerModal

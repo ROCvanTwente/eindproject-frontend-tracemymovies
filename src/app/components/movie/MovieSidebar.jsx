@@ -24,6 +24,7 @@ export function MovieSidebar({
   hasReview,
   hasLog,
   isLoggedIn = true,
+  reviewsEnabled = true,
 }) {
   const [hoverRating, setHoverRating] = useState(0);
 
@@ -147,23 +148,43 @@ export function MovieSidebar({
           </div>
 
           {/* Action buttons — single if no engagement yet, two if logged before */}
-          {!hasLog ? (
-            <button
-              onClick={onOpenLog}
-              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Review or log
-            </button>
-          ) : (
-            <>
+          {reviewsEnabled ? (
+            !hasLog ? (
               <button
-                onClick={onOpenEditLog}
+                onClick={onOpenLog}
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
               >
-                <Pencil className="w-4 h-4" />
-                {hasReview ? "Edit review" : "Add review"}
+                <RefreshCw className="w-4 h-4" />
+                Review or log
               </button>
+            ) : (
+              <>
+                <button
+                  onClick={onOpenEditLog}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                >
+                  <Pencil className="w-4 h-4" />
+                  {hasReview ? "Edit review" : "Add review"}
+                </button>
+                <button
+                  onClick={onOpenLog}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Log again
+                </button>
+              </>
+            )
+          ) : (
+            !hasLog ? (
+              <button
+                onClick={onOpenLog}
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Log watch
+              </button>
+            ) : (
               <button
                 onClick={onOpenLog}
                 className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#151921]/80 hover:bg-[#151921] border border-[#BFBCFC]/10 hover:border-[#BFBCFC]/30 text-[#94A3B8] hover:text-[#F8FAFC] rounded-xl text-sm transition-all"
@@ -171,7 +192,7 @@ export function MovieSidebar({
                 <RefreshCw className="w-4 h-4" />
                 Log again
               </button>
-            </>
+            )
           )}
         </>
       )}
