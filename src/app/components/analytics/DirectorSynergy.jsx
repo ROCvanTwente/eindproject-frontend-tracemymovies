@@ -9,8 +9,8 @@ export function DirectorSynergy({ rawPairings }) {
     <div className="w-full h-full min-h-[420px] flex flex-col justify-between relative overflow-hidden select-none outline-none border-none">
       <div className="flex items-center justify-between pb-3 mb-4 flex-none border-b border-white/[0.03]">
         <div className="flex items-center gap-2.5">
-          <GitCommit className="w-4 h-4 text-[#44FFFF] rotate-45" />
-          <h3 className="text-xs uppercase font-bold tracking-widest text-[#94A3B8]">Director Synergy Vector</h3>
+          <Users className="w-4 h-4 text-[#44FFFF]" />
+          <h3 className="text-xs uppercase font-bold tracking-widest text-[#94A3B8]">Creative Partnerships</h3>
         </div>
         <button 
           onClick={() => setShowInfo(true)}
@@ -30,18 +30,18 @@ export function DirectorSynergy({ rawPairings }) {
           <div className="flex items-center justify-between border-b border-white/5 pb-2">
             <div className="flex items-center gap-2 text-[#44FFFF]">
               <Users className="w-4 h-4" />
-              <h4 className="text-sm font-bold tracking-wide">Director Synergy</h4>
+              <h4 className="text-sm font-bold tracking-wide">Creative Partnerships</h4>
             </div>
             <button onClick={() => setShowInfo(false)} className="text-[#94A3B8] hover:text-white p-1 cursor-pointer outline-none focus:outline-none">
               <X className="w-4 h-4" />
             </button>
           </div>
           <p className="text-xs text-[#94A3B8] leading-relaxed">
-            This tracker cross-references directors from your logged history with their most frequent top-billed actors. The metric details your structural viewing overlaps between specific creative partners.
+            This card highlights the directors you watch most often and the actors they collaborate with in those movies. It calculates the overlap percentage based on how many of their shared films you've watched.
           </p>
         </div>
         <p className="text-[10px] text-[#44FFFF]/60 font-medium tracking-wide border-t border-white/5 pt-2">
-          Calculated automatically via active production team graphs.
+          Calculated automatically based on your logged history.
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export function DirectorSynergy({ rawPairings }) {
           <div className="flex flex-col items-center justify-center text-center p-6 my-auto">
             <Award className="w-8 h-8 text-[#94A3B8]/10 mb-2" />
             <p className="text-xs text-[#94A3B8]/50 font-medium max-w-[220px]">
-              No direct production synergy metrics found in your library yet.
+              No director-actor collaborations found in your logged history yet.
             </p>
           </div>
         )}
