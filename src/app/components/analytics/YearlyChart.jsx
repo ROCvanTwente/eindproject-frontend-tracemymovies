@@ -5,13 +5,14 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 
 export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
   const [viewMode, setViewMode] = useState("yearly"); // "yearly" | "monthly"
-  const currentYearString = new Date().getFullYear().toString();
-  const [selectedYear, setSelectedYear] = useState(currentYearString);
 
-  // 1. Process standard layout limits
+  // 1. Process standard layout limits and find smart default year
   const yearsArray = yearlyData.map((d) => parseInt(d.year)).filter(Boolean);
   const minYear = yearsArray.length > 0 ? Math.min(...yearsArray) : new Date().getFullYear();
   const maxYear = new Date().getFullYear();
+
+  const defaultYearString = yearsArray.length > 0 ? Math.max(...yearsArray).toString() : new Date().getFullYear().toString();
+  const [selectedYear, setSelectedYear] = useState(defaultYearString);
 
   // 2. Select and shape active chart collection data maps
   let activeChartData = [];
@@ -25,11 +26,17 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
     }));
   }
 
-  // 3. Peak values calculations map
+  // 3. Peak values calculations map with time context
   const peakMetric = activeChartData.reduce(
     (max, x) => (x.movies > max.movies ? x : max),
     { movies: 0 }
   );
+
+  const peakText = peakMetric.movies > 0
+    ? (viewMode === "yearly"
+      ? `${peakMetric.year} (${peakMetric.movies} films)`
+      : `${peakMetric.displayLabel} (${peakMetric.movies} films)`)
+    : "0 films";
 
   return (
     <div className="w-full">
@@ -53,9 +60,8 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
           <div className="flex bg-background/60 p-1 border border-white/5 rounded-xl">
             <button
               onClick={() => setViewMode("yearly")}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                viewMode === "yearly" ? "bg-accent text-background shadow-md" : "text-muted-foreground hover:text-white"
-              }`}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === "yearly" ? "bg-accent text-background shadow-md" : "text-muted-foreground hover:text-white"
+                }`}
             >
               Yearly
             </button>
@@ -66,9 +72,8 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
                   setSelectedYear(yearlyData[yearlyData.length - 1].year);
                 }
               }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                viewMode === "monthly" ? "bg-accent text-background shadow-md" : "text-muted-foreground hover:text-white"
-              }`}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === "monthly" ? "bg-accent text-background shadow-md" : "text-muted-foreground hover:text-white"
+                }`}
             >
               Monthly
             </button>
@@ -104,7 +109,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
                 {viewMode === "yearly" ? "Peak Volume" : "Max Monthly Log"}
               </p>
               <p className="text-sm font-black text-accent">
-                {peakMetric.movies} films
+                {peakText}
               </p>
             </div>
           </div>
@@ -112,7 +117,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
       </div>
 
       {/* Line Graph Canvas Container Area */}
-      <div className="w-full h-75 relative px-2">
+      <div className="w-full h-[320px] relative px-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={activeChartData} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
             <defs>
@@ -122,22 +127,23 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
             </defs>
 
             <CartesianGrid strokeDasharray="8 8" stroke="var(--color-muted)" opacity={0.2} vertical={false} />
-            
-            <XAxis 
-              dataKey={viewMode === "yearly" ? "year" : "displayLabel"} 
-              stroke="var(--color-muted-foreground)" 
+
+            <XAxis
+              dataKey={viewMode === "yearly" ? "year" : "displayLabel"}
+              stroke="var(--color-muted-foreground)"
               fontSize={11}
               fontWeight={700}
               tickLine={false}
               axisLine={false}
               dy={12}
             />
-            <YAxis 
-              stroke="var(--color-muted-foreground)" 
+            <YAxis
+              stroke="var(--color-muted-foreground)"
               fontSize={11}
               fontWeight={700}
               tickLine={false}
               axisLine={false}
+              allowDecimals={false}
               dx={-5}
             />
 
@@ -154,10 +160,10 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
               formatter={(value) => [`${value} Movies watched`, "Volume"]}
             />
 
-            <Line 
-              type="linear" 
-              dataKey="movies" 
-              stroke="var(--color-accent)" 
+            <Line
+              type="linear"
+              dataKey="movies"
+              stroke="var(--color-accent)"
               strokeWidth={3.5}
               filter="url(#neonGlow)"
               dot={{ stroke: '#07090e', strokeWidth: 2.5, fill: 'var(--color-accent)', r: 5 }}
