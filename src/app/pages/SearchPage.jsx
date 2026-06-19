@@ -190,7 +190,11 @@ function UserRow({ item, navigate }) {
         >
             <div className="w-10 h-10 flex-none rounded-full overflow-hidden bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] flex items-center justify-center">
                 {item.profilePicture ? (
-                    <img src={item.profilePicture} alt={item.username} className="w-full h-full object-cover" />
+                    <img
+                        src={item.profilePicture.startsWith("data:") ? item.profilePicture : `data:image/jpeg;base64,${item.profilePicture}`}
+                        alt={item.username}
+                        className="w-full h-full object-cover"
+                    />
                 ) : (
                     <span className="text-[#0B0E14] font-bold text-sm">
                         {item.username?.charAt(0).toUpperCase()}
