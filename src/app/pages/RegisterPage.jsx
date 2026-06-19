@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
+const RESEND_COOLDOWN = 30;
 import { Link, useNavigate } from 'react-router';
 import {
     UserPlus,
@@ -27,6 +29,35 @@ export function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [emailSent, setEmailSent] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
+    const [resendLoading, setResendLoading] = useState(false);
+    const timerRef = useRef(null);
+
+    useEffect(() => () => clearInterval(timerRef.current), []);
+
+    const startCooldown = () => {
+        setCooldown(RESEND_COOLDOWN);
+        timerRef.current = setInterval(() => {
+            setCooldown((prev) => {
+                if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const handleResend = async () => {
+        if (cooldown > 0 || resendLoading) return;
+        setResendLoading(true);
+        try {
+            await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/resend-verification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: formData.email }),
+            });
+            startCooldown();
+        } catch {}
+        finally { setResendLoading(false); }
+    };
 
     const { register, loginWithToken } = useAuth();
     const navigate = useNavigate();
@@ -97,6 +128,7 @@ export function RegisterPage() {
 
             if (res.requiresVerification) {
                 setEmailSent(true);
+                startCooldown();
             } else {
                 toast.success('Account created successfully!');
                 navigate('/');
@@ -124,10 +156,20 @@ export function RegisterPage() {
                             We sent a verification link to <strong className="text-[#44FFFF]">{formData.email}</strong>.<br />
                             Click the button in the email to activate your account.
                         </p>
-                        <div className="bg-[#44FFFF]/5 border border-[#44FFFF]/20 rounded-xl p-4 mb-6">
+                        <div className="bg-[#44FFFF]/5 border border-[#44FFFF]/20 rounded-xl p-4 mb-4">
                             <CheckCircle className="w-5 h-5 text-[#44FFFF] inline mr-2" />
                             <span className="text-[#94A3B8] text-sm">The link expires in 24 hours</span>
                         </div>
+
+                        <button
+                            onClick={handleResend}
+                            disabled={cooldown > 0 || resendLoading}
+                            className="text-[#BFBCFC] hover:text-[#AFA9FF] text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 mx-auto mb-4"
+                        >
+                            <Mail className="w-3.5 h-3.5" />
+                            {cooldown > 0 ? `Resend in ${cooldown}s` : resendLoading ? 'Sending...' : 'Resend Email'}
+                        </button>
+
                         <Link to="/login" className="text-[#BFBCFC] hover:text-[#AFA9FF] font-medium transition-colors text-sm">
                             Already verified? Log in →
                         </Link>
