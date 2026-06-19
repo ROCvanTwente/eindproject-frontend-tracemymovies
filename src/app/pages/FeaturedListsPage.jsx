@@ -1,278 +1,344 @@
 import { useEffect, useMemo, useState } from "react";
-import { 
-  Award, TrendingUp, Clapperboard, Heart, Orbit, Flame, Star, ChevronRight, ArrowLeft, Film 
-} from "lucide-react";
-import { Link, useSearchParams } from "react-router";
+import { useParams, useNavigate, useSearchParams } from "react-router";
+import { Trash2 } from "lucide-react";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
-import { ProfilePosterCard } from "../components/ProfilePosterCard";
 
-// Visual lookups paired with humanized fallback details for our premium editorial sets
-const THEME_MAP = {
-  acclaimed: { 
-    icon: Award, 
-    color: "#44FFFF", 
-    glow: "rgba(68,255,255,0.15)", 
-    border: "border-[#44FFFF]/30",
-    humanTitle: "Critically Acclaimed Masterpieces",
-    humanDesc: "The pinnacle of cinema history. Explore landmark storytelling, exceptional directing, and powerful performances that have left an absolute impact on global movie culture."
-  },
-  trending: { 
-    icon: TrendingUp, 
-    color: "#44FFFF", 
-    glow: "rgba(68,255,255,0.15)", 
-    border: "border-[#44FFFF]/30",
-    humanTitle: "Trending Worldwide",
-    humanDesc: "The cinematic releases capturing our attention right now. Discover what cinephiles around the globe are watching, logging, and discussing this week."
-  },
-  hits2025: { 
-    icon: Clapperboard, 
-    color: "#44FFFF", 
-    glow: "rgba(68,255,255,0.15)", 
-    border: "border-[#44FFFF]/30",
-    humanTitle: "2025's Top 10 Blockbusters",
-    humanDesc: "A complete look back at the definitive box office milestones, cultural events, and cinematic marvels that shaped the screen in 2025."
-  },
-  drama: { 
-    icon: Heart, 
-    color: "#44FFFF", 
-    glow: "rgba(68,255,255,0.15)", 
-    border: "border-[#44FFFF]/30",
-    humanTitle: "All-Time Best Drama",
-    humanDesc: "Moving character studies, profound relationships, and beautifully human dilemmas. These emotional journeys left a permanent mark on moviegoers."
-  },
-  scifi: { 
-    icon: Orbit, 
-    color: "#44FFFF", 
-    glow: "rgba(68,255,255,0.15)", 
-    border: "border-[#44FFFF]/30",
-    humanTitle: "Sci-Fi & Cyberpunk Essentials",
-    humanDesc: "Challenging futures, cosmic exploration, and cutting-edge worlds. Venture into standard-setting titles that redefine science fiction."
-  },
-  action: { 
-    icon: Flame, 
-    color: "#44FFFF", 
-    glow: "rgba(68,255,255,0.15)", 
-    border: "border-[#44FFFF]/30",
-    humanTitle: "Adrenaline Rush Action Hits",
-    humanDesc: "High-velocity stunt coordination, precise blockbusters, and intense suspense sequences built to keep your eyes glued to the screen."
-  }
-};
+import { FilmDragLayer } from "../components/featured-lists/FilmDragLayer";
+import { FeaturedListsBrowse } from "../components/featured-lists/FeaturedListsBrowse";
+import { FeaturedListsForm } from "../components/featured-lists/FeaturedListsForm";
 
-function ListPosterCollage({ posters = [] }) {
-  const slots = Array.from({ length: 4 }, (_, i) => posters[i] ?? null);
-  return (
-    <div className="flex h-32 md:h-36 gap-[2px] bg-[#0B0E14] overflow-hidden">
-      {slots.map((poster, i) => (
-        <div key={i} className="flex-1 min-w-0 h-full">
-          {poster ? (
-            <img src={poster} alt="" className="w-full h-full object-cover" loading="lazy" />
-          ) : (
-            <div className="w-full h-full bg-[#151921] flex items-center justify-center">
-              <Film className="w-5 h-5 text-[#94A3B8]/15" />
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p";
 
 export function FeaturedListsPage() {
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryId = searchParams.get("editId");
+  const activeId = id || queryId;
+  const isEdit = Boolean(activeId);
+  const navigate = useNavigate();
   const auth = useAuth();
+
   const [featuredLists, setFeaturedLists] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [browseLoading, setBrowseLoading] = useState(!isEdit);
+  const [isCreating, setIsCreating] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [listName, setListName] = useState("");
+  const [listDescription, setListDescription] = useState("");
+  const [isRanked, setIsRanked] = useState(false);
+  const [movies, setMovies] = useState([]);
+  const [originalMovies, setOriginalMovies] = useState([]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const token = useMemo(
     () =>
       auth?.token ||
       auth?.user?.token ||
-      localStorage.getItem("authToken") ||
       localStorage.getItem("auth_token") ||
-      localStorage.getItem("token") ||
-      sessionStorage.getItem("authToken") ||
-      sessionStorage.getItem("auth_token") ||
-      sessionStorage.getItem("token"),
+      sessionStorage.getItem("auth_token"),
     [auth]
   );
 
-  // Syncing with routing system query params to ensure browser navigation steps back gracefully
-  const activeListKey = searchParams.get("list");
-  const activeFeaturedList = useMemo(() => {
-    return featuredLists.find((list) => list.key === activeListKey) || null;
-  }, [featuredLists, activeListKey]);
+  // Robust Admin Verification parsing claims directly to survive profile sync drops
+  const isUserAdmin = useMemo(() => {
+    if (auth?.user?.isAdmin || auth?.isAdmin) return true;
+    if (!token) return false;
 
-  const fetchFeaturedLists = async () => {
     try {
-      setLoading(true);
-      const featuredUrl = `${import.meta.env.VITE_API_BASE_URL}/Lists/featured`;
-      const featRes = await fetch(featuredUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (featRes.ok) {
-        setFeaturedLists(await featRes.json());
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        const roleClaim = payload['role'] || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        const adminClaim = payload['isAdmin'];
+        
+        if (roleClaim === 'Admin' || roleClaim?.includes('Admin') || String(adminClaim).toLowerCase() === 'true') {
+          return true;
+        }
       }
-    } catch (err) {
-      toast.error("Could not load the featured movie lists");
+    } catch (e) {
+      console.error("Admin verification fallback parsing error:", e);
+    }
+    return false;
+  }, [auth, token]);
+
+  // Browse View Data Loading
+  useEffect(() => {
+    if (isEdit || isCreating) return;
+
+    const fetchFeaturedLists = async () => {
+      try {
+        setBrowseLoading(true);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured`);
+        if (!res.ok) throw new Error("Failed to load featured lists");
+        const data = await res.json();
+        setFeaturedLists(data);
+      } catch {
+        toast.error("Could not load global lists");
+      } finally {
+        setBrowseLoading(false);
+      }
+    };
+
+    fetchFeaturedLists();
+  }, [isEdit, isCreating, refreshTrigger]);
+
+  // Edit Mode Initial Loading
+  useEffect(() => {
+    if (!isEdit) return;
+
+    const fetchList = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${activeId}`);
+        if (!res.ok) throw new Error("Failed to load list");
+        const data = await res.json();
+        setListName(data.listName ?? "");
+        setListDescription(data.listDescription ?? "");
+        setIsRanked(Boolean(data.isRanked));
+        setMovies(data.movies ?? []);
+        setOriginalMovies(data.movies ?? []);
+      } catch {
+        toast.error("Could not load this featured list");
+        navigate("/featured-lists");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchList();
+  }, [isEdit, activeId]);
+
+  // TMDB Instant Movie Engine Lookups
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/search?query=${encodeURIComponent(query)}`
+        );
+        if (!res.ok) throw new Error("Search failed");
+        const data = await res.json();
+        const results = Array.isArray(data) ? data : [];
+        setSearchResults(results.filter((m) => !movies.some((lm) => lm.movieId === m.id)).slice(0, 8));
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery, movies]);
+
+  const handleAddMovie = (movie) => {
+    const newEntry = {
+      movieId: movie.id,
+      title: movie.title,
+      poster: movie.poster_path ? `${TMDB_POSTER_BASE}/w500${movie.poster_path}` : null,
+      releaseYear: movie.release_date?.split("-")[0] ?? null,
+      voteAverage: movie.vote_average ?? null,
+    };
+    setSearchQuery("");
+    setSearchResults([]);
+    setMovies((prev) => [...prev, newEntry]);
+  };
+
+  const handleRemoveMovie = (movieId) => {
+    setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
+  };
+
+  const moveMovie = (dragIndex, hoverIndex) => {
+    setMovies((prev) => {
+      const updated = [...prev];
+      const [dragged] = updated.splice(dragIndex, 1);
+      updated.splice(hoverIndex, 0, dragged);
+      return updated;
+    });
+  };
+
+  const handleSave = async () => {
+    if (!listName.trim()) return toast.error("Please give your list a name");
+    if (movies.length === 0) return toast.error("Add at least one film to your list");
+
+    setSaving(true);
+    try {
+      if (isEdit) {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured-list/${activeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ listName: listName.trim(), listDescription: listDescription.trim(), isRanked }),
+        });
+        if (!res.ok) throw new Error();
+
+        const toRemove = originalMovies.filter((om) => !movies.some((m) => m.movieId === om.movieId));
+        const toAdd = movies.filter((m) => !originalMovies.some((om) => om.movieId === m.movieId));
+
+        for (const m of toRemove) {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured-list/${activeId}/movies/${m.movieId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+        for (const m of toAdd) {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured-list/${activeId}/movies`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ movieId: m.movieId }),
+          });
+        }
+        if (movies.length > 0) {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured-list/${activeId}/reorder`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ movieIds: movies.map((m) => m.movieId) }),
+          });
+        }
+        toast.success("Featured list updated successfully");
+        navigate("/featured-lists");
+      } else {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured-list`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ listName: listName.trim(), listDescription: listDescription.trim(), isRanked }),
+        });
+        if (!res.ok) throw new Error();
+        const created = await res.json();
+
+        for (const m of movies) {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured-list/${created.listId}/movies`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ movieId: m.movieId }),
+          });
+        }
+        toast.success("Featured list created globally");
+        setIsCreating(false);
+        setRefreshTrigger((prev) => prev + 1);
+      }
+    } catch {
+      toast.error("Could not save featured list configuration");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  useEffect(() => {
-    if (token) fetchFeaturedLists();
-  }, [token]);
+  const confirmDeleteList = async () => {
+    setShowDeleteConfirm(false);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/featured-list/${activeId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Featured list removed permanently");
+      navigate("/featured-lists");
+      setRefreshTrigger((prev) => prev + 1);
+    } catch {
+      toast.error("Could not remove featured list");
+    }
+  };
 
-  if (loading) {
+  if (browseLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0B0E14]">
-        <div className="text-center">
-          <div className="relative w-20 h-20 mx-auto mb-4">
-            <div className="absolute inset-0 rounded-full border-2 border-[#44FFFF]/20 flex items-center justify-center">
-              <Star className="w-8 h-8 text-[#44FFFF] animate-pulse" />
-            </div>
-            <div className="absolute inset-0 rounded-full border-t-2 border-[#44FFFF] animate-spin" />
-          </div>
-          <p className="text-[#94A3B8] text-sm">Loading featured selections...</p>
-        </div>
+      <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#BFBCFC]/20 border-t-[#BFBCFC] rounded-full animate-spin" />
       </div>
     );
   }
 
-  // SINGLE LIST CONTENT SCREEN
-  if (activeFeaturedList) {
-    const theme = THEME_MAP[activeFeaturedList.key] || THEME_MAP.acclaimed;
-    const ListIcon = theme.icon;
-    const title = activeFeaturedList.listName || theme.humanTitle;
-    const description = activeFeaturedList.listDescription || theme.humanDesc;
-
+  if (!isEdit && !isCreating) {
     return (
-      <div className="min-h-screen py-6 md:py-8 bg-[#0B0E14] text-[#F8FAFC]">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <button
-            onClick={() => setSearchParams({})}
-            className="inline-flex items-center gap-2 text-sm text-[#94A3B8] hover:text-[#F8FAFC] transition-colors mb-6 group bg-[#151921]/60 px-4 py-2 rounded-xl border border-white/5 cursor-pointer shadow-lg"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            Back
-          </button>
+      <FeaturedListsBrowse
+        featuredLists={featuredLists}
+        isAdmin={isUserAdmin}
+        onCreateClick={() => {
+          setListName("");
+          setListDescription("");
+          setIsRanked(false);
+          setMovies([]);
+          setIsCreating(true);
+        }}
+        onEditClick={(listId) => navigate(`/featured-lists?editId=${listId}`)}
+        onListClick={(listId) => navigate(`/list/${listId}`)}
+      />
+    );
+  }
 
-          <div className="relative rounded-2xl p-6 md:p-8 overflow-hidden bg-[#151921]/40 border border-white/5 mb-8">
-            <div 
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{ background: `radial-gradient(circle at top left, ${theme.glow}, transparent 70%)` }}
-            />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-              <div className="flex items-start gap-4">
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${theme.color}20`, border: `1px solid ${theme.color}40` }}
-                >
-                  <ListIcon className="w-6 h-6" style={{ color: theme.color }} />
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <FilmDragLayer />
+      <FeaturedListsForm
+        isEdit={isEdit}
+        listName={listName}
+        setListName={setListName}
+        isRanked={isRanked}
+        setIsRanked={setIsRanked}
+        listDescription={listDescription}
+        setListDescription={setListDescription}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        searchFocused={searchFocused}
+        setSearchFocused={setSearchFocused}
+        isSearching={isSearching}
+        searchResults={searchResults}
+        handleAddMovie={handleAddMovie}
+        movies={movies}
+        moveMovie={moveMovie}
+        handleRemoveMovie={handleRemoveMovie}
+        handleDeleteList={() => setShowDeleteConfirm(true)}
+        handleCancel={() => (isEdit ? navigate("/featured-lists") : setIsCreating(false))}
+        handleSave={handleSave}
+        saving={saving}
+      />
+
+      {showDeleteConfirm && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#151921] border border-[#FF61D2]/30 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 bg-[#FF61D2]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Trash2 className="w-5 h-5 text-[#FF61D2]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-black tracking-tight">{title}</h1>
-                  <p className="text-[#94A3B8] text-sm mt-2 leading-relaxed max-w-3xl">{description}</p>
+                  <h3 className="text-[#F8FAFC] font-bold text-lg leading-tight">Delete list?</h3>
+                  <p className="text-[#94A3B8] text-sm mt-1">Are you sure? This cannot be undone.</p>
                 </div>
               </div>
-              <span className="self-start sm:self-center text-xs font-bold uppercase tracking-widest px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-[#44FFFF]">
-                {activeFeaturedList.movieCount} {activeFeaturedList.movieCount === 1 ? "movie" : "movies"}
-              </span>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-4 py-2 rounded-lg border border-[#BFBCFC]/20 text-[#94A3B8] text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteList}
+                  className="flex-1 px-4 py-2 rounded-lg bg-[#FF61D2] text-white font-bold text-sm"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* Premium Grid layout adapting logic from ListDetailPage.jsx */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3 md:gap-4">
-            {activeFeaturedList.movies?.map((movie, index) => (
-              <div key={movie.movieId} className="flex flex-col gap-1.5 group">
-                <ProfilePosterCard
-                  movieId={movie.movieId}
-                  poster={movie.poster}
-                  title={movie.title}
-                  to={`/movie/${movie.movieId}`}
-                />
-                <div className="flex items-center justify-between px-1 mt-0.5">
-                  <span className="font-data text-xs font-bold text-[#64748B] group-hover:text-[#44FFFF] transition-colors">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <div className="flex items-center gap-0.5 bg-[#0B0E14]/60 px-1.5 py-0.5 rounded border border-white/5">
-                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                    <span className="text-[10px] font-bold font-data text-amber-200">
-                      {movie.voteAverage > 0 ? movie.voteAverage.toFixed(1) : "0.0"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // OVERVIEW HUB SCREEN
-  return (
-    <div className="min-h-screen py-8 md:py-12 bg-[#0B0E14]">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="mb-8 md:mb-12">
-          <h1 className="text-3xl md:text-5xl font-black leading-none tracking-tight">
-            <span className="bg-gradient-to-r from-[#BFBCFC] via-[#9b9dfc] to-[#44FFFF] bg-clip-text text-transparent">
-              Featured Collections
-            </span>
-          </h1>
-          <p className="text-sm md:text-base text-[#64748B] mt-2 max-w-2xl leading-relaxed">
-            Explore premium lists curated exclusively by our editorial team. Dive deep into tailored sets across distinct cinematic universes.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {featuredLists.map((list) => {
-            const theme = THEME_MAP[list.key] || THEME_MAP.acclaimed;
-            const CardIcon = theme.icon;
-            const title = list.listName || theme.humanTitle;
-            const description = list.listDescription || theme.humanDesc;
-
-            return (
-              <div
-                key={list.key}
-                onClick={() => setSearchParams({ list: list.key })}
-                className="group block bg-[#151921]/40 hover:bg-[#151921]/90 overflow-hidden rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 hover:scale-[1.02] cursor-pointer relative shadow-xl shadow-black/20"
-              >
-                <div 
-                  className="absolute top-0 right-0 w-40 h-40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                  style={{ background: `radial-gradient(circle at top right, ${theme.glow}, transparent 70%)` }}
-                />
-                <ListPosterCollage posters={list.previewPosters} />
-                <div className="p-5 relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div 
-                      className="w-9 h-9 rounded-xl flex items-center justify-center border"
-                      style={{ background: `${theme.color}10`, borderColor: `${theme.color}30` }}
-                    >
-                      <CardIcon className="w-4 h-4" style={{ color: theme.color }} />
-                    </div>
-                    <h3 className="text-lg font-bold text-[#F8FAFC] group-hover:text-[#44FFFF] transition-colors truncate flex-1">
-                      {title}
-                    </h3>
-                  </div>
-                  <p className="text-[#64748B] text-xs leading-relaxed line-clamp-2 mb-4 min-h-[36px]">
-                    {description}
-                  </p>
-                  <div className="flex items-center justify-between text-xs pt-3 border-t border-white/5">
-                    <span className="text-[#44FFFF] font-data font-semibold bg-[#44FFFF]/5 border border-[#44FFFF]/10 px-2 py-0.5 rounded-md">
-                      {list.movieCount} {list.movieCount === 1 ? "movie" : "movies"}
-                    </span>
-                    <span className="text-[#64748B] font-medium group-hover:text-white flex items-center gap-1 transition-colors">
-                      Browse List <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </DndProvider>
   );
 }

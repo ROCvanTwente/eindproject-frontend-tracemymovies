@@ -202,7 +202,7 @@ export function Header() {
                   { to: "/", label: "Home", end: true },
                   { to: "/movies", label: "Movies" },
                   { to: "/about", label: "About" },
-                  ...(isAuthenticated ? [{ to: "/featured-lists", label: "Lists" }] : []),
+                  { to: "/featured-lists", label: "Lists" },
                 ].map(({ to, label, end }) => (
                   <NavLink
                     key={to}
@@ -525,31 +525,31 @@ export function Header() {
       )}
 
       {/* MOBILE MENU PANEL */}
-      {showMobileMenu && (
-        <div className="lg:hidden fixed top-[76px] left-0 right-0 bg-[#0D1117]/98 backdrop-blur-xl border-b border-white/8 z-40 max-h-[calc(100vh-76px)] overflow-y-auto">
-          <div className="container mx-auto px-4 py-3 space-y-0.5">
-            {[
-              { to: "/", label: "Home", end: true },
-              { to: "/movies", label: "Movies" },
-              { to: "/about", label: "About" },
-              ...(isAuthenticated ? [{ to: "/featured-lists", label: "Lists" }] : []),
-            ].map(({ to, label, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                onClick={() => setShowMobileMenu(false)}
-                className={({ isActive }) =>
-                  `block px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-[#BFBCFC]/15 text-[#F8FAFC]"
-                      : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
-                  }`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
+        {showMobileMenu && (
+          <div className="lg:hidden fixed top-[76px] left-0 right-0 bg-[#0D1117]/98 backdrop-blur-xl border-b border-white/8 z-40 max-h-[calc(100vh-76px)] overflow-y-auto">
+            <div className="container mx-auto px-4 py-3 space-y-0.5">
+              {[
+                { to: "/", label: "Home", end: true },
+                { to: "/movies", label: "Movies" },
+                { to: "/about", label: "About" },
+                { to: "/featured-lists", label: "Lists" },
+              ].map(({ to, label, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  onClick={() => setShowMobileMenu(false)}
+                  className={({ isActive }) =>
+                    `block px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-[#BFBCFC]/15 text-[#F8FAFC]"
+                        : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
 
             {isAuthenticated && (
               <>

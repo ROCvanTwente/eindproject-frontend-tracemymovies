@@ -47,7 +47,6 @@ function DraggableFilmCard({ movie, index, isRanked, moveMovie, onDropEnd, onRem
       const hoverClientX = clientOffset.x - hoverRect.left;
       const hoverClientY = clientOffset.y - hoverRect.top;
 
-      // Only swap once the dragged poster has reached the middle of this card
       if (dragIndex < hoverIndex && hoverClientX < hoverMiddleX && hoverClientY < hoverMiddleY) return;
       if (dragIndex > hoverIndex && hoverClientX > hoverMiddleX && hoverClientY > hoverMiddleY) return;
 
@@ -133,7 +132,7 @@ function FilmDragLayer() {
 
 export function CreateListPage() {
   const { id } = useParams();
-  const isEdit = Boolean(id);
+  const isEdit = id && id !== "new";
   const navigate = useNavigate();
   const auth = useAuth();
 
@@ -402,7 +401,6 @@ export function CreateListPage() {
                 </label>
                 <input
                   type="text"
-                  
                   value={listName}
                   onChange={(e) => setListName(e.target.value)}
                   maxLength={100}
@@ -425,23 +423,21 @@ export function CreateListPage() {
               </label>
             </div>
 
-<div className="flex flex-col">
-  <label className="block text-sm font-medium text-[#F8FAFC] mb-2">
-    Description
-  </label>
-
-  <textarea
-    placeholder="Thoughts..."
-    maxLength={10000}
-    value={listDescription}
-    onChange={(e) => setListDescription(e.target.value)}
-    className="w-full flex-1 min-h-[110px] bg-[#0B0E14] text-[#F8FAFC] px-3.5 py-2.5 rounded-lg border border-[#BFBCFC]/30 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none"
-  />
-
-  <div className="mt-1 text-xs text-[#94A3B8] text-right">
-    {listDescription.length}/10000 characters
-  </div>
-</div>
+            <div className="flex flex-col">
+              <label className="block text-sm font-medium text-[#F8FAFC] mb-2">
+                Description
+              </label>
+              <textarea
+                placeholder="Thoughts..."
+                maxLength={10000}
+                value={listDescription}
+                onChange={(e) => setListDescription(e.target.value)}
+                className="w-full flex-1 min-h-[110px] bg-[#0B0E14] text-[#F8FAFC] px-3.5 py-2.5 rounded-lg border border-[#BFBCFC]/30 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none"
+              />
+              <div className="mt-1 text-xs text-[#94A3B8] text-right">
+                {listDescription.length}/10000 characters
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-y border-[#BFBCFC]/25 py-3 mb-6">
@@ -449,7 +445,6 @@ export function CreateListPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 h-4" />
               <input
                 type="text"
-                
                 placeholder="Enter name of film..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
