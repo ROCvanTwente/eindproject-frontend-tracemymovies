@@ -84,7 +84,7 @@ export function SignalRProvider({ children }) {
       .configureLogging(signalR.LogLevel.Warning)
       .build();
 
-    connectionChat.on("ReceiveMessage", (senderId, messageId, message, timeSended, isRead, senderUserName, profileImg) => {
+    connectionChat.on("ReceiveMessage", (senderId, messageId, message, timeSended, isRead, movie, senderUserName, profileImg) => {
       if (window.location.pathname == "/messages") {
         console.log("NIET")
       } else {

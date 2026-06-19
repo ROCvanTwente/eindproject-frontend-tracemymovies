@@ -139,6 +139,7 @@ export function MovieDetailPage() {
                 onClose={() => setShowShareModal(false)}
                 movieTitle={movie.title}
                 movieId={movie.id}
+                token={token}
             />
         </div>
     );

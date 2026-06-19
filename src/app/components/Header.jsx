@@ -118,8 +118,13 @@ export function Header() {
           console.log("Verbonden met SignalR");
 
           newConnection.on("ReceiveTotalNotReadMessages", (totalNotReadMessages) => {
+            console.log("NU TOTAL MESSAGE");
             console.log(totalNotReadMessages);
             setTotalAllNotReadMessages(totalNotReadMessages);
+          });
+
+          newConnection.on("receiveDeleteMessage", (messageId) => {
+            newConnection.invoke("GetTotalNotReadMessages", "");
           });
 
           newConnection.invoke("GetTotalNotReadMessages", "");
@@ -296,16 +301,14 @@ export function Header() {
                   >
                     <button
                       onClick={handleLikedDropdown}
-                      className={`p-2 transition-all duration-200 rounded-lg ${
-                        showLikedDropdown
-                        ? "text-[#FF61D2] bg-[#FF61D2]/10"
-                        : "text-[#94A3B8] hover:text-[#FF61D2] hover:bg-[#FF61D2]/10"
+                      className={`p-2 transition-all duration-200 rounded-lg ${showLikedDropdown
+                          ? "text-[#FF61D2] bg-[#FF61D2]/10"
+                          : "text-[#94A3B8] hover:text-[#FF61D2] hover:bg-[#FF61D2]/10"
                         }`}
                       title="Liked Movies"
                     >
                       <Heart
-                        className={`w-5 h-5 transition-all duration-200 ${
-                          showLikedDropdown ? "fill-[#FF61D2] scale-110" : ""
+                        className={`w-5 h-5 transition-all duration-200 ${showLikedDropdown ? "fill-[#FF61D2] scale-110" : ""
                           }`}
                       />
                     </button>
@@ -390,8 +393,7 @@ export function Header() {
                   <NavLink
                     to="/FriendPage"
                     className={({ isActive }) =>
-                      `p-2 transition-colors duration-200 rounded-lg hidden md:block ${
-                        isActive ? "text-[#F8FAFC] bg-white/10" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                      `p-2 transition-colors duration-200 rounded-lg hidden md:block ${isActive ? "text-[#F8FAFC] bg-white/10" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
                       }`
                     }
                     title="Friends"
@@ -463,8 +465,7 @@ export function Header() {
                           to={to}
                           onClick={() => setShowUserMenu(false)}
                           className={({ isActive }) =>
-                            `block px-4 py-2 transition-colors ${
-                              isActive
+                            `block px-4 py-2 transition-colors ${isActive
                               ? "bg-[#BFBCFC]/15 text-[#F8FAFC] font-medium"
                               : "text-[#F8FAFC] hover:bg-[#BFBCFC]/10"
                             }`
@@ -479,8 +480,7 @@ export function Header() {
                           to="/admin"
                           onClick={() => setShowUserMenu(false)}
                           className={({ isActive }) =>
-                            `block px-4 py-2 transition-colors font-medium ${
-                              isActive
+                            `block px-4 py-2 transition-colors font-medium ${isActive
                               ? "bg-[#44FFFF]/15 text-[#44FFFF]"
                               : "text-[#44FFFF] hover:bg-[#44FFFF]/10"
                             }`

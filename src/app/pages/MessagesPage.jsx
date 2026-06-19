@@ -23,7 +23,7 @@ export function MessagesPage() {
             await connection.invoke(
                 "SendMessagePrivate",
                 selectedFriend.userId,
-                messageText
+                `0.${messageText}`
             );
         } catch (err) {
             console.error(err);
@@ -101,7 +101,6 @@ export function MessagesPage() {
         fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLastMessages`, { headers })
             .then((r) => r.ok ? r.json() : [])
             .then((data) => {
-                console.log(data)
                 setLastMessages(data);
             })
             .catch((err) => console.log(err));
@@ -117,7 +116,6 @@ export function MessagesPage() {
             .withAutomaticReconnect()
             .build();
 
-        console.log(newConnection)
         if (newConnection.state === signalR.HubConnectionState.Disconnected) {
             newConnection.start()
                 .then(() => {
@@ -157,7 +155,6 @@ export function MessagesPage() {
             .then((r) => r.ok ? r.json() : [])
             .then((data) => {
                 setMessages(data);
-                console.log(data)
                 if (lastMessages.length != 0) {
                     setLastMessages(prev => {
                         return prev.map(lastmessage => {
@@ -194,23 +191,25 @@ export function MessagesPage() {
         if (!connection) return
         connection.off("ReceiveMessage");
         connection.off("receiveDeleteMessage");
-        connection.on("ReceiveMessage", (senderId, messageId, message, timeSended, isRead) => {
+        connection.on("ReceiveMessage", (senderId, messageId, message, timeSended, isRead, movie) => {
             if (selectedFriend.userId == senderId || auth.user.userId == senderId) {
                 setMessages((prev) => [
                     ...prev,
                     { senderId, messageId, message, timeSended, isRead }
                 ]);
             }
-
+            
             if (selectedFriend.userId == senderId) {
                 console.log("Stuur NU DE LIVE EVENT: IsRead")
                 handleLiveIsRead(selectedFriend.userId, messageId);
             } else if (auth.user.userId != senderId) {
-                console.log("Het us van de andere vriend")
-                console.log(lastMessages)
+                console.log("Het is van de andere vriend")
                 setLastMessages(prev => {
                     return prev.map(lastmessage => {
                         if (lastmessage.friendId == senderId) {
+
+                            if (movie != null) message = "Shared a movie";
+
                             return {
                                 ...lastmessage,
                                 message: message,
@@ -233,11 +232,10 @@ export function MessagesPage() {
             fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLastMessages`, { headers })
                 .then((r) => r.ok ? r.json() : [])
                 .then((data) => {
-                    console.log(data)
                     setLastMessages(data);
+                    connection.invoke("GetTotalNotReadMessages", "");
                 })
                 .catch((err) => console.log(err));
-            connection.invoke("GetTotalNotReadMessages", "");
         });
     }, [selectedFriend, lastMessages, connection, auth])
 
@@ -392,21 +390,21 @@ export function MessagesPage() {
                                                     : 'bg-[#0B0E14] text-[#F8FAFC]'
                                                     } relative rounded-2xl px-4 py-3 break-all`}
                                             >
-                                                {message.movieReference && (
+                                                {message.movie != null && (
                                                     <Link
-                                                        to={`/movie/${message.movieReference.id}`}
+                                                        to={`/movie/${message.movie.movieId}`}
                                                         className="flex items-center gap-3 mb-2 p-2 bg-black/20 rounded-xl hover:bg-black/30 transition-all"
                                                     >
                                                         <img
-                                                            src={`https://image.tmdb.org/t/p/w92${message.movieReference.poster}`}
-                                                            alt={message.movieReference.title}
+                                                            src={`https://image.tmdb.org/t/p/w92${message.movie.posterImg}`}
+                                                            alt={message.movie.title}
                                                             className="w-12 h-16 object-cover rounded"
                                                         />
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-2">
                                                                 <Film className="w-4 h-4" />
                                                                 <span className="font-medium text-sm">
-                                                                    {message.movieReference.title}
+                                                                    {message.movie.title}
                                                                 </span>
                                                             </div>
                                                         </div>
