@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useCallback, use } from 'react';
-import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film, Check, CheckCheck, EllipsisVertical, Pencil, Trash } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film, Check, CheckCheck, EllipsisVertical, Pencil, Trash, X } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from "../context/AuthContext";
 import * as signalR from "@microsoft/signalr";
@@ -262,7 +262,7 @@ export function MessagesPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
 
                     {/* Left Column: Chat List */}
-                    <div className="lg:col-span-1 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col">
+                    <div className={`lg:col-span-1 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col ${selectedFriend ? "hidden" : "flex"} lg:flex`}>
                         <div className="p-4 border-b border-[#BFBCFC]/15">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] w-4 h-4" />
@@ -275,7 +275,7 @@ export function MessagesPage() {
                                 />
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto">
+                        <div className={`flex-1 overflow-y-auto`}>
                             {filterMyFriends.map((friend) => (
                                 <div
                                     key={friend.userId}
@@ -334,7 +334,7 @@ export function MessagesPage() {
                     </div>
 
                     {/* Right Column: Chat Window */}
-                    <div className="lg:col-span-2 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col">
+                    <div className={`lg:col-span-2 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col ${!selectedFriend ? "hidden" : "flex"} lg:flex`}>
                         {selectedFriend ? (
                             <>
                                 {/* Chat Header */}
@@ -368,6 +368,7 @@ export function MessagesPage() {
                                             </p>
                                         </div>
                                     </Link>
+                                    <button onClick={() => setSelectedFriend(null)} className={`block lg:hidden hover:cursor-pointer`}><X /></button>
                                 </div>
 
                                 {/* Messages List */}
