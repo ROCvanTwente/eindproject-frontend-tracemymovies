@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { WatchLogModal } from "./WatchLogModal";
 
+import * as signalR from "@microsoft/signalr";
+
 export function Header() {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || "");
@@ -41,23 +43,26 @@ export function Header() {
   const [likedMovies, setLikedMovies] = useState([]);
   const [likedLoading, setLikedLoading] = useState(false);
 
+  const [totalAllNotReadMessages, setTotalAllNotReadMessages] = useState(0);
+  const [connection, setConnection] = useState(null)
+
   const menuRef = useRef(null);
   const likedRef = useRef(null);
 
   const auth = useAuth();
 
   const token = useMemo(() => {
-          return (
-              auth?.token ||
-              auth?.user?.token ||
-              localStorage.getItem("authToken") ||
-              localStorage.getItem("auth_token") ||
-              localStorage.getItem("token") ||
-              sessionStorage.getItem("authToken") ||
-              sessionStorage.getItem("auth_token") ||
-              sessionStorage.getItem("token")
-          );
-      }, [auth]);
+    return (
+      auth?.token ||
+      auth?.user?.token ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("authToken") ||
+      sessionStorage.getItem("auth_token") ||
+      sessionStorage.getItem("token")
+    );
+  }, [auth]);
 
   const {
     user,
@@ -120,6 +125,51 @@ export function Header() {
     };
   }, []);
 
+  //MessageLogo LIVE
+  useEffect(() => {
+    if (!token) return
+
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`${import.meta.env.VITE_API_BASE_URL.replace("/api", "")}/hubs/chat`, {
+        accessTokenFactory: () => token
+      })
+      .configureLogging(signalR.LogLevel.Information)
+      .withAutomaticReconnect()
+      .build();
+
+    if (newConnection.state === signalR.HubConnectionState.Disconnected) {
+      newConnection.start()
+        .then(() => {
+          console.log("Verbonden met SignalR");
+
+          newConnection.on("ReceiveTotalNotReadMessages", (totalNotReadMessages) => {
+            console.log("NU TOTAL MESSAGE");
+            console.log(totalNotReadMessages);
+            setTotalAllNotReadMessages(totalNotReadMessages);
+          });
+
+          newConnection.on("receiveDeleteMessage", (messageId) => {
+            newConnection.invoke("GetTotalNotReadMessages", "");
+          });
+
+          newConnection.invoke("GetTotalNotReadMessages", "");
+
+        })
+        .catch((err) => console.error(err));
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setConnection(newConnection);
+
+    return () => {
+      if (newConnection.state !== signalR.HubConnectionState.Disconnected) {
+        newConnection.stop()
+          .then(() => console.log("SignalR netjes afgesloten"))
+          .catch(err => console.error("Fout bij sluiten:", err));
+      }
+      setConnection(null);
+    };
+  }, [token, auth]);
+
   // SEARCH
   const handleSearch = (e, closeMobileSearch = false) => {
     e.preventDefault();
@@ -130,17 +180,18 @@ export function Header() {
   };
 
 
- // FETCH LIKED MOVIES
+  // FETCH LIKED MOVIES
   const fetchLikedMovies = async () => {
     try {
       setLikedLoading(true);
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMovies`, { 
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },});
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLikedMovies`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Failed to fetch liked movies");
@@ -260,6 +311,11 @@ export function Header() {
                     title="Messages"
                   >
                     <MessageCircle className="w-5 h-5" />
+                    {totalAllNotReadMessages != 0 && (
+                      <div className="absolute top-1 right-1 flex h-3 w-3 items-center justify-center rounded-full bg-[#FF61D2] text-[9px] font-bold text-white shadow-sm ring-2 ring-[#151921]">
+                        {totalAllNotReadMessages > 9 ? "9+" : totalAllNotReadMessages}
+                      </div>
+                    )}
                   </NavLink>
 
                   {/* LIKED DROPDOWN */}
