@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Shield, AlertCircle, Search, Download, AlertTriangle, CheckCircle, Clock, XCircle, MoreVertical, Key } from 'lucide-react';
+import { X, Shield, AlertCircle, Search, Download, AlertTriangle, CheckCircle, Clock, XCircle, MoreVertical, Key, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { PaginationControls } from './PaginationControls';
 import { BanUserModal } from './BanUserModal';
@@ -56,6 +56,44 @@ export function UserManagement() {
     (u.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     (u.id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const [sortBy, setSortBy] = useState('joinDate');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    let valA = '';
+    let valB = '';
+
+    if (sortBy === 'role') {
+      const getRoleWeight = (role) => {
+        const r = (role || '').toLowerCase();
+        if (r === 'admin') return 1;
+        if (r === 'mod' || r === 'moderator') return 2;
+        return 3;
+      };
+      valA = getRoleWeight(a.role);
+      valB = getRoleWeight(b.role);
+    } else if (sortBy === 'status') {
+      valA = a.status || '';
+      valB = b.status || '';
+    } else if (sortBy === 'joinDate') {
+      valA = new Date(a.joinDate || a.joinedDate || 0).getTime();
+      valB = new Date(b.joinDate || b.joinedDate || 0).getTime();
+    }
+
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   // Pagination logic
   const totalEntries = totalServerEntries;
@@ -292,19 +330,55 @@ export function UserManagement() {
                 </th>
                 <th className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide">ID</th>
                 <th className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide">User Profile</th>
-                <th className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide">Role</th>
-                <th className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide">Status</th>
-                <th className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide">Join Date</th>
+                <th 
+                  onClick={() => handleSort('role')} 
+                  className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide cursor-pointer hover:text-[#F8FAFC] select-none"
+                >
+                  <div className="flex items-center gap-1">
+                    Role
+                    {sortBy === 'role' ? (
+                      sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                    ) : (
+                      <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('status')} 
+                  className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide cursor-pointer hover:text-[#F8FAFC] select-none"
+                >
+                  <div className="flex items-center gap-1">
+                    Status
+                    {sortBy === 'status' ? (
+                      sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                    ) : (
+                      <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />
+                    )}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('joinDate')} 
+                  className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide cursor-pointer hover:text-[#F8FAFC] select-none"
+                >
+                  <div className="flex items-center gap-1">
+                    Join Date
+                    {sortBy === 'joinDate' ? (
+                      sortOrder === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                    ) : (
+                      <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />
+                    )}
+                  </div>
+                </th>
                 <th className="px-6 py-4 text-left text-[#94A3B8] font-medium text-sm uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
               {loading ? (
               <tbody><tr><td colSpan="7" className="px-6 py-8 text-center text-[#94A3B8]">Loading users...</td></tr></tbody>
-              ) : filteredUsers.length === 0 ? (
+              ) : sortedUsers.length === 0 ? (
               <tbody><tr><td colSpan="7" className="px-6 py-8 text-center text-[#94A3B8]">No users found.</td></tr></tbody>
               ) : (
               <tbody>
-                {filteredUsers.map((user, index) => (
+                {sortedUsers.map((user, index) => (
                   <tr
                     key={user.id}
                     className={`border-b border-[#BFBCFC]/10 hover:bg-[#BFBCFC]/5 transition-colors ${

@@ -7,6 +7,7 @@ import { UserManagement } from './UserManagement';
 import { SystemSettingsPage } from './SystemSettingsPage';
 import { MovieCatalog } from './MovieCatalog';
 import { ActivityLogs } from './ActivityLogs';
+import { BadgeController } from './BadgeController';
 
 export function AdminContentFrame({ 
   currentView, 
@@ -34,6 +35,10 @@ export function AdminContentFrame({
 
   if (currentView === 'movies') {
     return <MovieCatalog />;
+  }
+
+  if (currentView === 'badges') {
+    return <BadgeController />;
   }
 
   if (currentView === 'activity') {
@@ -127,13 +132,24 @@ export function AdminContentFrame({
         {/* Top Watched Ranking */}
         <div className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-6">
           <h3 className="text-lg font-bold text-[#F8FAFC] mb-4">Most Watched This Week</h3>
-          <div className="space-y-2">
-            {topMovies.slice(0, 3).map((movie, idx) => (
-              <div key={idx} className="flex justify-between items-center p-2.5 bg-[#0B0E14] rounded-lg text-sm border border-[#BFBCFC]/5">
-                <span className="text-[#F8FAFC] font-medium">{idx + 1}. {movie.title}</span>
-                <span className="text-[#44FFFF] font-mono text-xs">{movie.watches.toLocaleString()} hits</span>
-              </div>
-            ))}
+          <div className="space-y-3">
+            {topMovies.slice(0, 3).map((movie, idx) => {
+              const posterUrl = movie.poster 
+                ? (movie.poster.startsWith('http') ? movie.poster : `https://image.tmdb.org/t/p/w92${movie.poster}`)
+                : 'https://via.placeholder.com/92x138/151921/BFBCFC?text=No+Poster';
+              return (
+                <div key={idx} className="flex items-center gap-3 p-2.5 bg-[#0B0E14] rounded-lg text-sm border border-[#BFBCFC]/5">
+                  <span className="text-xs font-bold text-[#94A3B8] w-4">{idx + 1}.</span>
+                  <div className="w-8 h-12 rounded overflow-hidden bg-[#151921] border border-[#BFBCFC]/10 flex-shrink-0">
+                    <img src={posterUrl} alt={movie.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[#F8FAFC] font-semibold truncate" title={movie.title}>{movie.title}</p>
+                    <p className="text-[#44FFFF] font-mono text-[10px] mt-0.5">{movie.watches.toLocaleString()} hits</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

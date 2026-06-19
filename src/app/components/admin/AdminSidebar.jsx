@@ -1,10 +1,11 @@
 // src/components/admin/AdminSidebar.jsx
-import { Shield, LayoutDashboard, Users, Film, List, Flag, Activity, Settings } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Film, List, Flag, Activity, Settings, Award } from 'lucide-react';
 
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'User Management', icon: Users },
   { id: 'movies', label: 'Movie Catalog', icon: Film },
+  { id: 'badges', label: 'Badge Controller', icon: Award },
   { id: 'moderation', label: 'Moderation Queue', icon: Flag },
   { id: 'activity', label: 'Activity Logs', icon: Activity },
   { id: 'settings', label: 'System Settings', icon: Settings },
@@ -45,18 +46,6 @@ export function AdminSidebar({ currentView, setCurrentView }) {
           );
         })}
       </nav>
-
-      <div className="p-4 border-t border-[#BFBCFC]/10">
-        <div className="flex items-center gap-3 p-3 bg-[#0B0E14] rounded-lg">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center">
-            <span className="text-[#0B0E14] font-bold text-sm">AD</span>
-          </div>
-          <div className="flex-1">
-            <p className="text-[#F8FAFC] font-medium text-sm">Admin</p>
-            <p className="text-[#44FFFF] text-xs">Super Admin</p>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }
