@@ -184,6 +184,15 @@ export function ProfilePosterCard({
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ MovieId: movieId, Rating: newRating }),
       });
+      // If film wasn't watched yet and a rating was given, mark it as watched
+      if (newRating > 0 && !isWatched) {
+        const watchRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/LogWatchActivity`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ MovieId: movieId }),
+        });
+        if (watchRes.ok) setIsWatched(true);
+      }
       triggerRefresh();
     } catch {}
   };
