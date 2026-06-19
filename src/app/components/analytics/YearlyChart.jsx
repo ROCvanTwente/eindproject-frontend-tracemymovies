@@ -1,3 +1,4 @@
+// Component dat een lijngrafiek tekent van het aantal bekeken films per jaar of per maand binnen een geselecteerd jaar.
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -6,15 +7,15 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
   const [viewMode, setViewMode] = useState("yearly"); // "yearly" | "monthly"
 
-  // 1. Process standard layout limits and find smart default year
+  // 1. Verwerk standaard layoutgrenzen en bepaal de slimme standaard jaaroptie
   const yearsArray = yearlyData.map((d) => parseInt(d.year)).filter(Boolean);
   const minYear = yearsArray.length > 0 ? Math.min(...yearsArray) : new Date().getFullYear();
   const maxYear = new Date().getFullYear();
-
+  
   const defaultYearString = yearsArray.length > 0 ? Math.max(...yearsArray).toString() : new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(defaultYearString);
 
-  // 2. Select and shape active chart collection data maps
+  // 2. Selecteer en modelleer de data voor de actieve grafiekweergave
   let activeChartData = [];
   if (viewMode === "yearly") {
     activeChartData = yearlyData;
@@ -26,7 +27,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
     }));
   }
 
-  // 3. Peak values calculations map with time context
+  // 3. Berekening van de piekwaarden inclusief de tijdscontext
   const peakMetric = activeChartData.reduce(
     (max, x) => (x.movies > max.movies ? x : max),
     { movies: 0 }
@@ -34,13 +35,13 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
 
   const peakText = peakMetric.movies > 0
     ? (viewMode === "yearly"
-      ? `${peakMetric.year} (${peakMetric.movies} films)`
-      : `${peakMetric.displayLabel} (${peakMetric.movies} films)`)
-    : "0 films";
+      ? `${peakMetric.year} (${peakMetric.movies} movies)`
+      : `${peakMetric.displayLabel} (${peakMetric.movies} movies)`)
+    : "0 movies";
 
   return (
     <div className="w-full">
-      {/* Header Info Block */}
+      {/* Header-informatieblok */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-white/5 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -54,9 +55,9 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
           </p>
         </div>
 
-        {/* Dynamic Controls Toggles Layout Block */}
+        {/* Knoppen en dropdowns voor de dynamische besturing */}
         <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-          {/* View Toggles */}
+          {/* Weergave-toggles */}
           <div className="flex bg-background/60 p-1 border border-white/5 rounded-xl">
             <button
               onClick={() => setViewMode("yearly")}
@@ -79,7 +80,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
             </button>
           </div>
 
-          {/* Year Picker Dropdown - Fixed with focus border styles, custom arrow wrapper, and hover protection */}
+          {/* Jaar-selectie dropdown (met styling voor focus, hover en aangepaste pijl) */}
           {viewMode === "monthly" && (
             <div className="relative">
               <select
@@ -93,7 +94,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
                   </option>
                 ))}
               </select>
-              {/* Custom SVG arrow container to stay black on hover backgrounds */}
+              {/* Aangepaste SVG-pijlhuls die zwart blijft bij hoveren over de achtergrond */}
               <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-muted-foreground">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
@@ -102,7 +103,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
             </div>
           )}
 
-          {/* Metric Data Pill Array */}
+          {/* Metric-datapil met samenvatting van de piek */}
           <div className="flex items-center gap-4 bg-background/80 border border-white/4 p-2 rounded-xl shadow-inner">
             <div className="px-3 py-0.5">
               <p className="text-[10px] text-muted-foreground/80 uppercase font-bold tracking-wider">
@@ -116,7 +117,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
         </div>
       </div>
 
-      {/* Line Graph Canvas Container Area */}
+      {/* Grafiek-canvasgebied */}
       <div className="w-full h-[320px] relative px-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={activeChartData} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
@@ -169,7 +170,7 @@ export function YearlyChart({ yearlyData = [], monthlyData = {} }) {
               dot={{ stroke: '#07090e', strokeWidth: 2.5, fill: 'var(--color-accent)', r: 5 }}
               activeDot={{ stroke: 'var(--color-accent)', strokeWidth: 2, fill: '#07090e', r: 7 }}
               connectNulls={true}
-              isAnimationActive={false} // Prevents breaking line transitions between view modes
+              isAnimationActive={false} // Voorkomt visuele haperingen bij transitie tussen weergaven
             />
           </LineChart>
         </ResponsiveContainer>

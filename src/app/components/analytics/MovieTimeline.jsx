@@ -1,7 +1,8 @@
+// Component dat de verdeling van de bekeken films over verschillende historische tijdperken visualiseert (Movie Timeline).
 import { useState } from 'react';
 import { Clock } from 'lucide-react';
 
-// Explicit color mapper based on movie timeline eras
+// Expliciete kleurtoewijzing op basis van filmtijdlijntijdperken
 const getEraColor = (label, idx) => {
   const lower = (label || '').toLowerCase();
   
@@ -10,7 +11,7 @@ const getEraColor = (label, idx) => {
   if (lower.includes('modern blockbusters')) return '#ff69ff';
   if (lower.includes('streaming era')) return '#00FFFF';
   
-  // Fallback palette for any unexpected dynamic eras
+  // Fallback-palet voor eventuele onverwachte dynamische tijdperken
   const fallbackPalette = ['#FF61D2', '#3B82F6', '#EC4899', '#AFA9FF'];
   return fallbackPalette[idx % fallbackPalette.length];
 };
@@ -18,7 +19,7 @@ const getEraColor = (label, idx) => {
 export function MovieTimeline({ rawData }) {
   const [activeIdx, setActiveIdx] = useState(null);
 
-  // Safe parsing of dynamic backend data map
+  // Veilige verwerking van dynamische backend-datatoewijzing
   const timelineData = (rawData || []).map((item, idx) => {
     const label = item.label || item.eraName || 'Unknown Era';
     return {
@@ -40,7 +41,7 @@ export function MovieTimeline({ rawData }) {
 
   return (
     <div className="w-full select-none flex flex-col h-full bg-transparent">
-      {/* Header Info */}
+      {/* Header-informatie */}
       <div className="flex items-center gap-2 mb-2">
         <Clock className="w-5 h-5 text-[#44FFFF] drop-shadow-[0_0_8px_rgba(68,255,255,0.5)]" />
         <h3 className="text-[#F8FAFC] font-bold font-heading text-xl tracking-wide">Movie Timeline</h3>
@@ -49,7 +50,7 @@ export function MovieTimeline({ rawData }) {
         A dynamic chronological dissection of your viewing habits mapped across historical release eras.
       </p>
 
-      {/* Seamless Continuous Ribbon Block without any internal borders */}
+      {/* Naadloze doorlopende balk zonder interne randen */}
       <div 
         className="h-8 w-full rounded-xl flex overflow-hidden border border-white/10 mb-8 bg-[#151921]/40 backdrop-blur-sm p-[3px] transition-all duration-300"
         onMouseLeave={() => setActiveIdx(null)}
@@ -75,7 +76,7 @@ export function MovieTimeline({ rawData }) {
         })}
       </div>
 
-      {/* Grid distribution across the expanded space */}
+      {/* Grid-verdeling over de beschikbare ruimte */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         {timelineData.map((item, idx) => {
           const isHighlighted = activeIdx === idx;
@@ -95,7 +96,7 @@ export function MovieTimeline({ rawData }) {
                 transform: isHighlighted ? 'translateY(-4px)' : 'translateY(0px)'
               }}
             >
-              {/* Decorative Subtle Background Glow Accent on Card Hover */}
+              {/* Decoratieve subtiele achtergrondgloed bij hoveren over de kaart */}
               <div 
                 className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 pointer-events-none"
                 style={{ backgroundColor: item.color }}

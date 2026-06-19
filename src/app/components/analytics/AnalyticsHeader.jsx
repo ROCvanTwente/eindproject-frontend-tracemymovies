@@ -1,3 +1,4 @@
+// Header-component voor de statistiekenpagina (Movie DNA).
 import { Sparkles } from "lucide-react";
 
 export function AnalyticsHeader() {

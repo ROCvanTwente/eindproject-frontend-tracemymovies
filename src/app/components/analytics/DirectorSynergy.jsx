@@ -1,3 +1,4 @@
+// Component dat de samenwerkingen tussen favoriete regisseurs en acteurs toont (Creative Partnerships).
 import { useState } from "react";
 import { GitCommit, Info, X, Users, Award } from "lucide-react";
 
@@ -12,7 +13,7 @@ export function DirectorSynergy({ rawPairings }) {
           <Users className="w-4 h-4 text-[#44FFFF]" />
           <h3 className="text-xs uppercase font-bold tracking-widest text-[#94A3B8]">Creative Partnerships</h3>
         </div>
-        <button 
+        <button
           onClick={() => setShowInfo(true)}
           className="text-[#94A3B8] hover:text-[#44FFFF] transition-all duration-200 p-1 rounded-md cursor-pointer hover:scale-110 outline-none focus:outline-none"
         >
@@ -20,11 +21,10 @@ export function DirectorSynergy({ rawPairings }) {
         </button>
       </div>
 
-      {/* Modern Friendly Explanation Overlay */}
-      <div 
-        className={`absolute inset-0 bg-[#0B0E14]/98 z-30 p-6 flex flex-col justify-between border border-[#44FFFF]/10 transition-all duration-200 ease-out origin-top-right ${
-          showInfo ? "scale-100 opacity-100 pointer-events-auto" : "scale-95 opacity-0 pointer-events-none"
-        }`}
+      {/* Moderne vriendelijke uitleg overlay */}
+      <div
+        className={`absolute inset-0 bg-[#0B0E14]/98 z-30 p-6 flex flex-col justify-between border border-[#44FFFF]/10 transition-all duration-200 ease-out origin-top-right ${showInfo ? "scale-100 opacity-100 pointer-events-auto" : "scale-95 opacity-0 pointer-events-none"
+          }`}
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-2">
@@ -45,11 +45,11 @@ export function DirectorSynergy({ rawPairings }) {
         </p>
       </div>
 
-      {/* Floaty Borderless Matrix List Layout */}
+      {/* Vloeiende randloze lijstlay-out voor de partnerschappen */}
       <div className="space-y-4 flex-1 flex flex-col justify-start pt-2 min-h-0 relative">
         {hasData ? (
           rawPairings.map((pair, idx) => (
-            <div 
+            <div
               key={idx}
               className="flex items-center justify-between group transition-all duration-200 py-3 border-b border-white/[0.02] last:border-none"
             >
