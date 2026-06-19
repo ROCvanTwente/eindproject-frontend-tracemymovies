@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { ModerationQueue } from './ModerationQueue';
 import { UserManagement } from './UserManagement';
 import { SystemSettingsPage } from './SystemSettingsPage';
+import { MovieCatalog } from './MovieCatalog';
+import { ActivityLogs } from './ActivityLogs';
 
 export function AdminContentFrame({ 
   currentView, 
@@ -28,6 +30,14 @@ export function AdminContentFrame({
 
   if (currentView === 'settings') {
     return <SystemSettingsPage />;
+  }
+
+  if (currentView === 'movies') {
+    return <MovieCatalog />;
+  }
+
+  if (currentView === 'activity') {
+    return <ActivityLogs />;
   }
 
   if (currentView !== 'dashboard') {
