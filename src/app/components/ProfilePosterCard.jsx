@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router";
-import { Eye, Heart, Film, Star, MoreHorizontal, Bookmark } from "lucide-react";
+import { Eye, Heart, Film, Star, MoreHorizontal, Bookmark, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
