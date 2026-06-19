@@ -19,7 +19,7 @@ export function BiometricHud({ stats }) {
     { 
       label: "Average Rating", 
       value: displayStats.averageScore > 0 ? Number(displayStats.averageScore).toFixed(1) : "0.0", 
-      sub: "critique mean", 
+      sub: "monthly average", 
       icon: Star, 
       color: "text-[#44FFFF]"
     },
@@ -33,7 +33,7 @@ export function BiometricHud({ stats }) {
     { 
       label: "Total Time Watched", 
       value: `${displayStats.totalHours}h`, 
-      sub: "cumulative depth", 
+      sub: "watched this month", 
       icon: Clock, 
       color: "text-[#44FFFF]"
     },
