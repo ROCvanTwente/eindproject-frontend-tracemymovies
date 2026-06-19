@@ -5,7 +5,6 @@ const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'User Management', icon: Users },
   { id: 'movies', label: 'Movie Catalog', icon: Film },
-  { id: 'lists', label: 'User Lists', icon: List },
   { id: 'moderation', label: 'Moderation Queue', icon: Flag },
   { id: 'activity', label: 'Activity Logs', icon: Activity },
   { id: 'settings', label: 'System Settings', icon: Settings },

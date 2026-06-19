@@ -1,5 +1,5 @@
 // src/pages/AdminPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '../context/AuthContext';
@@ -39,27 +39,42 @@ export function AdminPage() {
     );
   }
 
-  // Growth Datasets
-  const userGrowthDataMonth = [
-    { month: 'Jan', users: 8400 }, { month: 'Feb', users: 9200 }, { month: 'Mar', users: 10100 },
-    { month: 'Apr', users: 11200 }, { month: 'May', users: 11800 }, { month: 'Jun', users: 12847 },
-  ];
-  const userGrowthDataYear = [
-    { month: '2021', users: 5400 }, { month: '2022', users: 7200 }, { month: '2023', users: 9600 }, { month: '2024', users: 12847 },
-  ];
-  const activeChartDataset = chartPeriod === 'month' ? userGrowthDataMonth : userGrowthDataYear;
+  const [stats, setStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
-  const topMovies = [
-    { title: 'Inception', watches: 3421, poster: '/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg' },
-    { title: 'The Dark Knight', watches: 3156, poster: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg' },
-    { title: 'Interstellar', watches: 2987, poster: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg' },
-  ];
+  useEffect(() => {
+    if (!user || (user.role !== 'Admin' && user.role !== 'Moderator')) return;
 
-  const movieUpdates = [
-    { id: 1, movieTitle: 'Interstellar', description: "Genre 'Adventure' added" },
-    { id: 2, movieTitle: 'The Dark Knight', description: 'Release date updated to July 18, 2008' },
-    { id: 3, movieTitle: 'Inception', description: 'Rating updated to 8.4/10' },
-  ];
+    const fetchStats = async () => {
+      setLoadingStats(true);
+      try {
+        const token = localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token");
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7245/api";
+        const response = await fetch(`${baseUrl}/admin/dashboard-stats`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (err) {
+        console.error("Error fetching admin stats:", err);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, [user]);
+
+  const activeChartDataset = chartPeriod === 'month' 
+    ? (stats?.userGrowthMonth || []) 
+    : (stats?.userGrowthYear || []);
+
+  const topMovies = stats?.topMovies || [];
+  const movieUpdates = stats?.movieUpdates || [];
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#0B0E14] flex">
@@ -87,15 +102,25 @@ export function AdminPage() {
 
         {/* Dynamic Main Workspace Frame */}
         <main className="p-8 flex-1">
-          <AdminContentFrame 
-            currentView={currentView}
-            chartPeriod={chartPeriod}
-            setChartPeriod={setChartPeriod}
-            userGrowthData={activeChartDataset}
-            topMovies={topMovies}
-            movieUpdates={movieUpdates}
-            setEditGenresMovie={setEditGenresMovie}
-          />
+          {loadingStats && currentView === 'dashboard' ? (
+            <div className="flex flex-col items-center justify-center min-h-[300px] text-[#94A3B8] gap-2">
+              <div className="w-8 h-8 border-2 border-[#BFBCFC] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm font-medium">Loading dashboard overview...</p>
+            </div>
+          ) : (
+            <AdminContentFrame 
+              currentView={currentView}
+              chartPeriod={chartPeriod}
+              setChartPeriod={setChartPeriod}
+              userGrowthData={activeChartDataset}
+              topMovies={topMovies}
+              movieUpdates={movieUpdates}
+              setEditGenresMovie={setEditGenresMovie}
+              totalUsers={stats?.totalUsers || 0}
+              totalMovies={stats?.totalMovies || 0}
+              totalWatches={stats?.totalWatches || 0}
+            />
+          )}
         </main>
       </div>
 

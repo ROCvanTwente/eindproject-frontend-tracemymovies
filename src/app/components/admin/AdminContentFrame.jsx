@@ -6,7 +6,18 @@ import { ModerationQueue } from './ModerationQueue';
 import { UserManagement } from './UserManagement';
 import { SystemSettingsPage } from './SystemSettingsPage';
 
-export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, userGrowthData, topMovies, movieUpdates, setEditGenresMovie }) {
+export function AdminContentFrame({ 
+  currentView, 
+  chartPeriod, 
+  setChartPeriod, 
+  userGrowthData, 
+  topMovies, 
+  movieUpdates, 
+  setEditGenresMovie,
+  totalUsers = 0,
+  totalMovies = 0,
+  totalWatches = 0
+}) {
   if (currentView === 'moderation') {
     return <ModerationQueue />;
   }
@@ -44,13 +55,9 @@ export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, us
                 <div className="w-14 h-14 bg-gradient-to-br from-[#BFBCFC] to-[#AFA9FF] rounded-2xl flex items-center justify-center shadow-lg">
                   <Users className="w-7 h-7 text-[#0B0E14]" />
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#44FFFF]/10 border border-[#44FFFF]/30 rounded-full">
-                  <ArrowUp className="w-3.5 h-3.5 text-[#44FFFF]" />
-                  <span className="text-[#44FFFF] text-xs font-bold">12%</span>
-                </div>
               </div>
               <div className="space-y-1 mb-2">
-                <p className="text-4xl font-bold text-[#F8FAFC]">12,847</p>
+                <p className="text-4xl font-bold text-[#F8FAFC]">{totalUsers.toLocaleString()}</p>
                 <p className="text-[#94A3B8] text-sm font-medium">Total Users</p>
               </div>
             </div>
@@ -59,12 +66,12 @@ export function AdminContentFrame({ currentView, chartPeriod, setChartPeriod, us
           {/* Dummy shortcuts for other two metrics blocks to minimize vertical length */}
           <div className="bg-[#151921] border border-[#44FFFF]/20 rounded-2xl p-6 shadow-xl">
             <Film className="w-7 h-7 text-[#44FFFF] mb-4" />
-            <p className="text-3xl font-bold text-[#F8FAFC]">45,231</p>
+            <p className="text-3xl font-bold text-[#F8FAFC]">{totalMovies.toLocaleString()}</p>
             <p className="text-[#94A3B8] text-xs mt-1">Movies in Database</p>
           </div>
           <div className="bg-[#151921] border border-[#FF61D2]/20 rounded-2xl p-6 shadow-xl">
             <Eye className="w-7 h-7 text-[#FF61D2] mb-4" />
-            <p className="text-3xl font-bold text-[#F8FAFC]">2.4M</p>
+            <p className="text-3xl font-bold text-[#F8FAFC]">{totalWatches.toLocaleString()}</p>
             <p className="text-[#94A3B8] text-xs mt-1">Total Watches</p>
           </div>
         </div>

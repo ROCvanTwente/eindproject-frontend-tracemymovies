@@ -5,6 +5,7 @@ import { deleteReview } from '../../services/reviews';
 import { DeleteReviewModal } from '../review/DeleteReviewModal';
 
 export function ModerationQueue() {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7245/api";
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modSearch, setModSearch] = useState('');
@@ -20,7 +21,7 @@ export function ModerationQueue() {
       try {
         const token = getToken();
         if (!token) return;
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/reports`, {
+        const res = await fetch(`${baseUrl}/admin/reports`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -39,7 +40,7 @@ export function ModerationQueue() {
   const handleDismiss = async (reportId) => {
     try {
       const token = getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/reports/${reportId}`, {
+      const res = await fetch(`${baseUrl}/admin/reports/${reportId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -67,18 +68,8 @@ export function ModerationQueue() {
     setDeleteTarget(null);
   };
 
-  const onReviewDeleted = async () => {
-    if (deleteTarget?.reportId) {
-      // Stuur een expliciet signaal naar de API om de report status in de DB bij te werken
-      try {
-        const token = getToken();
-        await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/reports/${deleteTarget.reportId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } catch (err) {
-        console.error("Failed to dismiss report:", err);
-      }
+  const onReviewDeleted = () => {
+    if (deleteTarget) {
       // Update visueel ALLE rapporten die bij de verwijderde review horen
       setReports((prev) => prev.map((r) => r.targetId === deleteTarget.reviewId ? { ...r, status: 'Deleted' } : r));
     }
@@ -204,6 +195,7 @@ export function ModerationQueue() {
         reviewAuthor={deleteTarget?.authorName || 'Anonymous'}
         reviewContent={deleteTarget?.reviewContent || ''}
         reviewId={deleteTarget?.reviewId}
+        isAdminDelete={true}
         onDeleted={onReviewDeleted}
       />
 

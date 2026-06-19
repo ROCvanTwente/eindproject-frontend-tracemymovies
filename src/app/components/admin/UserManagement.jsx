@@ -6,12 +6,14 @@ import { PaginationControls } from './PaginationControls';
 import { BanUserModal } from './BanUserModal';
 
 export function UserManagement() {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://localhost:7245/api";
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUsers, setSelectedUsers] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const [openUserActions, setOpenUserActions] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalServerEntries, setTotalServerEntries] = useState(0);
   const [localEditUser, setLocalEditUser] = useState(null);
@@ -25,7 +27,7 @@ export function UserManagement() {
       setLoading(true);
       try {
         const token = getToken();
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users?pageNumber=${currentPage}&pageSize=${itemsPerPage}`, {
+        const response = await fetch(`${baseUrl}/users?pageNumber=${currentPage}&pageSize=${itemsPerPage}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -94,7 +96,7 @@ export function UserManagement() {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/forgot-password`, {
+      const res = await fetch(`${baseUrl}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: user.email }),
@@ -118,13 +120,40 @@ export function UserManagement() {
     setOpenUserActions(null);
   };
 
-  // Close dropdown when clicking outside
+  const handleToggleActions = (e, userId) => {
+    e.stopPropagation();
+    if (openUserActions === userId) {
+      setOpenUserActions(null);
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const dropdownHeight = 220; // approximate height of the dropdown
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const showUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+      
+      setDropdownPosition({
+        top: showUpward 
+          ? rect.top - dropdownHeight - 8 
+          : rect.bottom + 8,
+        left: Math.max(16, rect.right - 256),
+      });
+      setOpenUserActions(userId);
+    }
+  };
+
+  // Close dropdown when clicking outside or scrolling
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest('[data-dropdown]')) setOpenUserActions(null);
     };
+    const handleScroll = () => {
+      setOpenUserActions(null);
+    };
     document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, []);
 
   const handleSaveRole = async (newRole) => {
@@ -132,7 +161,7 @@ export function UserManagement() {
     
     try {
       const token = getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/users/${localEditUser.id}/role`, {
+      const res = await fetch(`${baseUrl}/admin/users/${localEditUser.id}/role`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +191,7 @@ export function UserManagement() {
     
     try {
       const token = getToken();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/users/${localBanUser.id}/ban`, {
+      const res = await fetch(`${baseUrl}/admin/users/${localBanUser.id}/ban`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -248,7 +277,7 @@ export function UserManagement() {
       )}
 
       {/* Users Table */}
-      <div className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl overflow-hidden shadow-lg">
+      <div className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl overflow-hidden shadow-lg min-h-[300px]">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#0B0E14] border-b border-[#BFBCFC]/10">
@@ -275,7 +304,7 @@ export function UserManagement() {
               <tbody><tr><td colSpan="7" className="px-6 py-8 text-center text-[#94A3B8]">No users found.</td></tr></tbody>
               ) : (
               <tbody>
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user, index) => (
                   <tr
                     key={user.id}
                     className={`border-b border-[#BFBCFC]/10 hover:bg-[#BFBCFC]/5 transition-colors ${
@@ -310,12 +339,12 @@ export function UserManagement() {
                       <span className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 ${
                         user.role === 'Admin'
                           ? 'bg-[#FF61D2]/10 text-[#FF61D2] border border-[#FF61D2]/30'
-                          : user.role === 'Mod'
+                          : (user.role === 'Mod' || user.role === 'Moderator')
                           ? 'bg-[#44FFFF]/10 text-[#44FFFF] border border-[#44FFFF]/30'
                           : 'bg-[#BFBCFC]/10 text-[#BFBCFC] border border-[#BFBCFC]/30'
                       }`}>
                         {user.role === 'Admin' && <Shield className="w-3 h-3" />}
-                        {user.role === 'Mod' && <Shield className="w-3 h-3" />}
+                        {(user.role === 'Mod' || user.role === 'Moderator') && <Shield className="w-3 h-3" />}
                         {user.role}
                       </span>
                     </td>
@@ -339,7 +368,7 @@ export function UserManagement() {
                     <td className="px-6 py-4">
                       <div className="relative" data-dropdown>
                         <button
-                          onClick={() => setOpenUserActions(openUserActions === user.id ? null : user.id)}
+                          onClick={(e) => handleToggleActions(e, user.id)}
                           className="group relative p-2.5 hover:bg-gradient-to-br hover:from-[#BFBCFC]/10 hover:to-[#44FFFF]/10 rounded-xl transition-all duration-200 border border-transparent hover:border-[#BFBCFC]/20"
                         >
                           <MoreVertical className="w-5 h-5 text-[#94A3B8] group-hover:text-[#BFBCFC] transition-colors" />
@@ -347,7 +376,15 @@ export function UserManagement() {
 
                         {/* Actions Dropdown */}
                         {openUserActions === user.id && (
-                          <div className="absolute right-0 top-full mt-2 w-64 bg-gradient-to-br from-[#151921] to-[#0B0E14] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/60 overflow-hidden z-50 backdrop-blur-xl">
+                          <div 
+                            style={{
+                              position: 'fixed',
+                              top: `${dropdownPosition.top}px`,
+                              left: `${dropdownPosition.left}px`,
+                              width: '256px'
+                            }}
+                            className="bg-gradient-to-br from-[#151921] to-[#0B0E14] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/60 overflow-hidden z-50 backdrop-blur-xl animate-fade-in"
+                          >
                             <div className="px-4 py-3 border-b border-[#BFBCFC]/10 bg-[#BFBCFC]/5">
                               <p className="text-xs font-medium text-[#BFBCFC] uppercase tracking-wide">User Actions</p>
                             </div>
@@ -456,6 +493,7 @@ export function EditUserRoleModal({ isOpen, onClose, userName, currentRole, onSa
       case 'Admin':
         return 'Admins have full access to all features including user management and system settings.';
       case 'Mod':
+      case 'Moderator':
         return 'Moderators can flag content but cannot delete users.';
       case 'User':
         return 'Regular users have standard access without administrative privileges.';
