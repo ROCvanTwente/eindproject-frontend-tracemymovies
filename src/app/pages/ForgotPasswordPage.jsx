@@ -1,12 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { Mail, ArrowLeft, Send, CheckCircle } from 'lucide-react';
+
+const RESEND_COOLDOWN = 30;
 
 export function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [cooldown, setCooldown] = useState(0);
+    const timerRef = useRef(null);
+
+    useEffect(() => {
+        return () => clearInterval(timerRef.current);
+    }, []);
+
+    const startCooldown = () => {
+        setCooldown(RESEND_COOLDOWN);
+        timerRef.current = setInterval(() => {
+            setCooldown((prev) => {
+                if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+                return prev - 1;
+            });
+        }, 1000);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -20,6 +38,7 @@ export function ForgotPasswordPage() {
             });
             if (res.ok) {
                 setSubmitted(true);
+                startCooldown();
             } else {
                 const data = await res.json().catch(() => ({}));
                 setError(data.message || 'Something went wrong, please try again.');
@@ -29,6 +48,20 @@ export function ForgotPasswordPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleResend = async () => {
+        if (cooldown > 0 || loading) return;
+        setLoading(true);
+        try {
+            await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            startCooldown();
+        } catch {}
+        finally { setLoading(false); }
     };
 
     return (
@@ -78,14 +111,25 @@ export function ForgotPasswordPage() {
                             </button>
                         </form>
                     ) : (
-                        <div className="bg-[#44FFFF]/10 border border-[#44FFFF]/30 rounded-xl p-6 text-center">
-                            <CheckCircle className="w-12 h-12 text-[#44FFFF] mx-auto mb-3" />
-                            <p className="text-[#F8FAFC] mb-4">
-                                We've sent a reset link to <strong className="text-[#44FFFF]">{email}</strong>
-                            </p>
-                            <p className="text-[#94A3B8] text-sm">
-                                Check your inbox and click the link to reset your password.
-                            </p>
+                        <div className="text-center">
+                            <div className="bg-[#44FFFF]/10 border border-[#44FFFF]/30 rounded-xl p-6 mb-4">
+                                <CheckCircle className="w-12 h-12 text-[#44FFFF] mx-auto mb-3" />
+                                <p className="text-[#F8FAFC] mb-2">
+                                    We've sent a reset link to <strong className="text-[#44FFFF]">{email}</strong>
+                                </p>
+                                <p className="text-[#94A3B8] text-sm">
+                                    Check your inbox and click the link to reset your password. The previous link is no longer valid if you resend.
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={handleResend}
+                                disabled={cooldown > 0 || loading}
+                                className="text-[#BFBCFC] hover:text-[#AFA9FF] text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 mx-auto"
+                            >
+                                <Send className="w-3.5 h-3.5" />
+                                {cooldown > 0 ? `Resend in ${cooldown}s` : loading ? 'Sending...' : 'Resend Email'}
+                            </button>
                         </div>
                     )}
 
