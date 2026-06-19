@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useRefresh } from "../context/RefreshContext";
 
+const STATUS_TOAST_ID = "movie-status-toast";
+
 export function useMovieDetail(id, token) {
     const { triggerRefresh, refreshKey } = useRefresh();
     const [movie, setMovie] = useState(null);
@@ -10,6 +12,7 @@ export function useMovieDetail(id, token) {
 
     const [recommendations, setRecommendations] = useState([]);
     const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+    const [streamingProviders, setStreamingProviders] = useState(null);
 
     const [isFavorite, setIsFavorite] = useState(false);
     const [isInWatchlist, setIsInWatchlist] = useState(false);
@@ -102,12 +105,32 @@ export function useMovieDetail(id, token) {
         }
     }, [id, RECOMMENDATIONS_URL]);
 
+    const fetchStreamingProviders = useCallback(async () => {
+        if (!id) return;
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_BASE_URL}/tmdbmovie/GetWatchProviders?id=${id}&region=NL`
+            );
+            if (!res.ok) return;
+            const data = await res.json();
+            const regionData = data?.results?.NL || data?.NL || data;
+            setStreamingProviders({
+                flatrate: regionData?.flatrate || [],
+                rent: regionData?.rent || [],
+                buy: regionData?.buy || [],
+            });
+        } catch {
+            // no providers shown on error
+        }
+    }, [id]);
+
     useEffect(() => {
         if (id) {
             fetchMovieData();
             fetchRecommendations();
+            fetchStreamingProviders();
         }
-    }, [id, fetchMovieData, fetchRecommendations]);
+    }, [id, fetchMovieData, fetchRecommendations, fetchStreamingProviders]);
 
     useEffect(() => {
         if (token && id) {
@@ -139,17 +162,19 @@ export function useMovieDetail(id, token) {
 
     const handleToggleWatch = async () => {
         if (!token) {
-            toast.error("You must be logged in to add movies to your list.");
+            toast.error("You must be logged in to add movies to your list.", { id: STATUS_TOAST_ID });
             return;
         }
 
+        if (isSavingWatch) return;
+
         if (isWatched && filmRating > 0) {
-            toast.error("Remove your rating first before unwatching.");
+            toast.error("Remove your rating first before unwatching.", { id: STATUS_TOAST_ID });
             return;
         }
 
         if (isWatched && (hasLogEntries || watchCount > 0)) {
-            toast.error(`Can't unwatch — you have activity on this film.`);
+            toast.error(`Can't unwatch — you have activity on this film.`, { id: STATUS_TOAST_ID });
             return;
         }
 
@@ -165,6 +190,7 @@ export function useMovieDetail(id, token) {
                 if (response.ok) {
                     setIsWatched(false);
                     triggerRefresh();
+                    toast.success(`'${movie?.title}' removed from watched`, { id: STATUS_TOAST_ID });
                 }
             } else {
                 const response = await fetch(SAVE_WATCH_URL, {
@@ -178,7 +204,9 @@ export function useMovieDetail(id, token) {
 
                 if (response.ok) {
                     setIsWatched(true);
+                    setIsInWatchlist(false);
                     triggerRefresh();
+                    toast.success(`'${movie?.title}' added to watched`, { id: STATUS_TOAST_ID });
                 }
             }
         } catch (err) {
@@ -190,9 +218,11 @@ export function useMovieDetail(id, token) {
 
     const handleToggleLike = async () => {
         if (!token) {
-            toast.error("You must be logged in.");
+            toast.error("You must be logged in.", { id: STATUS_TOAST_ID });
             return;
         }
+
+        if (isSavingLike) return;
 
         setIsSavingLike(true);
         const nextLikeState = !isFavorite;
@@ -213,6 +243,10 @@ export function useMovieDetail(id, token) {
             if (response.ok) {
                 setIsFavorite(nextLikeState);
                 triggerRefresh();
+                toast.success(
+                    nextLikeState ? `'${movie?.title}' added to favorites` : `'${movie?.title}' removed from favorites`,
+                    { id: STATUS_TOAST_ID }
+                );
             }
         } catch (err) {
             // silently fail
@@ -223,9 +257,11 @@ export function useMovieDetail(id, token) {
 
     const handleToggleWatchlist = async () => {
         if (!token) {
-            toast.error("You must be logged in.");
+            toast.error("You must be logged in.", { id: STATUS_TOAST_ID });
             return;
         }
+
+        if (isSavingWatchlist) return;
 
         setIsSavingWatchlist(true);
         const nextWatchlistState = !isInWatchlist;
@@ -245,6 +281,10 @@ export function useMovieDetail(id, token) {
 
             if (response.ok) {
                 setIsInWatchlist(nextWatchlistState);
+                toast.success(
+                    nextWatchlistState ? `'${movie?.title}' added to watchlist` : `'${movie?.title}' removed from watchlist`,
+                    { id: STATUS_TOAST_ID }
+                );
             }
         } catch (err) {
             // silently fail
@@ -254,6 +294,11 @@ export function useMovieDetail(id, token) {
     };
 
     const handleSetRating = async (newRating) => {
+        if (!token) {
+            toast.error("You must be logged in.", { id: STATUS_TOAST_ID });
+            return;
+        }
+
         setFilmRating(newRating);
         await fetch(`${import.meta.env.VITE_API_BASE_URL}/database/SetFilmRating`, {
             method: "POST",
@@ -266,7 +311,7 @@ export function useMovieDetail(id, token) {
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ MovieId: parseInt(id) }),
             });
-            if (r.ok) { setIsWatched(true); setWatchCount(1); }
+            if (r.ok) { setIsWatched(true); setWatchCount(1); setIsInWatchlist(false); }
         }
         triggerRefresh();
     };
@@ -277,6 +322,7 @@ export function useMovieDetail(id, token) {
         error,
         recommendations,
         loadingRecommendations,
+        streamingProviders,
         isFavorite,
         isInWatchlist,
         isWatched,

@@ -143,6 +143,7 @@ export function CreateListPage() {
   const [listDescription, setListDescription] = useState("");
   const [isRanked, setIsRanked] = useState(false);
   const [movies, setMovies] = useState([]);
+  const [originalMovies, setOriginalMovies] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -178,6 +179,7 @@ export function CreateListPage() {
         setListDescription(data.listDescription ?? "");
         setIsRanked(Boolean(data.isRanked));
         setMovies(data.movies ?? []);
+        setOriginalMovies(data.movies ?? []);
       } catch {
         toast.error("Could not load this list");
         navigate("/my-lists");
@@ -216,7 +218,7 @@ export function CreateListPage() {
     return () => clearTimeout(timeout);
   }, [searchQuery, movies]);
 
-  const handleAddMovie = async (movie) => {
+  const handleAddMovie = (movie) => {
     const newEntry = {
       movieId: movie.id,
       title: movie.title,
@@ -227,45 +229,11 @@ export function CreateListPage() {
 
     setSearchQuery("");
     setSearchResults([]);
-
-    if (isEdit) {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/movies`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ movieId: movie.id }),
-        });
-        if (!res.ok) throw new Error("Failed to add movie");
-        setMovies((prev) => [...prev, newEntry]);
-        toast.success(`Added ${movie.title}`);
-      } catch {
-        toast.error("Could not add movie to list");
-      }
-    } else {
-      setMovies((prev) => [...prev, newEntry]);
-    }
+    setMovies((prev) => [...prev, newEntry]);
   };
 
-  const handleRemoveMovie = async (movieId) => {
-    if (isEdit) {
-      const previous = movies;
-      setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/movies/${movieId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to remove movie");
-      } catch {
-        setMovies(previous);
-        toast.error("Could not remove movie from list");
-      }
-    } else {
-      setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
-    }
+  const handleRemoveMovie = (movieId) => {
+    setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
   };
 
   const moveMovie = (dragIndex, hoverIndex) => {
@@ -277,25 +245,14 @@ export function CreateListPage() {
     });
   };
 
-  const handleDropEnd = async () => {
-    if (!isEdit) return;
-    try {
-      await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/reorder`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ movieIds: movies.map((m) => m.movieId) }),
-      });
-    } catch {
-      toast.error("Could not save new order");
-    }
-  };
-
   const handleSave = async () => {
     if (!listName.trim()) {
       toast.error("Please give your list a name");
+      return;
+    }
+
+    if (movies.length === 0) {
+      toast.error("Add at least one film to your list");
       return;
     }
 
@@ -315,6 +272,37 @@ export function CreateListPage() {
           }),
         });
         if (!res.ok) throw new Error("Failed to update list");
+
+        const toRemove = originalMovies.filter((om) => !movies.some((m) => m.movieId === om.movieId));
+        const toAdd = movies.filter((m) => !originalMovies.some((om) => om.movieId === m.movieId));
+
+        for (const movie of toRemove) {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/movies/${movie.movieId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+        for (const movie of toAdd) {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/movies`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ movieId: movie.movieId }),
+          });
+        }
+        if (movies.length > 0) {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/Lists/${id}/reorder`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ movieIds: movies.map((m) => m.movieId) }),
+          });
+        }
+
         toast.success("List updated");
         navigate(`/list/${id}`);
       } else {
@@ -548,7 +536,6 @@ export function CreateListPage() {
                   index={index}
                   isRanked={isRanked}
                   moveMovie={moveMovie}
-                  onDropEnd={handleDropEnd}
                   onRemove={handleRemoveMovie}
                 />
               ))}

@@ -1,15 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Star, AlertCircle, MoreVertical, Trash, Edit, Flag } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRefresh } from "../../context/RefreshContext";
-import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteReview, reportReview, getReviewById } from "../../services/reviews";
+import { addReview, getReviewsVoorFilm, addLikeReview, removeLikeReview, deleteReview, reportReview, getReviewById, getReviewsEnabled } from "../../services/reviews";
 import { getToken, getCurrentUserId } from "../../services/auth";
 import { DeleteReviewModal } from "./DeleteReviewModal";
 import { ReviewModal } from "./ReviewModal";
+import { ReportReviewModal } from "./ReportReviewModal";
 import { ReviewForm } from "./ReviewForm";
-import { ReviewItem } from "./ReviewItem";
 import { ReviewPagination } from "./ReviewPagination";
-import { ReportModal } from "./ReportModal";
+import { ReviewItem } from "./ReviewItem";
 
 export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
     const auth = useAuth();
@@ -23,6 +24,7 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [likedMap, setLikedMap] = useState({});
     const [openMenuKey, setOpenMenuKey] = useState(null);
+    const [reviewsEnabled, setReviewsEnabled] = useState(true);
 
     const getLikeStorageKey = (reviewId) => {
         if (currentUserId == null || reviewId == null) return null;
@@ -77,6 +79,11 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
             seeded[reviewKey] = !!(r.userLiked ?? r.likedByCurrentUser ?? r.isLiked ?? false) || (storageKey ? localStorage.getItem(storageKey) === "true" : false);
         });
         setLikedMap(seeded);
+
+        try {
+            const enabled = await getReviewsEnabled();
+            setReviewsEnabled(enabled);
+        } catch (_) {}
     };
 
     useEffect(() => {
@@ -90,7 +97,13 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
             setIsLoadingReviews(true);
             try {
                 const data = await getReviewsVoorFilm(movieId);
+                let enabled = true;
+                try {
+                    enabled = await getReviewsEnabled();
+                } catch (_) {}
+
                 if (isMounted) {
+                    setReviewsEnabled(enabled);
                     const loaded = Array.isArray(data) ? data : data?.reviews || [];
                     setReviews(loaded);
 
@@ -164,6 +177,17 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
         setEditTarget(review);
         setEditModalOpen(true);
         setOpenMenuKey(null);
+    };
+
+    const openReportModal = (review) => {
+        setReportTarget(review);
+        setReportModalOpen(true);
+        setOpenMenuKey(null);
+    };
+
+    const closeReportModal = () => {
+        setReportModalOpen(false);
+        setReportTarget(null);
     };
 
     const closeDeleteModal = () => {
@@ -312,36 +336,23 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
         return true;
     };
 
-    const handleReportReview = (review, reviewKey) => {
-        const reviewId = review.id ?? review.reviewId;
-        if (!reviewId) {
-            toast.error("Could not find review id.");
-            return;
-        }
-
-        setReportTarget({ review, reviewKey });
-        setReportModalOpen(true);
-        setOpenMenuKey(null);
-    };
-
-    const submitReport = async (reason) => {
-        if (!reportTarget) return;
-        
-        const { review } = reportTarget;
-        const reviewId = review.id ?? review.reviewId;
-
-        const result = await reportReview(reviewId, reason, token);
-        if (!result) {
-            toast.error("Could not report review.");
-            return;
-        }
-
-        toast.success("Report submitted. Thank you for helping keep our community safe.");
-        setReportModalOpen(false);
-        setReportTarget(null);
-    };
-
     const handleSubmitReview = async (reviewRating, reviewText, containsSpoilers, resetForm) => {
+        if (reviewRating === 0) {
+            toast.error("Selecteer een score.");
+            return;
+        }
+
+        if (!reviewText.trim()) {
+            toast.error("Schrijf eerst een review.");
+            return;
+        }
+
+        const MAX_REVIEW_LENGTH = 5000;
+        if (reviewText.trim().length > MAX_REVIEW_LENGTH) {
+            toast.error(`Maximaal ${MAX_REVIEW_LENGTH} tekens toegestaan.`);
+            return;
+        }
+
         if (!token) {
             toast.error("Your session is missing a valid login token. Please log in again.");
             return;
@@ -356,15 +367,12 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
                 containsSpoilers,
             }, token);
 
-            if (!createdReview) {
-                toast.error("Could not post review. Check if the API is running on https://localhost:7112 and if you are logged in.");
-                return;
-            }
-
             toast.success("Review saved.");
             resetForm();
 
             await refreshReviews();
+        } catch (error) {
+            toast.error(error.message || "Could not post review. Check if the API is running and if you are logged in.");
         } finally {
             setIsSubmitting(false);
         }
@@ -375,12 +383,32 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
             <h3 className="text-lg md:text-xl font-bold font-heading text-[#F8FAFC] mb-3 md:mb-4">Reviews</h3>
 
             {!hideForm && (
-                <ReviewForm
-                    movieTitle={movieTitle}
-                    isAuthenticated={isAuthenticated}
-                    isSubmitting={isSubmitting}
-                    onSubmit={handleSubmitReview}
-                />
+                reviewsEnabled ? (
+                    <ReviewForm
+                        movieTitle={movieTitle}
+                        isAuthenticated={isAuthenticated}
+                        isSubmitting={isSubmitting}
+                        onSubmit={handleSubmitReview}
+                    />
+                ) : (
+                    <div className="relative overflow-hidden rounded-xl border border-[#FF61D2]/20 bg-gradient-to-r from-[#FF61D2]/5 via-[#BFBCFC]/5 to-transparent p-5 mb-6 backdrop-blur-md animate-fade-in">
+                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-[#FF61D2]/10 rounded-full blur-xl"></div>
+                        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-[#BFBCFC]/10 rounded-full blur-xl"></div>
+                        <div className="flex gap-4 items-start relative z-10">
+                            <div className="w-10 h-10 rounded-xl bg-[#FF61D2]/10 flex items-center justify-center shrink-0 border border-[#FF61D2]/20 shadow-lg shadow-[#FF61D2]/5">
+                                <AlertCircle className="w-5 h-5 text-[#FF61D2]" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-[#F8FAFC]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                                    Reviews Temporarily Disabled
+                                </h4>
+                                <p className="text-xs text-[#94A3B8] mt-1 leading-relaxed max-w-xl">
+                                    The administrator has temporarily disabled creating and editing reviews. You can still read and delete existing reviews.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )
             )}
 
             {isLoadingReviews ? (
@@ -401,15 +429,15 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
                             review={review}
                             reviewKey={reviewKey}
                             movieTitle={movieTitle}
-                            isLiked={likedMap[reviewKey]}
-                            canEdit={isOwner}
+                            isLiked={!!likedMap[reviewKey]}
+                            canEdit={isOwner && reviewsEnabled}
                             canDelete={isOwner}
                             isMenuOpen={openMenuKey === reviewKey}
                             onToggleMenu={(key) => setOpenMenuKey((prev) => (prev === key ? null : key))}
                             onToggleLike={handleToggleLike}
                             onEdit={openEditModal}
                             onDelete={openDeleteModal}
-                            onReport={handleReportReview}
+                            onReport={openReportModal}
                         />
                     );
                 })
@@ -442,16 +470,10 @@ export function ReviewSection({ movieId, movieTitle, hideForm = false }) {
                     }}
                 />
 
-                <ReportModal
+                <ReportReviewModal
                     isOpen={reportModalOpen}
-                    onClose={() => {
-                        setReportModalOpen(false);
-                        setReportTarget(null);
-                    }}
-                    reviewAuthor={reportTarget?.review.user?.userName || reportTarget?.review.userName || 'Anonymous'}
-                    reviewContent={reportTarget?.review.review || reportTarget?.review.content || reportTarget?.review.reviewText || reportTarget?.review.text || ''}
-                    reviewId={reportTarget?.review.id ?? reportTarget?.review.reviewId}
-                    onReport={submitReport}
+                    onClose={closeReportModal}
+                    review={reportTarget}
                 />
                 </>
             )}

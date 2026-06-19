@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { deleteReview } from "../../services/reviews";
+import { deleteReview, adminDeleteReview } from "../../services/reviews";
 import { getToken } from "../../services/auth";
 
-export function DeleteReviewModal({ isOpen, onClose, reviewAuthor, reviewContent, reviewId, onDeleted }) {
+export function DeleteReviewModal({ isOpen, onClose, reviewAuthor, reviewContent, reviewId, onDeleted, isAdminDelete = false }) {
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -21,7 +21,9 @@ export function DeleteReviewModal({ isOpen, onClose, reviewAuthor, reviewContent
 
     const token = getToken();
     try {
-      const ok = await deleteReview(reviewId, token);
+      const ok = isAdminDelete
+        ? await adminDeleteReview(reviewId, token)
+        : await deleteReview(reviewId, token);
       if (!ok) throw new Error("delete failed");
 
       toast.success("Review deleted successfully");

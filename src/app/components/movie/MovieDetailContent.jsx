@@ -13,6 +13,7 @@ export function MovieDetailContent({
   movie,
   loadingRecommendations,
   recommendations,
+  streamingProviders,
   isWatched,
   isFavorite,
   filmRating,
@@ -21,6 +22,9 @@ export function MovieDetailContent({
   onToggleWatch,
   onToggleLike,
   onToggleWatchlist,
+  isSavingWatch,
+  isSavingLike,
+  isSavingWatchlist,
   onSetRating,
   onOpenLog,
   onOpenEditLog,
@@ -28,6 +32,8 @@ export function MovieDetailContent({
   onOpenShare,
   hasReview,
   hasLog,
+  isLoggedIn,
+  reviewsEnabled,
 }) {
   return (
     <div className="container mx-auto px-4 max-w-7xl -mt-12 md:-mt-16 relative z-10 pb-16">
@@ -84,6 +90,7 @@ export function MovieDetailContent({
         {/* ── RIGHT COLUMN: sidebar, same top as poster ── */}
         <MovieSidebar
           movie={movie}
+          streamingProviders={streamingProviders}
           isWatched={isWatched}
           isFavorite={isFavorite}
           filmRating={filmRating}
@@ -92,11 +99,16 @@ export function MovieDetailContent({
           onToggleWatch={onToggleWatch}
           onToggleLike={onToggleLike}
           onToggleWatchlist={onToggleWatchlist}
+          isSavingWatch={isSavingWatch}
+          isSavingLike={isSavingLike}
+          isSavingWatchlist={isSavingWatchlist}
           onSetRating={onSetRating}
           onOpenLog={onOpenLog}
           onOpenEditLog={onOpenEditLog}
           hasReview={hasReview}
           hasLog={hasLog}
+          isLoggedIn={isLoggedIn}
+          reviewsEnabled={reviewsEnabled}
         />
       </div>
     </div>

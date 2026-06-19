@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
-import { X, Flag, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import { createPortal } from "react-dom";
+import { X, Flag, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { getToken, getCurrentUserId } from "../../services/auth";
+import { useAuth } from "../../context/AuthContext";
 
 const REPORT_REASONS = [
   {
@@ -41,39 +43,108 @@ const REPORT_REASONS = [
   },
 ];
 
-export function ReportModal({ isOpen, onClose, reviewAuthor, reviewContent, reviewId, onReport }) {
+// Pass the 'review' object into the props to access its hidden database data dynamically
+export function ReportReviewModal({ isOpen, onClose, review }) {
   const [selectedReason, setSelectedReason] = useState('');
   const [additionalDetails, setAdditionalDetails] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const auth = useAuth();
 
-  if (!isOpen) return null;
+  if (!isOpen || !review) return null;
 
-  const handleSubmit = () => {
+  const reviewAuthor = review?.user?.userName || review?.userName || "Anonymous";
+  const reviewContent = review?.review ?? review?.content ?? review?.reviewText ?? review?.text ?? "";
+  const reviewAuthorId = review?.userId ?? review?.user?.id ?? review?.user?.userId ?? review?.user?.userID ?? review?.authorUserId ?? null;
+
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    
     if (!selectedReason) {
-      toast.error('Please select a reason for reporting');
+      toast.error("Please select a reason for reporting");
       return;
     }
 
-    const reasonLabel = REPORT_REASONS.find(r => r.id === selectedReason)?.label || 'Other';
-    const finalReason = additionalDetails.trim() 
-      ? `${reasonLabel}: ${additionalDetails.trim()}`
-      : reasonLabel;
+    setIsSubmitting(true);
+    const token = getToken();
+    const currentUserId = getCurrentUserId();
 
-    if (onReport) {
-      onReport(finalReason);
-    } else {
-      toast.success('Report submitted. Thank you for helping keep our community safe.');
-      onClose();
+    if (!token) {
+      toast.error("Je moet ingelogd zijn om een review te rapporteren.");
+      setIsSubmitting(false);
+      return;
     }
 
-    // Reset form
-    setSelectedReason('');
-    setAdditionalDetails('');
+    const reasonObj = REPORT_REASONS.find(r => r.id === selectedReason);
+    const trimmedDetails = additionalDetails.trim();
+    const combinedReason = trimmedDetails ? `${reasonObj.label} - ${trimmedDetails}` : reasonObj.label;
+
+    const reportPayload = {
+      targetType: "Review",
+      targetId: Number(review.id ?? review.reviewId),
+      reporterUserId: String(currentUserId || auth?.user?.id || auth?.user?.userId || "Unknown"),
+      authorUserId: String(reviewAuthorId || "Unknown"),
+      originalText: reviewContent || "No review content provided",
+      reasonLabel: combinedReason,
+      status: "Pending"
+    };
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/reports`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(reportPayload),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Je bent niet ingelogd of je sessie is verlopen. Log opnieuw in.");
+        }
+        
+        if (response.status === 403) {
+          throw new Error("Je hebt geen rechten om deze review te rapporteren.");
+        }
+
+        let errorData;
+        try {
+          const errorText = await response.text();
+          try {
+            errorData = JSON.parse(errorText);
+          } catch (e) {
+            errorData = { message: errorText || "Lege response van de server (400 Bad Request)" };
+          }
+        } catch (e) {
+          errorData = { message: "Netwerk fout tijdens het inlezen van de error" };
+        }
+        console.error("VALIDATION ERROR FROM BACKEND:", errorData);
+        
+        let errorMessage = errorData.message || errorData.title || "Report submission failed due to validation.";
+        if (errorData.errors) {
+          errorMessage = Object.values(errorData.errors).flat().join(" | ");
+        }
+        throw new Error(errorMessage);
+      }
+
+      toast.success("Report submitted. Thank you for helping keep our community safe.");
+      onClose();
+      setSelectedReason('');
+      setAdditionalDetails('');
+    } catch (error) {
+      console.error("Report failed:", error);
+      toast.error(error.message || "Could not submit report.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
-    onClose();
-    setSelectedReason('');
-    setAdditionalDetails('');
+    if (!isSubmitting) {
+      onClose();
+      setSelectedReason('');
+      setAdditionalDetails('');
+    }
   };
 
   const modalContent = (
@@ -102,7 +173,8 @@ export function ReportModal({ isOpen, onClose, reviewAuthor, reviewContent, revi
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-[#FF61D2]/20 rounded-lg text-[#94A3B8] hover:text-[#FF61D2] transition-all"
+            disabled={isSubmitting}
+            className="p-2 hover:bg-[#FF61D2]/20 rounded-lg text-[#94A3B8] hover:text-[#FF61D2] transition-all disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -134,11 +206,12 @@ export function ReportModal({ isOpen, onClose, reviewAuthor, reviewContent, revi
                 <button
                   key={reason.id}
                   onClick={() => setSelectedReason(reason.id)}
+                  disabled={isSubmitting}
                   className={`w-full text-left p-3 rounded-lg border transition-all ${
                     selectedReason === reason.id
                       ? 'bg-[#FF61D2]/10 border-[#FF61D2]/30'
                       : 'bg-[#0B0E14] border-[#BFBCFC]/15 hover:border-[#BFBCFC]/25'
-                  }`}
+                  } disabled:opacity-50`}
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -175,8 +248,9 @@ export function ReportModal({ isOpen, onClose, reviewAuthor, reviewContent, revi
               value={additionalDetails}
               onChange={(e) => setAdditionalDetails(e.target.value)}
               placeholder="Provide any additional context that might help us review this report..."
+              disabled={isSubmitting}
               rows={4}
-              className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none text-sm placeholder:text-[#94A3B8]"
+              className="w-full bg-[#0B0E14] text-[#F8FAFC] px-4 py-3 rounded-lg border border-[#BFBCFC]/15 focus:outline-none focus:border-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 transition-all resize-none text-sm placeholder:text-[#94A3B8] disabled:opacity-50"
               maxLength={500}
             />
             <p className="text-[#94A3B8] text-xs mt-1">
@@ -196,16 +270,18 @@ export function ReportModal({ isOpen, onClose, reviewAuthor, reviewContent, revi
         <div className="flex gap-2 p-4 border-t border-[#BFBCFC]/15">
           <button
             onClick={handleClose}
-            className="flex-1 bg-[#151921] hover:bg-[#1E293B] text-[#F8FAFC] px-4 py-2.5 rounded-lg font-medium transition-all border border-[#BFBCFC]/15 text-sm"
+            disabled={isSubmitting}
+            className="flex-1 bg-[#151921] hover:bg-[#1E293B] text-[#F8FAFC] px-4 py-2.5 rounded-lg font-medium transition-all border border-[#BFBCFC]/15 text-sm disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="flex-1 bg-[#FF61D2] hover:bg-[#FF4DBD] text-white px-4 py-2.5 rounded-lg font-medium transition-all shadow-lg shadow-[#FF61D2]/30 text-sm flex items-center justify-center gap-2"
+            disabled={!selectedReason || isSubmitting}
+            className="flex-1 bg-[#FF61D2] hover:bg-[#FF4DBD] text-white px-4 py-2.5 rounded-lg font-medium transition-all shadow-lg shadow-[#FF61D2]/30 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Flag className="w-4 h-4" />
-            Submit Report
+            {isSubmitting ? "Submitting..." : "Submit Report"}
           </button>
         </div>
       </div>

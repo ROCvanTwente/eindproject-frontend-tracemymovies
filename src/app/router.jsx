@@ -13,8 +13,8 @@ import { ProfilePage } from './pages/ProfilePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { MessagesPage } from './pages/MessagesPage';
 import { AdminPage } from './pages/AdminPage';
-import { WeeklyFavoritesPage } from './pages/WeeklyFavoritesPage';
-import { GlobalMovieDNAPage } from './pages/GlobalMovieDNAPage';
+// import { WeeklyFavoritesPage } from './pages/WeeklyFavoritesPage';
+// import { GlobalMovieDNAPage } from './pages/GlobalMovieDNAPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { LoginPage } from './pages/LoginPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -25,9 +25,11 @@ import { ConfirmEmailChangePage } from './pages/ConfirmEmailChangePage';
 import { ConfirmEmailChangeRequestPage } from './pages/ConfirmEmailChangeRequestPage';
 import { ConfirmDeletePage } from './pages/ConfirmDeletePage';
 import { UserProfilePage } from './pages/UserProfilePage';
+import { AboutPage } from './pages/AboutPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ServerErrorPage } from './pages/ServerErrorPage';
 import FriendPage from './pages/FriendPage';
+import AllFriendsPage from './pages/AllFriendsPage';
 import LikedMoviesPage from './pages/LikedMoviesPage';
 import { AllActivityPage } from './pages/AllActivityPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
@@ -37,6 +39,8 @@ import { BadgesPage } from './pages/BadgesPage';
 import { ActorPage } from './pages/ActorPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 import { DiaryPage } from './pages/DiaryPage';
+import { MovieFriendsActivityPage } from './pages/MovieFriendsActivityPage';
+import { FeaturedListsPage } from './pages/FeaturedListsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -66,12 +70,24 @@ export const router = createBrowserRouter([
                 element: _jsx(ActorPage, {}),
             },
             {
-                path: 'weekly-favorites',
-                element: _jsx(WeeklyFavoritesPage, {}),
+                path: 'movie/:id/friends-activity',
+                element: _jsx(ProtectedRoute, { children: _jsx(MovieFriendsActivityPage, {}) }),
             },
             {
-                path: 'global-dna',
-                element: _jsx(GlobalMovieDNAPage, {}),
+                path: 'featured-lists',
+                element: _jsx(FeaturedListsPage, {}),
+            },
+            // {
+            //     path: 'weekly-favorites',
+            //     element: _jsx(WeeklyFavoritesPage, {}),
+            // },
+            // {
+            //     path: 'global-dna',
+            //     element: _jsx(GlobalMovieDNAPage, {}),
+            // },
+            {
+                path: 'about',
+                element: _jsx(AboutPage, {}),
             },
             {
                 path: 'register',
@@ -118,6 +134,14 @@ export const router = createBrowserRouter([
             {
                 path: 'FriendPage',
                 element: _jsx(ProtectedRoute, { children: _jsx(FriendPage, {}) }),
+            },
+            {
+                path: 'friends',
+                element: _jsx(ProtectedRoute, { children: _jsx(AllFriendsPage, {}) }),
+            },
+            {
+                path: 'user/:userId/friends',
+                element: _jsx(ProtectedRoute, { children: _jsx(AllFriendsPage, {}) }),
             },
             {
                 path: 'my-lists',

@@ -11,6 +11,7 @@ import { useRefresh } from "../context/RefreshContext";
 
 const DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MAX_REVIEW_LENGTH = 5000;
 
 export function DatePicker({ value, onChange }) {
   const today = new Date();
@@ -160,6 +161,7 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
   const [containsSpoilers, setContainsSpoilers] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasWatched, setHasWatched] = useState(preHasWatchedBefore !== null ? preHasWatchedBefore : !!preSelectedMovie);
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -181,6 +183,19 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
       setReviewText(preReviewText);
       setContainsSpoilers(false);
       document.body.style.overflow = "hidden";
+
+      const checkEnabled = async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Review/AreReviewsEnabled`);
+          if (res.ok) {
+            const data = await res.json();
+            setReviewsEnabled(data);
+          }
+        } catch (_) {
+          setReviewsEnabled(true);
+        }
+      };
+      checkEnabled();
     } else {
       document.body.style.overflow = "unset";
     }
@@ -236,6 +251,11 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
   const handleSubmit = async () => {
     if (!selectedMovie) return;
 
+    if (reviewText.trim().length > MAX_REVIEW_LENGTH) {
+      toast.error(`Maximum ${MAX_REVIEW_LENGTH} characters allowed.`);
+      return;
+    }
+
     setIsSaving(true);
     try {
       const body = JSON.stringify({
@@ -244,8 +264,8 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
         isRewatch,
         isLiked,
         rating: rating > 0 ? rating : null,
-        reviewText: reviewText.trim() || null,
-        containsSpoilers,
+        reviewText: reviewsEnabled ? (reviewText.trim() || null) : null,
+        containsSpoilers: reviewsEnabled ? containsSpoilers : false,
       });
 
       const res = preLogId
@@ -260,13 +280,27 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
             body,
           });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        let errMsg = "Save failed. Please try again.";
+        try {
+          const text = await res.text();
+          if (text) {
+            try {
+              const json = JSON.parse(text);
+              if (json && json.message) errMsg = json.message;
+            } catch (_) {
+              errMsg = text;
+            }
+          }
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
       toast.success(preLogId ? `"${selectedMovie.title}" updated!` : `"${selectedMovie.title}" logged!`);
       triggerRefresh();
       onSuccess?.();
       onClose();
-    } catch {
-      toast.error("Save failed. Please try again.");
+    } catch (err) {
+      toast.error(err.message || "Save failed. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -448,22 +482,34 @@ export function WatchLogModal({ isOpen, onClose, preSelectedMovie = null, preIsR
                   <MessageSquare className="w-3.5 h-3.5 text-[#94A3B8]" />
                   <span className="text-xs text-[#94A3B8]">Review</span>
                 </div>
-                <textarea
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  placeholder="What did you think?"
-                  rows={5}
-                  className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/40 outline-none resize-none"
-                />
-                {reviewText.length > 0 && (
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#BFBCFC]/10">
-                    <button
-                      onClick={() => setContainsSpoilers((v) => !v)}
-                      className={`w-4 h-4 rounded border transition-colors flex items-center justify-center flex-shrink-0 ${containsSpoilers ? "bg-[#FF61D2] border-[#FF61D2]" : "border-[#94A3B8]/40"}`}
-                    >
-                      {containsSpoilers && <span className="text-white text-[8px] font-bold">✓</span>}
-                    </button>
-                    <span className="text-xs text-[#94A3B8]">Contains spoilers</span>
+                {reviewsEnabled ? (
+                  <>
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      placeholder="What did you think?"
+                      rows={5}
+                      maxLength={MAX_REVIEW_LENGTH}
+                      className="w-full bg-transparent text-[#F8FAFC] text-sm placeholder-[#94A3B8]/40 outline-none resize-none break-words"
+                    />
+                    <div className="text-right text-xs text-[#94A3B8] mt-1">
+                      {reviewText.length} / {MAX_REVIEW_LENGTH} characters
+                    </div>
+                    {reviewText.length > 0 && (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#BFBCFC]/10">
+                        <button
+                          onClick={() => setContainsSpoilers((v) => !v)}
+                          className={`w-4 h-4 rounded border transition-colors flex items-center justify-center flex-shrink-0 ${containsSpoilers ? "bg-[#FF61D2] border-[#FF61D2]" : "border-[#94A3B8]/40"}`}
+                        >
+                          {containsSpoilers && <span className="text-white text-[8px] font-bold">✓</span>}
+                        </button>
+                        <span className="text-xs text-[#94A3B8]">Contains spoilers</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-xs text-[#FF61D2]/80 bg-[#FF61D2]/5 border border-[#FF61D2]/15 p-3 rounded-lg leading-relaxed">
+                    Reviews are currently disabled by the administrator. You can still log ratings, likes, and watch statuses.
                   </div>
                 )}
               </div>

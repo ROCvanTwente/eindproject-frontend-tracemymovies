@@ -2,8 +2,23 @@ import { useState } from "react";
 
 export function ReviewTextBlock({ text, containsSpoilers }) {
   const [revealed, setRevealed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const isLong = (text?.length ?? 0) > 240;
+
   if (!containsSpoilers) {
-    return <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{text}</p>;
+    return (
+      <div>
+        <p className={`text-[#94A3B8] text-sm leading-relaxed break-words ${!expanded ? "line-clamp-5" : ""}`}>{text}</p>
+        {isLong && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="text-[#BFBCFC] text-xs font-medium hover:text-[#AFA9FF] transition-colors mt-1"
+          >
+            {expanded ? "Show less" : "Show more"}
+          </button>
+        )}
+      </div>
+    );
   }
   if (!revealed) {
     return (
@@ -21,7 +36,15 @@ export function ReviewTextBlock({ text, containsSpoilers }) {
   return (
     <>
       <span className="inline-block text-[10px] uppercase tracking-wide text-[#FF61D2]/70 border border-[#FF61D2]/30 rounded px-1.5 py-0.5 mb-2">Spoilers</span>
-      <p className="text-[#94A3B8] text-sm leading-relaxed line-clamp-5">{text}</p>
+      <p className={`text-[#94A3B8] text-sm leading-relaxed break-words ${!expanded ? "line-clamp-5" : ""}`}>{text}</p>
+      {isLong && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="text-[#BFBCFC] text-xs font-medium hover:text-[#AFA9FF] transition-colors mt-1 mr-3"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
       <button onClick={() => setRevealed(false)} className="mt-1 text-[#94A3B8]/40 hover:text-[#94A3B8] text-xs transition-colors">Hide spoilers</button>
     </>
   );

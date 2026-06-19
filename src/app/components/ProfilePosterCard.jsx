@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import { useRefresh } from "../context/RefreshContext";
 import { toast } from "sonner";
 import { WatchLogModal } from "./WatchLogModal";
+import { AddToListsModal } from "./AddToListsModal";
+import { getReviewsEnabled } from "../services/reviews";
 
 export function ProfilePosterCard({
   movieId,
@@ -20,10 +22,23 @@ export function ProfilePosterCard({
   filmRatingProp,
   logIdProp,
   onEyeOverride,
+  inListContext,
+  onRemoveFromList,
 }) {
   const navigate = useNavigate();
   const auth = useAuth();
   const { triggerRefresh } = useRefresh();
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchReviewsEnabled = async () => {
+      try {
+        const enabled = await getReviewsEnabled();
+        setReviewsEnabled(enabled);
+      } catch {}
+    };
+    fetchReviewsEnabled();
+  }, []);
 
   const token = useMemo(
     () =>
@@ -59,6 +74,7 @@ export function ProfilePosterCard({
   const [preModalRating, setPreModalRating] = useState(0);
   const [specificLogRating, setSpecificLogRating] = useState(0);
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [addToListsOpen, setAddToListsOpen] = useState(false);
   const menuButtonRef = useRef(null);
   const logButtonRef = useRef(null);
 
@@ -295,9 +311,14 @@ export function ProfilePosterCard({
 
             {/* Menu items */}
             <div className="py-0.5">
-              <button className="w-full text-left px-4 py-2 text-sm text-[#94A3B8]/35 cursor-default">
-                Show your activity
-              </button>
+              {(logIdProp ?? autoLatestLogId) && (
+                <button
+                  onClick={() => { setMenuOpen(false); navigate(`/log/${logIdProp ?? autoLatestLogId}`); }}
+                  className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
+                >
+                  Show your activity
+                </button>
+              )}
 
               {/* Log / Review — submenu when film is already logged */}
               <button
@@ -313,23 +334,33 @@ export function ProfilePosterCard({
                 }
                 className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
               >
-                {hasLogOrReview ? "Log again / edit review..." : "Review or log film again..."}
+                {hasLogOrReview
+                  ? `Log again / ${latestReviewText ? "edit" : "add"} review...`
+                  : "Review or log film..."}
               </button>
 
-              {!isWatched && (
+              <button
+                onClick={handleToggleWatchlist}
+                className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
+              >
+                {isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+              </button>
+
+              {inListContext ? (
                 <button
-                  onClick={handleToggleWatchlist}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer ${
-                    isInWatchlist ? "text-[#BFBCFC] hover:bg-[#BFBCFC]/10" : "text-[#F8FAFC] hover:bg-[#BFBCFC]/10"
-                  }`}
+                  onClick={() => { setMenuOpen(false); onRemoveFromList?.(); }}
+                  className="w-full text-left px-4 py-2 text-sm text-[#FF6B6B] hover:bg-[#FF6B6B]/10 cursor-pointer transition-colors"
                 >
-                  {isInWatchlist ? "Remove from watchlist" : "Add to watchlist"}
+                  Remove from this list
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setMenuOpen(false); setAddToListsOpen(true); }}
+                  className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
+                >
+                  Add to lists...
                 </button>
               )}
-
-              <button className="w-full text-left px-4 py-2 text-sm text-[#94A3B8]/35 cursor-default">
-                Add to lists...
-              </button>
             </div>
           </div>
           {subMenuOpen && (
@@ -343,13 +374,15 @@ export function ProfilePosterCard({
                   onClick={() => { setPreModalDate(""); setPreModalReviewText(""); setPreModalIsRewatch(true); setPreModalHasWatched(true); setPreModalLogId(null); setPreModalRating(filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
                 >
-                  Review or log film again...
+                  {reviewsEnabled ? "Review or log film again..." : "Log film again..."}
                 </button>
                 <button
                   onClick={() => { setPreModalDate(latestWatchedDate); setPreModalReviewText(latestReviewText); setPreModalIsRewatch(false); setPreModalHasWatched(true); setPreModalLogId(logIdProp ?? autoLatestLogId); setPreModalRating(logIdProp ? specificLogRating : filmRating); setMenuOpen(false); setSubMenuOpen(false); setLogModalOpen(true); }}
                   className="w-full text-left px-4 py-2 text-sm text-[#F8FAFC] hover:bg-[#BFBCFC]/10 cursor-pointer transition-colors"
                 >
-                  {latestReviewText ? "Edit review..." : "Add review..."}
+                  {reviewsEnabled 
+                    ? (latestReviewText ? "Edit review..." : "Add review...") 
+                    : "Edit log entry..."}
                 </button>
               </div>
             </div>
@@ -365,6 +398,15 @@ export function ProfilePosterCard({
         className="relative group cursor-pointer"
         onClick={(e) => { e.stopPropagation(); navigate(to ?? (autoLatestLogId ? `/log/${autoLatestLogId}` : `/movie/${movieId}`)); }}
       >
+        {/* Title on hover */}
+        <div className="absolute -top-8 left-0 right-0 z-40 px-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <div className="bg-[#151921] border border-[#BFBCFC]/20 rounded-md px-2 py-1 shadow-lg">
+            <p className="text-[#F8FAFC] text-[11px] font-semibold text-center truncate leading-tight">
+              {title}
+            </p>
+          </div>
+        </div>
+
         {/* Poster */}
         <div
           className={`aspect-[2/3] rounded-lg overflow-hidden bg-[#151921] border transition-all duration-200 ${
@@ -443,6 +485,13 @@ export function ProfilePosterCard({
         preDate={preModalDate}
         preLogId={preModalLogId}
         onSuccess={() => triggerRefresh()}
+      />
+
+      <AddToListsModal
+        isOpen={addToListsOpen}
+        onClose={() => setAddToListsOpen(false)}
+        movieId={movieId}
+        movieTitle={title}
       />
     </>
   );

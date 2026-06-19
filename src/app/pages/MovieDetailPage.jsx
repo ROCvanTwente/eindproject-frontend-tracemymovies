@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams } from "react-router";
+import { toast } from "sonner";
 import {
     Heart, Plus, DollarSign, Globe, Calendar,
     Clock, Eye, Share2, Loader2, User, ChevronRight, AlertCircle, RefreshCw,
@@ -16,10 +17,24 @@ import { MovieDetailError } from "../components/movie/MovieDetailError";
 import { MovieDetailContent } from "../components/movie/MovieDetailContent";
 import { useMovieDetail } from "../hooks/useMovieDetail";
 import { useAuth } from "../context/AuthContext";
+import { getReviewsEnabled } from "../services/reviews";
 
 export function MovieDetailPage() {
     const { id } = useParams();
     const auth = useAuth();
+    const [reviewsEnabled, setReviewsEnabled] = useState(true);
+
+    useEffect(() => {
+        const fetchReviewsEnabled = async () => {
+            try {
+                const enabled = await getReviewsEnabled();
+                setReviewsEnabled(enabled);
+            } catch (err) {
+                console.error("Error fetching reviews enabled status:", err);
+            }
+        };
+        fetchReviewsEnabled();
+    }, []);
 
     const token = useMemo(() => {
         return (
@@ -40,6 +55,7 @@ export function MovieDetailPage() {
         error,
         recommendations,
         loadingRecommendations,
+        streamingProviders,
         isFavorite,
         isInWatchlist,
         isWatched,
@@ -54,6 +70,9 @@ export function MovieDetailPage() {
         setShowShareModal,
         showTrailerModal,
         isAnimateIn,
+        isSavingWatch,
+        isSavingLike,
+        isSavingWatchlist,
         trailerVideo,
         openTrailer,
         closeTrailer,
@@ -85,6 +104,7 @@ export function MovieDetailPage() {
                 movie={movie}
                 loadingRecommendations={loadingRecommendations}
                 recommendations={recommendations}
+                streamingProviders={streamingProviders}
                 isWatched={isWatched}
                 isFavorite={isFavorite}
                 filmRating={filmRating}
@@ -93,13 +113,24 @@ export function MovieDetailPage() {
                 onToggleLike={handleToggleLike}
                 isInWatchlist={isInWatchlist}
                 onToggleWatchlist={handleToggleWatchlist}
+                isSavingWatch={isSavingWatch}
+                isSavingLike={isSavingLike}
+                isSavingWatchlist={isSavingWatchlist}
                 onSetRating={handleSetRating}
-                onOpenLog={() => setShowWatchLogModal(true)}
-                onOpenEditLog={() => setShowEditLogModal(true)}
+                onOpenLog={() => {
+                    if (!token) { toast.error("You must be logged in."); return; }
+                    setShowWatchLogModal(true);
+                }}
+                onOpenEditLog={() => {
+                    if (!token) { toast.error("You must be logged in."); return; }
+                    setShowEditLogModal(true);
+                }}
                 onOpenTrailer={openTrailer}
                 onOpenShare={() => setShowShareModal(true)}
                 hasReview={!!latestReviewText}
                 hasLog={!!latestLogId}
+                isLoggedIn={!!token}
+                reviewsEnabled={reviewsEnabled}
             />
 
             <TrailerModal

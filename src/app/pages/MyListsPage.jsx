@@ -3,6 +3,9 @@ import { List, Plus, Film } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
+import { ReviewPagination } from "../components/review/ReviewPagination";
+
+const PAGE_SIZE = 6;
 
 function ListPosterCollage({ posters = [] }) {
   const slots = Array.from({ length: 4 }, (_, i) => posters[i] ?? null);
@@ -32,6 +35,7 @@ export function MyListsPage() {
   const [lists, setLists] = useState([]);
   const [ownerUsername, setOwnerUsername] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
 
   const token = useMemo(
     () =>
@@ -71,6 +75,11 @@ export function MyListsPage() {
   useEffect(() => {
     if (token) fetchLists();
   }, [token, userId]);
+
+  useEffect(() => setPage(0), [lists]);
+
+  const totalPages = Math.max(1, Math.ceil(lists.length / PAGE_SIZE));
+  const paged = lists.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (loading) {
     return (
@@ -112,36 +121,43 @@ export function MyListsPage() {
         </div>
 
         {lists.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {lists.map((list) => (
-              <Link
-                key={list.listId}
-                to={isPublic ? `/user/${userId}/list/${list.listId}` : `/list/${list.listId}`}
-                className="group block bg-[#151921]/70 backdrop-blur-xl overflow-hidden rounded-lg transition-all hover:scale-[1.02]"
-              >
-                <ListPosterCollage posters={list.previewPosters} />
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paged.map((list) => (
+                <Link
+                  key={list.listId}
+                  to={isPublic ? `/user/${userId}/list/${list.listId}` : `/list/${list.listId}`}
+                  className="group block bg-[#151921]/70 backdrop-blur-xl overflow-hidden rounded-lg transition-all hover:scale-[1.02]"
+                >
+                  <ListPosterCollage posters={list.previewPosters} />
 
-                <div className="p-4">
-                  <h3 className="text-lg font-bold text-[#F8FAFC] group-hover:text-[#BFBCFC] transition-colors truncate mb-1">
-                    {list.listName}
-                  </h3>
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold text-[#F8FAFC] group-hover:text-[#BFBCFC] transition-colors truncate mb-1">
+                      {list.listName}
+                    </h3>
 
-                  {list.listDescription && (
-                    <p className="text-[#94A3B8] text-sm line-clamp-2 mb-2">
-                      {list.listDescription}
-                    </p>
-                  )}
+                    {list.listDescription && (
+                      <p className="text-[#94A3B8] text-sm line-clamp-2 mb-2">
+                        {list.listDescription}
+                      </p>
+                    )}
 
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-[#44FFFF] font-data font-medium">
-                      {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
-                    </span>
-                    {list.isRanked && <span className="text-[#94A3B8]">• Ranked</span>}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-[#44FFFF] font-data font-medium">
+                        {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
+                      </span>
+                      {list.isRanked && <span className="text-[#94A3B8]">• Ranked</span>}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+            <ReviewPagination
+              currentPage={page + 1}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p - 1)}
+            />
+          </>
         ) : (
           <div className="text-center py-20">
             <Film className="w-24 h-24 text-[#BFBCFC]/20 mx-auto mb-4" />
@@ -155,13 +171,6 @@ export function MyListsPage() {
                 <p className="text-[#94A3B8] mb-6">
                   Create your first custom list to organize your favorite movies
                 </p>
-                <button
-                  onClick={() => navigate("/list/new")}
-                  className="bg-[#BFBCFC] hover:bg-[#AFA9FF] text-[#0B0E14] px-6 py-3 rounded-xl font-medium transition-all inline-flex items-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Create Your First List
-                </button>
               </>
             )}
           </div>

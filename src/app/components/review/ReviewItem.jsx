@@ -40,7 +40,8 @@ export function ReviewItem({
     const [topBadges, setTopBadges] = useState(null);
     const [isAdmin, setIsAdmin] = useState(false);
 
-    const author = review.user?.userName || (review.userId ? `User #${review.userId}` : "Anonymous");
+    const author = review.user?.userName || review.userName || review.authorName || (review.userId ? `User #${review.userId}` : "Anonymous");
+    const profileImg = review.profileImageBase64 ?? review.user?.profileImageBase64 ?? review.profilePicture ?? review.user?.profilePicture;
     const content = review.review || "";
     const rating = review.rating ?? 0;
     const spoiler = review.containsSpoilers ?? false;
@@ -50,7 +51,7 @@ export function ReviewItem({
         month: 'short', day: 'numeric', year: 'numeric'
     }) : "No date";
 
-    const userId = review.user?.id;
+    const userId = review.userId ?? review.user?.id ?? review.user?.userId ?? review.user?.userID;
 
     useEffect(() => {
         if (!userId) return;
@@ -84,7 +85,7 @@ export function ReviewItem({
         <div className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-4 md:p-6 mb-4">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                    <UserAvatar profileImageBase64={review.user?.profileImageBase64} author={author} />
+                    <UserAvatar profileImageBase64={profileImg} author={author} />
                     <div>
                         <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-[#F8FAFC] font-medium">{author}</p>
