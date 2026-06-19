@@ -5,9 +5,9 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 
 const DISCOVER = [
-  { label: 'Home',         to: '/',         title: 'TraceMyMovies Home - Track and rate films' },
-  { label: 'Browse Films', to: '/movies',    title: 'Browse all films and search movies' },
-  { label: 'About Us',     to: '/about',     title: 'About TraceMyMovies and the development team' },
+  { label: 'Home',          to: '/',         title: 'TraceMyMovies Home - Track and rate films' },
+  { label: 'Movie Catalog', to: '/movies',    title: 'Browse our full catalog of films' },
+  { label: 'About Us',      to: '/about',     title: 'About TraceMyMovies and the development team' },
 ];
 
 const FEATURES_GUEST = [
@@ -17,6 +17,7 @@ const FEATURES_GUEST = [
   { label: 'The Queue',     to: '/register', title: 'Register to keep a movie queue' },
   { label: 'Movie Diary',   to: '/register', title: 'Register to keep a diary of your watch history' },
   { label: 'Custom Lists',  to: '/register', title: 'Register to create movie lists' },
+  { label: 'Activity Logs', to: '/register', title: 'Register to view user activity logs' },
   { label: 'Friends',       to: '/register', title: 'Register to add friends and see activity' },
   { label: 'Badges',        to: '/register', title: 'Register to unlock badges' },
 ];
@@ -28,6 +29,7 @@ const FEATURES_AUTH = [
   { label: 'The Queue',     to: '/the-queue', title: 'Manage your personal queue' },
   { label: 'Movie Diary',   to: '/diary',     title: 'Keep a diary of your movie viewings' },
   { label: 'My Lists',      to: '/my-lists',  title: 'Create and browse custom movie lists' },
+  { label: 'Activity Logs', to: '/activity',  title: 'View platform activity logs' },
   { label: 'Friends',       to: '/FriendPage', title: 'Connect with movie friends' },
   { label: 'Badges',        to: '/badges',   title: 'Check your unlocked badges' },
 ];
