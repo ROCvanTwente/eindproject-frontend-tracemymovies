@@ -1,12 +1,17 @@
+// Importeer de benodigde iconen van lucide-react
 import { Eye, Star, Users, Trophy, ArrowRight, Clapperboard } from 'lucide-react';
+// Importeer Link voor veilige client-side navigatie binnen de app
 import { Link } from 'react-router';
+// Importeer de custom hooks voor data-ophaling en authenticatie
 import { useHomeMovies } from '../hooks/useHomeMovies';
 import { useAuth } from '../context/AuthContext';
+// Importeer de visuele componenten voor de lay-out
 import { HeroSection } from '../components/HeroSection';
 import { HomeLoading } from '../components/home/HomeLoading';
 import { HomeError } from '../components/home/HomeError';
 import { HomeMovieLists } from '../components/home/HomeMovieLists';
 
+// Een vaste lijst met platformfuncties, buiten de component geplaatst voor betere prestaties
 const FEATURES = [
   {
     icon: Eye,
@@ -38,16 +43,18 @@ const FEATURES = [
   },
 ];
 
+// Component voor de introductiebanner van het platform
 function PlatformBanner({ isAuthenticated }) {
   return (
     <section className="relative py-10 md:py-18 overflow-hidden">
+      {/* Achtergronddecoratie met subtiele, wazige kleurcirkels (blur effecten) */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-72 h-72 bg-[#BFBCFC]/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-[#44FFFF]/5 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl relative z-10">
-        {/* Headline */}
+        {/* De hoofdkopteksten (headlines) van de banner */}
         <div className="text-center mb-8 md:mb-12">
           <div className="inline-flex items-center gap-2 bg-[#BFBCFC]/10 border border-[#BFBCFC]/20 text-[#BFBCFC] px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4">
             <Clapperboard className="w-3 h-3" />
@@ -64,7 +71,7 @@ function PlatformBanner({ isAuthenticated }) {
           </p>
         </div>
 
-        {/* Feature cards */}
+        {/* Grid-overzicht waarin de vier platformfuncties dynamically worden getoond */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4 mb-8 md:mb-12">
           {FEATURES.map(({ icon: Icon, color, glow, title, desc }) => (
             <div
@@ -72,6 +79,7 @@ function PlatformBanner({ isAuthenticated }) {
               className="relative bg-[#0F1219] rounded-xl md:rounded-2xl p-4 md:p-6 group transition-all duration-300 hover:-translate-y-1 overflow-hidden"
               style={{ border: `1px solid rgba(255,255,255,0.05)` }}
             >
+              {/* Interactieve hover-effecten (glow en vloeiende randen) */}
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl md:rounded-2xl"
                 style={{ background: `radial-gradient(ellipse at 0% 0%, ${glow}, transparent 60%)` }}
@@ -80,6 +88,7 @@ function PlatformBanner({ isAuthenticated }) {
                 className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }}
               />
+              {/* Icoon van de specifieke functie met een dynamische achtergrondkleur */}
               <div
                 className="relative w-9 h-9 md:w-11 md:h-11 rounded-xl flex items-center justify-center mb-3 md:mb-4 transition-all duration-300 group-hover:scale-110"
                 style={{ background: `${color}15`, border: `1px solid ${color}30` }}
@@ -92,7 +101,7 @@ function PlatformBanner({ isAuthenticated }) {
           ))}
         </div>
 
-        {/* CTA */}
+        {/* Call-to-Action (CTA) knoppen. De registratieknop verbergt automatisch als je ingelogd bent */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           {!isAuthenticated && (
             <Link
@@ -116,19 +125,26 @@ function PlatformBanner({ isAuthenticated }) {
   );
 }
 
+// De hoofdcomponent voor de homepagina van de applicatie
 export function HomePage() {
+  // Haal de films op en controleer de laad- of foutstatus via de custom hook
   const { movies, loading, error } = useHomeMovies();
+  // Controleer via de global context of de huidige bezoeker is ingelogd
   const { isAuthenticated } = useAuth();
 
+  // Vroegtijdige returns (early returns) om laad- en foutsituaties direct op te vangen
   if (loading) return <HomeLoading />;
   if (error) return <HomeError message={error} />;
 
   return (
     <>
+      {/* Grote hero-sectie bovenaan de pagina met de meest trending films */}
       <HeroSection movies={movies.trending} />
 
+      {/* De tussentijdse platformbanner met informatie over features */}
       <PlatformBanner isAuthenticated={isAuthenticated} />
 
+      {/* Gesegmenteerde filmlijsten (Populair, Best Beoordeeld en Binnenkort Verwacht) */}
       <HomeMovieLists
         popularMovies={movies.popular}
         topRatedMovies={movies.topRated}
