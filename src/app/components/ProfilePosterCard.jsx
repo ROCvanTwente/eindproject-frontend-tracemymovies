@@ -312,9 +312,20 @@ export function ProfilePosterCard({
                 ))}
               </div>
               {(hoverRating || filmRating) > 0 && (
-                <p className="text-center text-[#94A3B8] text-[10px] mt-2">
-                  {hoverRating || filmRating}/10
-                </p>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <p className="text-[#94A3B8] text-[10px]">
+                    {hoverRating || filmRating}/10
+                  </p>
+                  {filmRating > 0 && !hoverRating && (
+                    <button
+                      onClick={() => handleSetRating(filmRating)}
+                      className="text-[#94A3B8]/60 hover:text-[#FF61D2] transition-colors"
+                      title="Clear rating"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
