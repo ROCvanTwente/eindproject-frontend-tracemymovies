@@ -195,7 +195,7 @@ export function MessagesPage() {
             if (selectedFriend.userId == senderId || auth.user.userId == senderId) {
                 setMessages((prev) => [
                     ...prev,
-                    { senderId, messageId, message, timeSended, isRead }
+                    { senderId, messageId, message, timeSended, isRead, movie }
                 ]);
             }
             
