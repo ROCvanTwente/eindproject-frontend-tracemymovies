@@ -77,7 +77,7 @@ export function MoodRadar({ rawData }) {
           <RadarChart 
             cx="50%" 
             cy="50%" 
-            outerRadius="75%" 
+            outerRadius="68%" 
             data={chartData} 
             tabIndex={-1}
             style={{ outline: "none", border: "none" }}
