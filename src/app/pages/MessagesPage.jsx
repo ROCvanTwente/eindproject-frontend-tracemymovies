@@ -203,22 +203,6 @@ export function MessagesPage() {
                     ...prev,
                     { senderId, messageId, message, timeSended, isRead, movie }
                 ]);
-                setLastMessages(prev => {
-                    return prev.map(lastmessage => {
-                        if (lastmessage.friendId == senderId) {
-
-                            if (movie != null) message = "Shared a movie";
-
-                            return {
-                                ...lastmessage,
-                                message: message,
-                                isRead: false,
-                                totalNotReadMessages: lastmessage.totalNotReadMessages + 1
-                            };
-                        }
-                        return (lastmessage);
-                    });
-                });
             }
 
             if (selectedFriend.userId == senderId) {
@@ -343,6 +327,7 @@ export function MessagesPage() {
                                                             lastMessages.find(lm => lm.friendId == friend.userId)?.message
                                                         )}
                                                     </p>
+                                                    {console.log(lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId)}
                                                     <div className='flex justify-center bg-[#ff61d2] rounded-full w-[10%]'>{(lastMessages.length != 0
                                                         && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages != 0
                                                         && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId)
