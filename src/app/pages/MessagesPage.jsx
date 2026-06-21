@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film, Check, CheckCheck, EllipsisVertical, Pencil, Trash, X } from 'lucide-react';
+import { MessageCircle, Send, Search, UserPlus, MoreVertical, Film, Check, CheckCheck, EllipsisVertical, Pencil, Trash, X, Users } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from "../context/AuthContext";
 import * as signalR from "@microsoft/signalr";
@@ -14,6 +14,7 @@ export function MessagesPage() {
     const [connection, setConnection] = useState(null);
     const [messages, setMessages] = useState([]);
     const [lastMessages, setLastMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const handleSendMessage = useCallback(async (e) => {
         e.preventDefault();
@@ -41,8 +42,6 @@ export function MessagesPage() {
             );
         } catch (err) {
             console.error(err);
-        } finally {
-            setMessageText('');
         }
     });
 
@@ -89,14 +88,19 @@ export function MessagesPage() {
     }, [auth]);
 
     const getMyFriends = useCallback(() => {
+        setLoading(true);
         const headers = { 'Authorization': `Bearer ${token}` };
         fetch(`${import.meta.env.VITE_API_BASE_URL}/friend/GetMyFriends`, { headers })
             .then((r) => r.ok ? r.json() : [])
             .then((data) => {
                 setMyFriends(data);
                 setFilterMyFriends(data);
+                setLoading(false)
             })
-            .catch((err) => console.log(err));
+            .catch((err) => {
+                console.log(err)
+                setLoading(false)
+            });
 
         fetch(`${import.meta.env.VITE_API_BASE_URL}/database/GetLastMessages`, { headers })
             .then((r) => r.ok ? r.json() : [])
@@ -198,7 +202,7 @@ export function MessagesPage() {
                     { senderId, messageId, message, timeSended, isRead, movie }
                 ]);
             }
-            
+
             if (selectedFriend.userId == senderId) {
                 console.log("Stuur NU DE LIVE EVENT: IsRead")
                 handleLiveIsRead(selectedFriend.userId, messageId);
@@ -245,11 +249,11 @@ export function MessagesPage() {
     }, [messages]);
 
     return (
-        <div className="min-h-screen py-8">
+        <div className=" py-8">
             <div className="container mx-auto px-4 max-w-7xl">
 
                 {/* Header */}
-                <div className="mb-6">
+                <div className={`mb-6 ${selectedFriend ? "hidden" : "block"} lg:block`}>
                     <h1 className="text-3xl md:text-4xl font-bold font-heading text-[#F8FAFC] mb-2">
                         Chats
                     </h1>
@@ -259,7 +263,7 @@ export function MessagesPage() {
                 </div>
 
                 {/* Main Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
 
                     {/* Left Column: Chat List */}
                     <div className={`lg:col-span-1 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col ${selectedFriend ? "hidden" : "flex"} lg:flex`}>
@@ -275,66 +279,75 @@ export function MessagesPage() {
                                 />
                             </div>
                         </div>
-                        <div className={`flex-1 overflow-y-auto`}>
-                            {filterMyFriends.map((friend) => (
-                                <div
-                                    key={friend.userId}
-                                    className={`cursor-pointer relative w-full p-4 border-b border-[#BFBCFC]/10 hover:bg-[#BFBCFC]/5 transition-all ${selectedFriend === friend.userId ? 'bg-[#BFBCFC]/10' : ''}`}
-                                    onClick={() => setSelectedFriend(friend)}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Link
-                                            to={`/user/${friend.userId}`}
-                                            className="relative flex-shrink-0 hover:opacity-80 transition-opacity"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            {friend.profileImageBase64 ? (
-                                                <img
-                                                    className='w-12 h-12 rounded-full flex items-center justify-center'
-                                                    src={`data:image/png;base64,${friend.profileImageBase64}`}
-                                                    alt={friend.userId}
-                                                />
-                                            ) : (
-                                                <div className="w-12 h-12 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
-                                                    <span className="text-[#0B0E14] font-bold text-xl">{friend.userName[0]}</span>
-                                                </div>
-                                            )}
-                                            {friend.isOnline ? (
-                                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#151921]" />
-                                            ) : (
-                                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#3b424f] rounded-full border-2 border-[#151921]" />
-                                            )}
-                                        </Link>
+                        <div className={`flex-1 overflow-y-auto ${filterMyFriends.length == 0 && "flex justify-center items-center"}`}>
+                            {!loading && filterMyFriends.length != 0 ? (
+                                filterMyFriends.map((friend) => (
+                                    <div
+                                        key={friend.userId}
+                                        className={`cursor-pointer relative w-full p-4 border-b border-[#BFBCFC]/10 hover:bg-[#BFBCFC]/5 transition-all ${selectedFriend === friend.userId ? 'bg-[#BFBCFC]/10' : ''}`}
+                                        onClick={() => setSelectedFriend(friend)}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Link
+                                                to={`/user/${friend.userId}`}
+                                                className="relative flex-shrink-0 hover:opacity-80 transition-opacity"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {friend.profileImageBase64 ? (
+                                                    <img
+                                                        className='w-12 h-12 rounded-full flex items-center justify-center'
+                                                        src={`data:image/png;base64,${friend.profileImageBase64}`}
+                                                        alt={friend.userId}
+                                                    />
+                                                ) : (
+                                                    <div className="w-12 h-12 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/30">
+                                                        <span className="text-[#0B0E14] font-bold text-xl">{friend.userName[0]}</span>
+                                                    </div>
+                                                )}
+                                                {friend.isOnline ? (
+                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#44FFFF] rounded-full border-2 border-[#151921]" />
+                                                ) : (
+                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#3b424f] rounded-full border-2 border-[#151921]" />
+                                                )}
+                                            </Link>
 
-                                        <button
-                                            className="cursor-pointer flex-1 min-w-0 text-left"
-                                        >
-                                            <div className="flex items-center justify-between mb-1">
-                                                <h3 className="text-[#F8FAFC] font-medium truncate">{friend.userName}</h3>
-                                            </div>
-                                            <div className='flex row justify-between items-center'>
-                                                <p
-                                                    className={`text-[#94A3B8] text-sm truncate ${(lastMessages.length != 0 && !lastMessages.find(lm => lm.friendId == friend.userId)?.isRead && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId) && "font-black"}`}>
-                                                    {lastMessages.length != 0 && (lastMessages.find(lm => lm.friendId == friend.userId)?.message?.length > 30 ?
-                                                        lastMessages.find(lm => lm.friendId == friend.userId)?.message?.substring(0, 30) + "..." :
-                                                        lastMessages.find(lm => lm.friendId == friend.userId)?.message
-                                                    )}
-                                                </p>
-                                                <div className='flex justify-center bg-[#ff61d2] rounded-full w-[10%]'>{(lastMessages.length != 0
-                                                    && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages != 0
-                                                    && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId)
-                                                    && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages}
+                                            <button
+                                                className="cursor-pointer flex-1 min-w-0 text-left"
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <h3 className="text-[#F8FAFC] font-medium truncate">{friend.userName}</h3>
                                                 </div>
-                                            </div>
-                                        </button>
+                                                <div className='flex row justify-between items-center'>
+                                                    <p
+                                                        className={`text-[#94A3B8] text-sm truncate ${(lastMessages.length != 0 && !lastMessages.find(lm => lm.friendId == friend.userId)?.isRead && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId) && "font-black"}`}>
+                                                        {lastMessages.length != 0 && (lastMessages.find(lm => lm.friendId == friend.userId)?.message?.length > 30 ?
+                                                            lastMessages.find(lm => lm.friendId == friend.userId)?.message?.substring(0, 30) + "..." :
+                                                            lastMessages.find(lm => lm.friendId == friend.userId)?.message
+                                                        )}
+                                                    </p>
+                                                    {console.log(lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId)}
+                                                    <div className='flex justify-center bg-[#ff61d2] rounded-full w-[10%]'>{(lastMessages.length != 0
+                                                        && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages != 0
+                                                        && lastMessages.find(lm => lm.friendId == friend.userId)?.senderId != auth.user.userId)
+                                                        && lastMessages.find(lm => lm.friendId == friend.userId)?.totalNotReadMessages}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </div>
                                     </div>
+                                ))
+                            ) : (
+                                <div className='flex flex-col items-center'>
+                                    <Users className="w-24 h-24 text-[#BFBCFC]/20" />
+                                    <p className="text-2xl font-bold text-[#F8FAFC] mb-2">You Have No Friends</p>
+                                    <p className="text-[#94A3B8]">Make New Friends to Chat</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </div>
 
                     {/* Right Column: Chat Window */}
-                    <div className={`lg:col-span-2 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col ${!selectedFriend ? "hidden" : "flex"} lg:flex`}>
+                    <div className={`lg:col-span-2 bg-[#151921]/70 backdrop-blur-xl border border-[#BFBCFC]/15 rounded-2xl overflow-hidden flex flex-col ${!selectedFriend ? "hidden" : "flex"} ${myFriends.length == 0 ? "hidden" : "lg:flex"}`}>
                         {selectedFriend ? (
                             <>
                                 {/* Chat Header */}
@@ -372,56 +385,71 @@ export function MessagesPage() {
                                 </div>
 
                                 {/* Messages List */}
-                                <div id="chatDiv" className="flex-1 overflow-y-auto p-4 space-y-4">
-                                    {messages.map((message) => (
-                                        <div
-                                            key={message.messageId}
-                                            className={`relative flex gap-2 items-end ${message.senderId === auth.user.userId ? 'justify-end' : 'justify-start'}`}
-                                        >
-                                            <Link
-                                                to={`/user/${message.senderId == auth.user.userId ? auth.user.userId : selectedFriend.userId}`}
-                                                className="flex-shrink-0 hover:opacity-80 transition-opacity"
-                                            >
-                                                {getCorrectImgMessage(message.senderId)}
-                                            </Link>
-
+                                <div id="chatDiv" className={`flex-1 overflow-y-auto p-4 space-y-4 ${messages.length == 0 && "flex justify-center items-center"}`}>
+                                    {messages.length != 0 ? (
+                                        messages.map((message) => (
                                             <div
-                                                className={`max-w-[70%] ${message.senderId == auth.user.userId
-                                                    ? 'bg-[#BFBCFC] text-[#0B0E14]'
-                                                    : 'bg-[#0B0E14] text-[#F8FAFC]'
-                                                    } relative rounded-2xl px-4 py-3 break-all`}
+                                                key={message.messageId}
+                                                className={`relative flex gap-2 items-end ${message.senderId === auth.user.userId ? 'justify-end' : 'justify-start'}`}
                                             >
-                                                {message.movie != null && (
-                                                    <Link
-                                                        to={`/movie/${message.movie.movieId}`}
-                                                        className="flex items-center gap-3 mb-2 p-2 bg-black/20 rounded-xl hover:bg-black/30 transition-all"
-                                                    >
-                                                        <img
-                                                            src={`https://image.tmdb.org/t/p/w92${message.movie.posterImg}`}
-                                                            alt={message.movie.title}
-                                                            className="w-12 h-16 object-cover rounded"
-                                                        />
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <Film className="w-4 h-4" />
-                                                                <span className="font-medium text-sm">
-                                                                    {message.movie.title}
-                                                                </span>
+                                                <Link
+                                                    to={`/user/${message.senderId == auth.user.userId ? auth.user.userId : selectedFriend.userId}`}
+                                                    className="flex-shrink-0 hover:opacity-80 transition-opacity"
+                                                >
+                                                    {getCorrectImgMessage(message.senderId)}
+                                                </Link>
+
+                                                <div
+                                                    className={`max-w-[70%] ${message.senderId == auth.user.userId
+                                                        ? 'bg-[#BFBCFC] text-[#0B0E14]'
+                                                        : 'bg-[#0B0E14] text-[#F8FAFC]'
+                                                        } relative rounded-2xl px-4 py-3 break-all`}
+                                                >
+                                                    {message.movie != null && (
+                                                        <Link
+                                                            to={`/movie/${message.movie.movieId}`}
+                                                            className="flex items-center gap-3 mb-2 p-2 bg-black/20 rounded-xl hover:bg-black/30 transition-all"
+                                                        >
+                                                            <img
+                                                                src={`https://image.tmdb.org/t/p/w92${message.movie.posterImg}`}
+                                                                alt={message.movie.title}
+                                                                className="w-12 h-16 object-cover rounded"
+                                                            />
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Film className="w-4 h-4" />
+                                                                    <span className="font-medium text-sm">
+                                                                        {message.movie.title}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </Link>
-                                                )}
-                                                <p className="text-sm">{message.message}</p>
-                                                <p className={`text-xs mt-1 text-[#94A3B8]`}>{message.timeSended}</p>
-                                            </div>
-                                            {message.senderId == auth.user.userId && (
-                                                <div className='flex flex-col justify-between'>
-                                                    <span className='absolute top-0 text-[#736afc] cursor-pointer' onClick={() => handleDeleteMessage(message.messageId)}><Trash className='h-4' /></span>
-                                                    <span className='text-[#736afc]'>{message.isRead ? <CheckCheck /> : <Check />}</span>
+                                                        </Link>
+                                                    )}
+                                                    <p className="text-sm">{message.message}</p>
+                                                    <p className={`text-xs mt-1 text-[#94A3B8]`}>{message.timeSended && (
+                                                        new Date().toISOString().split("T")[0] == message.timeSended.split("T")[0] ? (
+                                                            message.timeSended.split("T")[1].split(".")[0]
+                                                        ) : (
+                                                            message.timeSended.split(".")[0].replace("T", " ")
+                                                        )
+                                                    )}</p>
                                                 </div>
-                                            )}
+                                                {message.senderId == auth.user.userId && (
+                                                    <div className='flex flex-col justify-between'>
+                                                        <span className='absolute top-0 text-[#736afc] cursor-pointer' onClick={() => handleDeleteMessage(message.messageId)}><Trash className='h-4' /></span>
+                                                        <span className='text-[#736afc]'>{message.isRead ? <CheckCheck /> : <Check />}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex-1 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <MessageCircle className="w-24 h-24 text-[#BFBCFC]/20 mx-auto mb-4" />
+                                                <h3 className="text-2xl font-bold text-[#F8FAFC] mb-2">Type your first message</h3>
+                                            </div>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
 
                                 {/* Message Input Form */}
