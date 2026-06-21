@@ -175,6 +175,11 @@ export function CreateListPage() {
         });
         if (!res.ok) throw new Error("Failed to load list");
         const data = await res.json();
+        if (data.isFeatured) {
+          toast.error("Featured lists cannot be edited here");
+          navigate("/featured-lists");
+          return;
+        }
         setListName(data.listName ?? "");
         setListDescription(data.listDescription ?? "");
         setIsRanked(Boolean(data.isRanked));

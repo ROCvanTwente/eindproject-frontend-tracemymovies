@@ -118,6 +118,14 @@ export function FeaturedListsPage() {
     fetchList();
   }, [isEdit, activeId]);
 
+  // Security route guard to block non-admins from edit/create mode
+  useEffect(() => {
+    if ((isEdit || isCreating) && !isUserAdmin && !browseLoading) {
+      toast.error("Only administrators can create or edit global featured lists");
+      navigate("/featured-lists");
+    }
+  }, [isEdit, isCreating, isUserAdmin, browseLoading, navigate]);
+
   // TMDB Instant Movie Engine Lookups
   useEffect(() => {
     const query = searchQuery.trim();
@@ -255,6 +263,14 @@ export function FeaturedListsPage() {
   };
 
   if (browseLoading) {
+    return (
+      <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#BFBCFC]/20 border-t-[#BFBCFC] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if ((isEdit || isCreating) && !isUserAdmin) {
     return (
       <div className="min-h-screen bg-[#0B0E14] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#BFBCFC]/20 border-t-[#BFBCFC] rounded-full animate-spin" />
