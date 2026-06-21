@@ -76,6 +76,7 @@ export function ListDetailPage() {
   );
 
   const isUserAdmin = useMemo(() => {
+    if (auth?.user?.role === "Admin" || auth?.user?.role?.includes("Admin")) return true;
     if (auth?.user?.isAdmin || auth?.isAdmin) return true;
     if (!token) return false;
 
@@ -103,7 +104,7 @@ export function ListDetailPage() {
       const parts = token.split('.');
       if (parts.length >= 2) {
         const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-        return payload['nameid'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+        return payload['sub'] || payload['nameid'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
       }
     } catch {}
     return null;
@@ -113,6 +114,18 @@ export function ListDetailPage() {
     if (!list?.userId || !currentUserId) return false;
     return String(list.userId) === String(currentUserId);
   }, [list, currentUserId]);
+
+  const isFeaturedList = useMemo(() => {
+    if (list?.isFeatured || list?.listType === "Featured") return true;
+    if (isUserAdmin && !isOwner) return true;
+    return false;
+  }, [list, isOwner, isUserAdmin]);
+
+  const showEditButton = useMemo(() => {
+    if (isPublic) return false;
+    if (isFeaturedList) return isUserAdmin;
+    return isOwner;
+  }, [isPublic, isFeaturedList, isUserAdmin, isOwner]);
 
   const fetchList = async () => {
     try {
@@ -243,13 +256,10 @@ export function ListDetailPage() {
             </span>
           </div>
           <div className="flex flex-col gap-3 md:w-56 flex-shrink-0">
-            {(!isPublic &&
-              (list?.isFeatured || list?.listType === "Featured"
-                ? isUserAdmin
-                : isOwner)) && (
+            {showEditButton && (
               <button
                 onClick={() => {
-                  if (list?.isFeatured || list?.listType === "Featured") {
+                  if (isFeaturedList) {
                     navigate(`/featured-lists?editId=${id}`);
                   } else {
                     navigate(`/list/${id}/edit`);
@@ -258,7 +268,7 @@ export function ListDetailPage() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[#BFBCFC] hover:bg-[#BFBCFC]/10 transition-all"
               >
                 <Edit className="w-4 h-4" />
-                {list?.isFeatured || list?.listType === "Featured" ? "Edit Featured List" : "Edit or Delete this List"}
+                {isFeaturedList ? "Edit Featured List" : "Edit or Delete this List"}
               </button>
             )}
             {movies.length > 0 && (
@@ -342,7 +352,7 @@ export function ListDetailPage() {
                     key={movie.movieId}
                     movie={movie}
                     isRanked={list.isRanked}
-                    onRemove={isPublic || list?.isFeatured || list?.listType === "Featured" || !isOwner ? undefined : handleRemoveMovie}
+                    onRemove={isPublic || isFeaturedList || !isOwner ? undefined : handleRemoveMovie}
                   />
                 ))}
               </div>
