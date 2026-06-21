@@ -428,7 +428,13 @@ export function MessagesPage() {
                                                         </Link>
                                                     )}
                                                     <p className="text-sm">{message.message}</p>
-                                                    <p className={`text-xs mt-1 text-[#94A3B8]`}>{message.timeSended}</p>
+                                                    <p className={`text-xs mt-1 text-[#94A3B8]`}>{message.timeSended && (
+                                                        new Date().toISOString().split("T")[0] == message.timeSended.split("T")[0] ? (
+                                                            message.timeSended.split("T")[1].split(".")[0]
+                                                        ) : (
+                                                            message.timeSended.split(".")[0].replace("T", " ")
+                                                        )
+                                                    )}</p>
                                                 </div>
                                                 {message.senderId == auth.user.userId && (
                                                     <div className='flex flex-col justify-between'>
