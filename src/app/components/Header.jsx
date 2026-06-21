@@ -321,8 +321,8 @@ export function Header() {
                     <button
                       onClick={handleLikedDropdown}
                       className={`p-2 transition-all rounded-xl ${showLikedDropdown
-                          ? "text-[#FF61D2] bg-[#FF61D2]/12"
-                          : "text-[#64748B] hover:text-[#FF61D2] hover:bg-[#FF61D2]/10"
+                        ? "text-[#FF61D2] bg-[#FF61D2]/12"
+                        : "text-[#64748B] hover:text-[#FF61D2] hover:bg-[#FF61D2]/10"
                         }`}
                       title="Liked Movies"
                     >
@@ -543,12 +543,19 @@ export function Header() {
               {/* MOBILE MENU BUTTON */}
               <button
                 onClick={() => { setShowMobileMenu(!showMobileMenu); setShowMobileSearch(false); }}
-                className="lg:hidden p-2 text-[#64748B] hover:text-[#F8FAFC] transition-colors rounded-xl hover:bg-white/5 ml-0.5"
+                className="lg:hidden p-2 text-[#64748B] hover:text-[#F8FAFC] transition-colors rounded-xl hover:bg-white/5 ml-0.5 relative"
               >
                 {showMobileMenu ? (
                   <X className="w-5 h-5" />
                 ) : (
-                  <Menu className="w-5 h-5" />
+                  <>
+                    <Menu className="w-5 h-5" />
+                    {totalAllNotReadMessages !== 0 && (
+                      <div className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF61D2] text-[12px] font-bold text-white shadow-sm ring-2 ring-[#151921]">
+                        {totalAllNotReadMessages > 9 ? "9+" : totalAllNotReadMessages}
+                      </div>
+                    )}
+                  </>
                 )}
               </button>
             </div>
