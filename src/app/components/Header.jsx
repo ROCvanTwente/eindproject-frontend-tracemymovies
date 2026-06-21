@@ -94,7 +94,7 @@ export function Header() {
     setSeenFriendRequestIds(updated);
     try {
       sessionStorage.setItem("seenFriendRequestIds", JSON.stringify([...updated]));
-    } catch {}
+    } catch { }
   };
 
   const navigate = useNavigate();
@@ -260,10 +260,9 @@ export function Header() {
                     to={to}
                     end={end}
                     className={({ isActive }) =>
-                      `px-3 py-1.5 rounded-lg text-base font-medium transition-all duration-200 ${
-                        isActive
-                          ? "text-[#F8FAFC] bg-white/8"
-                          : "text-[#64748B] hover:text-[#CBD5E1] hover:bg-white/5"
+                      `px-3 py-1.5 rounded-lg text-base font-medium transition-all duration-200 ${isActive
+                        ? "text-[#F8FAFC] bg-white/8"
+                        : "text-[#64748B] hover:text-[#CBD5E1] hover:bg-white/5"
                       }`
                     }
                   >
@@ -304,8 +303,7 @@ export function Header() {
                   <NavLink
                     to="/messages"
                     className={({ isActive }) =>
-                      `p-2 transition-colors rounded-xl hidden md:flex items-center justify-center ${
-                        isActive ? "text-[#F8FAFC] bg-white/8" : "text-[#64748B] hover:text-[#F8FAFC] hover:bg-white/5"
+                      `relative p-2 transition-colors rounded-xl hidden md:flex items-center justify-center ${isActive ? "text-[#F8FAFC] bg-white/8" : "text-[#64748B] hover:text-[#F8FAFC] hover:bg-white/5"
                       }`
                     }
                     title="Messages"
@@ -322,11 +320,10 @@ export function Header() {
                   <div className="relative hidden md:block" ref={likedRef}>
                     <button
                       onClick={handleLikedDropdown}
-                      className={`p-2 transition-all rounded-xl ${
-                        showLikedDropdown
+                      className={`p-2 transition-all rounded-xl ${showLikedDropdown
                           ? "text-[#FF61D2] bg-[#FF61D2]/12"
                           : "text-[#64748B] hover:text-[#FF61D2] hover:bg-[#FF61D2]/10"
-                      }`}
+                        }`}
                       title="Liked Movies"
                     >
                       <Heart className={`w-5 h-5 transition-all duration-200 ${showLikedDropdown ? "fill-[#FF61D2]" : ""}`} />
@@ -413,8 +410,7 @@ export function Header() {
                     to="/FriendPage"
                     onClick={markFriendRequestsSeen}
                     className={({ isActive }) =>
-                      `relative p-2 transition-colors rounded-xl hidden md:flex items-center justify-center ${
-                        isActive ? "text-[#F8FAFC] bg-white/8" : "text-[#64748B] hover:text-[#F8FAFC] hover:bg-white/5"
+                      `relative p-2 transition-colors rounded-xl hidden md:flex items-center justify-center ${isActive ? "text-[#F8FAFC] bg-white/8" : "text-[#64748B] hover:text-[#F8FAFC] hover:bg-white/5"
                       }`
                     }
                     title="Friends"
@@ -443,9 +439,8 @@ export function Header() {
                 <div className="relative" ref={menuRef}>
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className={`flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-xl transition-all duration-200 ${
-                      showUserMenu ? "bg-white/8" : "hover:bg-white/5"
-                    }`}
+                    className={`flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-xl transition-all duration-200 ${showUserMenu ? "bg-white/8" : "hover:bg-white/5"
+                      }`}
                   >
                     {user.profilePicture ? (
                       <img
@@ -491,10 +486,9 @@ export function Header() {
                           to={to}
                           onClick={() => setShowUserMenu(false)}
                           className={({ isActive }) =>
-                            `block px-4 py-2 text-sm transition-colors ${
-                              isActive
-                                ? "bg-[#BFBCFC]/12 text-[#F8FAFC] font-medium"
-                                : "text-[#94A3B8] hover:bg-white/5 hover:text-[#F8FAFC]"
+                            `block px-4 py-2 text-sm transition-colors ${isActive
+                              ? "bg-[#BFBCFC]/12 text-[#F8FAFC] font-medium"
+                              : "text-[#94A3B8] hover:bg-white/5 hover:text-[#F8FAFC]"
                             }`
                           }
                         >
@@ -507,10 +501,9 @@ export function Header() {
                           to="/admin"
                           onClick={() => setShowUserMenu(false)}
                           className={({ isActive }) =>
-                            `block px-4 py-2 text-sm font-medium transition-colors ${
-                              isActive
-                                ? "bg-[#44FFFF]/12 text-[#44FFFF]"
-                                : "text-[#44FFFF] hover:bg-[#44FFFF]/8"
+                            `block px-4 py-2 text-sm font-medium transition-colors ${isActive
+                              ? "bg-[#44FFFF]/12 text-[#44FFFF]"
+                              : "text-[#44FFFF] hover:bg-[#44FFFF]/8"
                             }`
                           }
                         >
@@ -581,31 +574,30 @@ export function Header() {
       )}
 
       {/* MOBILE MENU PANEL */}
-        {showMobileMenu && (
-          <div className="lg:hidden fixed top-[76px] left-0 right-0 bg-[#0D1117]/98 backdrop-blur-xl border-b border-white/8 z-40 max-h-[calc(100vh-76px)] overflow-y-auto">
-            <div className="container mx-auto px-4 py-3 space-y-0.5">
-              {[
-                { to: "/", label: "Home", end: true },
-                { to: "/movies", label: "Movies" },
-                { to: "/about", label: "About" },
-                { to: "/featured-lists", label: "Lists" },
-              ].map(({ to, label, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  onClick={() => setShowMobileMenu(false)}
-                  className={({ isActive }) =>
-                    `block px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[#BFBCFC]/15 text-[#F8FAFC]"
-                        : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
-                    }`
-                  }
-                >
-                  {label}
-                </NavLink>
-              ))}
+      {showMobileMenu && (
+        <div className="lg:hidden fixed top-[76px] left-0 right-0 bg-[#0D1117]/98 backdrop-blur-xl border-b border-white/8 z-40 max-h-[calc(100vh-76px)] overflow-y-auto">
+          <div className="container mx-auto px-4 py-3 space-y-0.5">
+            {[
+              { to: "/", label: "Home", end: true },
+              { to: "/movies", label: "Movies" },
+              { to: "/about", label: "About" },
+              { to: "/featured-lists", label: "Lists" },
+            ].map(({ to, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                onClick={() => setShowMobileMenu(false)}
+                className={({ isActive }) =>
+                  `block px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive
+                    ? "bg-[#BFBCFC]/15 text-[#F8FAFC]"
+                    : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                  }`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
 
             {isAuthenticated && (
               <>
@@ -614,20 +606,23 @@ export function Header() {
                   to="/messages"
                   onClick={() => setShowMobileMenu(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      isActive ? "bg-white/10 text-[#F8FAFC]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                    `relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive ? "bg-white/10 text-[#F8FAFC]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
                     }`
                   }
                 >
                   <MessageCircle className="w-4 h-4" />
+                  {totalAllNotReadMessages != 0 && (
+                    <div className="absolute right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#FF61D2] text-[12px] font-bold text-white shadow-sm ring-2 ring-[#151921]">
+                      {totalAllNotReadMessages > 9 ? "9+" : totalAllNotReadMessages}
+                    </div>
+                  )}
                   Messages
                 </NavLink>
                 <NavLink
                   to="/FriendPage"
                   onClick={() => { setShowMobileMenu(false); markFriendRequestsSeen(); }}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      isActive ? "bg-white/10 text-[#F8FAFC]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
+                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${isActive ? "bg-white/10 text-[#F8FAFC]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5"
                     }`
                   }
                 >
@@ -650,8 +645,7 @@ export function Header() {
                   to="/likedmoviespage"
                   onClick={() => setShowMobileMenu(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                      isActive ? "text-[#FF61D2] bg-[#FF61D2]/10" : "text-[#64748B] hover:text-[#FF61D2] hover:bg-[#FF61D2]/8"
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? "text-[#FF61D2] bg-[#FF61D2]/10" : "text-[#64748B] hover:text-[#FF61D2] hover:bg-[#FF61D2]/8"
                     }`
                   }
                 >

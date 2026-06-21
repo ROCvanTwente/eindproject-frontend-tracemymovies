@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 export default function ChatNotification({ messageInfo, setMessageInfo }) {
   if (!messageInfo.senderUserName) return
   return (
-    <div className="fixed bottom-0 right-0 mb-5 mr-5 p-5 z-999 w-100 rounded-lg bg-[#12161d]">
+    <div className="fixed bottom-0 right-0 mb-5 mr-5 p-5 z-999 w-75 lg:w-100 rounded-lg bg-[#12161d]">
       <div className="flex row items-center mb-3">
         {messageInfo.profileImg != null ? (
           <img
