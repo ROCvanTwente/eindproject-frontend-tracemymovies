@@ -42,8 +42,6 @@ export function MessagesPage() {
             );
         } catch (err) {
             console.error(err);
-        } finally {
-            setMessageText('');
         }
     });
 
