@@ -75,6 +75,58 @@ export function ListDetailPage() {
     [auth]
   );
 
+  const isUserAdmin = useMemo(() => {
+    if (auth?.user?.role === "Admin" || auth?.user?.role?.includes("Admin")) return true;
+    if (auth?.user?.isAdmin || auth?.isAdmin) return true;
+    if (!token) return false;
+
+    try {
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        const roleClaim = payload['role'] || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        const adminClaim = payload['isAdmin'];
+        
+        if (roleClaim === 'Admin' || roleClaim?.includes('Admin') || String(adminClaim).toLowerCase() === 'true') {
+          return true;
+        }
+      }
+    } catch (e) {
+      console.error("Admin verification fallback parsing error:", e);
+    }
+    return false;
+  }, [auth, token]);
+
+  const currentUserId = useMemo(() => {
+    if (auth?.user?.id || auth?.user?.userId) return auth.user.id || auth.user.userId;
+    if (!token) return null;
+    try {
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload['sub'] || payload['nameid'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+      }
+    } catch {}
+    return null;
+  }, [auth, token]);
+
+  const isOwner = useMemo(() => {
+    if (!list?.userId || !currentUserId) return false;
+    return String(list.userId) === String(currentUserId);
+  }, [list, currentUserId]);
+
+  const isFeaturedList = useMemo(() => {
+    if (list?.isFeatured || list?.listType === "Featured") return true;
+    if (isUserAdmin && !isOwner) return true;
+    return false;
+  }, [list, isOwner, isUserAdmin]);
+
+  const showEditButton = useMemo(() => {
+    if (isPublic) return false;
+    if (isFeaturedList) return isUserAdmin;
+    return isOwner;
+  }, [isPublic, isFeaturedList, isUserAdmin, isOwner]);
+
   const fetchList = async () => {
     try {
       setLoading(true);
@@ -204,13 +256,19 @@ export function ListDetailPage() {
             </span>
           </div>
           <div className="flex flex-col gap-3 md:w-56 flex-shrink-0">
-            {!isPublic && (
+            {showEditButton && (
               <button
-                onClick={() => navigate(`/list/${id}/edit`)}
+                onClick={() => {
+                  if (isFeaturedList) {
+                    navigate(`/featured-lists?editId=${id}`);
+                  } else {
+                    navigate(`/list/${id}/edit`);
+                  }
+                }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-[#BFBCFC] hover:bg-[#BFBCFC]/10 transition-all"
               >
                 <Edit className="w-4 h-4" />
-                Edit or Delete this List
+                {isFeaturedList ? "Edit Featured List" : "Edit or Delete this List"}
               </button>
             )}
             {movies.length > 0 && (
@@ -294,7 +352,7 @@ export function ListDetailPage() {
                     key={movie.movieId}
                     movie={movie}
                     isRanked={list.isRanked}
-                    onRemove={isPublic ? undefined : handleRemoveMovie}
+                    onRemove={isPublic || isFeaturedList || !isOwner ? undefined : handleRemoveMovie}
                   />
                 ))}
               </div>

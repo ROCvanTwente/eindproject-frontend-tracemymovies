@@ -1,3 +1,4 @@
+// Component dat een radar-grafiek toont van de favoriete filmgenres van de gebruiker (Genre Breakdown / Taste Matrix).
 import { useState } from "react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import { Eye, Info, X, Film, Activity } from "lucide-react";
@@ -5,7 +6,7 @@ import { Eye, Info, X, Film, Activity } from "lucide-react";
 export function MoodRadar({ rawData }) {
   const [showInfo, setShowInfo] = useState(false);
 
-  // Map data to handle .NET camelCase serialization formatting issues automatically
+  // Map data om automatisch eventuele .NET camelCase-serialisatieproblemen op te vangen
   const chartData = rawData && rawData.length > 0 
     ? rawData.map(item => ({
         subject: item.subject,
@@ -38,7 +39,7 @@ export function MoodRadar({ rawData }) {
         </button>
       </div>
 
-      {/* Modern Friendly Explanation Overlay */}
+      {/* Moderne vriendelijke uitleg overlay */}
       <div 
         className={`absolute inset-0 bg-[#0B0E14]/98 z-30 p-6 flex flex-col justify-between border border-[#44FFFF]/10 transition-all duration-200 ease-out origin-top-right rounded-xl ${
           showInfo ? "scale-100 opacity-100 pointer-events-auto" : "scale-95 opacity-0 pointer-events-none"

@@ -1,3 +1,4 @@
+// Hoofdpagina voor filmstatistieken (Movie DNA) met data-integraties.
 import { useEffect, useState } from "react";
 import { AnalyticsHeader } from "../components/analytics/AnalyticsHeader";
 import { BiometricHud } from "../components/analytics/BiometricHud";
@@ -65,7 +66,7 @@ export function AnalyticsPage() {
         </section>
  
         <div className="space-y-12 pt-4">
-          {/* TIER 1: Connected directly to Dynamic API Feeds */}
+          {/* NIVEAU 1: Direct verbonden met de dynamische API-feeds */}
           <section className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 items-stretch">
             <div className="lg:col-span-3 min-h-[420px] w-full flex items-center justify-center">
               <TasteProfile rawData={analyticsData?.tasteProfile} />
@@ -75,13 +76,13 @@ export function AnalyticsPage() {
             </div>
           </section>
  
-          {/* TIER 2: Extended Time Ribbon spanning the cleared space */}
+          {/* NIVEAU 2: Uitgebreide tijdlijn (chronologische verdeling) */}
           <section className="w-full">
             <MovieTimeline rawData={analyticsData?.movieTimeline} />
           </section>
         </div>
        
-        {/* Borderless Floating Footer Card */}
+        {/* Randloze zwevende voettekst-kaart voor jaarlijkse/maandelijkse trends */}
         <section className="bg-[#151921]/20 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-md">
           <YearlyChart 
             yearlyData={analyticsData?.yearlyData || []} 

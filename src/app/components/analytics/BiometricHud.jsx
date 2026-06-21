@@ -1,3 +1,4 @@
+// HUD-component dat de top 4 key metrics (films, rating, streak en kijktijd) toont in glassmorphic kaarten.
 import { Film, Star, Flame, Clock } from "lucide-react";
 
 export function BiometricHud({ stats }) {
@@ -8,7 +9,7 @@ export function BiometricHud({ stats }) {
     totalHours: 0
   };
 
-  // Get localized current month name and year (e.g. "June 2026")
+  // Haal de gelokaliseerde huidige maandnaam en het jaar op (bijv. "juni 2026")
   const currentMonth = new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
 
   const metrics = [
@@ -63,10 +64,10 @@ export function BiometricHud({ stats }) {
             key={index} 
             className="flex flex-col justify-between p-6 rounded-2xl bg-[#151921]/45 border border-white/[0.04] shadow-lg backdrop-blur-md transition-all duration-300 hover:translate-y-[-4px] hover:border-white/10 hover:bg-[#151921]/60 group relative overflow-hidden"
           >
-            {/* Background Hover Glow */}
+            {/* Achtergrond Hover Glow */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.02] transition-opacity duration-300 pointer-events-none bg-[#44FFFF]" />
             
-            {/* Top Row: Icon and Badge */}
+            {/* Bovenste rij: Icoon en Badge */}
             <div className="flex items-center justify-between mb-5">
               <div className={`w-10 h-10 rounded-xl bg-white/[0.02] flex items-center justify-center transition-all duration-300 group-hover:bg-[#44FFFF]/5 ${metric.glowColor}`}>
                 <Icon className={`w-5 h-5 ${metric.color} transition-transform duration-500 group-hover:scale-110`} />
@@ -80,7 +81,7 @@ export function BiometricHud({ stats }) {
               </span>
             </div>
 
-            {/* Bottom Row: Stats and Labels */}
+            {/* Onderste rij: Statistieken en Labels */}
             <div className="space-y-1">
               <p className="text-[10px] uppercase tracking-widest text-[#94A3B8]/60 font-black">
                 {metric.label}
