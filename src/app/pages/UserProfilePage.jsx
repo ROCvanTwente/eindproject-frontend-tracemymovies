@@ -78,9 +78,9 @@ function RecentListCard({ list, to }) {
           <div className="w-24 h-32 rounded-md bg-[#0B0E14]" />
         )}
       </div>
-      <div className="flex items-center justify-between mt-1.5 px-0.5">
+      <div className="flex items-center justify-between mt-5 px-0.5">
         <span className="text-[#F8FAFC] text-xs font-medium truncate mr-2 group-hover:text-[#44FFFF] transition-colors">
-          {list.name}
+          {list.listName}
         </span>
         <span className="text-[#94A3B8]/40 text-xs flex-shrink-0">
           {list.movieCount} {list.movieCount === 1 ? "film" : "films"}
