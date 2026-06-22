@@ -145,41 +145,13 @@ export function SystemSettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-4 sm:p-6">
       {/* ── Page Header ── */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-[#F8FAFC]" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            System Settings
-          </h2>
-          <p className="text-xs text-[#4B5563] mt-0.5 max-w-lg leading-relaxed">
-            Configure global application states, security rules, and third-party API integrations.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          {settingsSaved && (
-            <div className="flex items-center gap-1.5 text-xs text-[#4ADE80] px-3 py-1.5 rounded-lg bg-green-400/8 border border-green-400/20">
-              <CheckCircle className="w-3.5 h-3.5" />
-              Saved
-            </div>
-          )}
-          <button
-            onClick={() => {
-              fetchSettings(); // Re-fetch to discard local changes
-              toast.info('Changes discarded.');
-            }}
-            className="px-4 py-2 text-sm font-medium text-[#94A3B8] border border-[#2A3042] rounded-lg hover:border-[#3D4A5C] hover:text-[#F8FAFC] transition-all"
-          >
-            Discard
-          </button>
-          <button
-            onClick={handleSaveSettings}
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#0B0E14] bg-[#BFBCFC] hover:bg-[#AFA9FF] rounded-lg transition-all shadow-lg shadow-[#BFBCFC]/15 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes
-          </button>
-        </div>
+      <div>
+        <h2 className="text-xl font-bold text-[#F8FAFC]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+          System Settings
+        </h2>
+        <p className="text-xs text-[#4B5563] mt-0.5 max-w-lg leading-relaxed">
+          Configure global application states, security rules, and third-party API integrations.
+        </p>
       </div>
 
       {/* Settings Options Card Container */}
@@ -229,6 +201,33 @@ export function SystemSettingsPage() {
         <p className="text-xs text-[#94A3B8] leading-relaxed">
           <strong>Caution:</strong> Changes committed here apply instantly across the whole cluster database environment. Ensure configuration checks match live operation strategies before submitting.
         </p>
+      </div>
+
+      {/* ── Action Buttons ── */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-[rgba(191,188,252,0.07)]">
+        {settingsSaved && (
+          <div className="flex items-center gap-1.5 text-xs text-[#4ADE80] px-3 py-1.5 rounded-lg bg-green-400/8 border border-green-400/20">
+            <CheckCircle className="w-3.5 h-3.5" />
+            Saved
+          </div>
+        )}
+        <button
+          onClick={() => {
+            fetchSettings(); // Re-fetch to discard local changes
+            toast.info('Changes discarded.');
+          }}
+          className="px-4 py-2.5 text-sm font-medium text-[#94A3B8] border border-[#2A3042] rounded-xl hover:border-[#3D4A5C] hover:text-[#F8FAFC] transition-all"
+        >
+          Discard
+        </button>
+        <button
+          onClick={handleSaveSettings}
+          disabled={saving}
+          className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-[#0B0E14] bg-[#BFBCFC] hover:bg-[#AFA9FF] rounded-xl transition-all shadow-lg shadow-[#BFBCFC]/15 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Save Changes
+        </button>
       </div>
 
     </div>

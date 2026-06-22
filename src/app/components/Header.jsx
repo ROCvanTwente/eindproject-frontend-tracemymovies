@@ -1,4 +1,4 @@
-﻿import React, { Fragment, useEffect, useRef, useState, useMemo } from "react";
+import React, { Fragment, useEffect, useRef, useState, useMemo } from "react";
 import {
   Search,
   LogOut,

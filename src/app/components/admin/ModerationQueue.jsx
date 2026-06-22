@@ -168,11 +168,11 @@ export function ModerationQueue() {
       {/* ── Top Control Bar ── */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Title + counter */}
-        <div className="flex items-center gap-3 mr-auto">
-          <h2 className="text-xl font-bold text-[#F8FAFC]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mr-auto">
+          <h2 className="text-lg sm:text-xl font-bold text-[#F8FAFC]" style={{ fontFamily: 'Poppins, sans-serif' }}>
             Content Moderation Queue
           </h2>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-orange-400/15 text-orange-300 border border-orange-400/25">
+          <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-semibold bg-orange-400/15 text-orange-300 border border-orange-400/25">
             {activeReports.length} Pending Items
           </span>
         </div>
