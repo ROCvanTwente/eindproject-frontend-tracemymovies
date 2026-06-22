@@ -1,6 +1,7 @@
 // src/pages/AdminPage.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
+import { Shield, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminContentFrame } from '../components/admin/AdminContentFrame';
@@ -13,6 +14,7 @@ export function AdminPage() {
   const [editGenresMovie, setEditGenresMovie] = useState(null);
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user || (user.role !== 'Admin' && user.role !== 'Moderator')) return;
@@ -76,13 +78,37 @@ export function AdminPage() {
   const movieUpdates = stats?.movieUpdates || [];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#0B0E14] flex">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#0B0E14] flex flex-col lg:flex-row relative">
+      {/* Mobile Top Bar */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-[#151921] border-b border-[#BFBCFC]/10 sticky top-16 z-30">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-lg flex items-center justify-center">
+            <Shield className="w-5 h-5 text-[#0B0E14]" />
+          </div>
+          <div>
+            <h1 className="text-[#F8FAFC] font-bold text-sm">TraceMyMovies</h1>
+            <p className="text-[#94A3B8] text-xs">Admin Panel</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] focus:outline-none hover:bg-white/5 rounded-lg transition-colors"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      </div>
+
       {/* Structural Components */}
-      <AdminSidebar currentView={currentView} setCurrentView={setCurrentView} />
+      <AdminSidebar 
+        currentView={currentView} 
+        setCurrentView={setCurrentView} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Dynamic Main Workspace Frame */}
-        <main className="p-8 flex-1">
+        <main className="p-4 sm:p-6 lg:p-8 flex-1">
           {loadingStats && currentView === 'dashboard' ? (
             <div className="flex flex-col items-center justify-center min-h-[300px] text-[#94A3B8] gap-2">
               <div className="w-8 h-8 border-2 border-[#BFBCFC] border-t-transparent rounded-full animate-spin"></div>

@@ -393,8 +393,8 @@ export function MovieCatalog() {
         )}
       </div>
 
-      {/* Catalog Table */}
-      <div className="bg-[#151921] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+      {/* Catalog Table - Desktop */}
+      <div className="hidden md:block bg-[#151921] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -525,6 +525,125 @@ export function MovieCatalog() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Catalog Card Grid - Mobile */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {loading ? (
+          <div className="py-12 text-center text-[#94A3B8] bg-[#151921] border border-white/5 rounded-2xl">
+            <div className="flex items-center justify-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-[#BFBCFC]" />
+              <span>Loading movie catalog data...</span>
+            </div>
+          </div>
+        ) : filteredMovies.length === 0 ? (
+          <div className="py-12 text-center text-[#94A3B8] bg-[#151921] border border-white/5 rounded-2xl">
+            <div className="flex flex-col items-center justify-center gap-1">
+              <AlertCircle className="w-6 h-6 text-[#475569] mb-1" />
+              <span className="font-semibold">No movies found</span>
+              <span>Try adjusting your filters or search query</span>
+            </div>
+          </div>
+        ) : (
+          filteredMovies.map((movie) => {
+            const isChecked = selectedMovieIds.includes(movie.movieId);
+            const isMenuOpen = activeMenuId === movie.movieId;
+            return (
+              <div 
+                key={movie.movieId} 
+                className={`bg-[#151921] border border-white/5 rounded-2xl p-4 space-y-4 shadow-xl transition-colors ${
+                  isChecked ? 'border-[#BFBCFC]/40 bg-[#BFBCFC]/5' : ''
+                }`}
+              >
+                {/* Header: Checkbox, ID, API Status, Actions */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => handleSelectOne(movie.movieId, e.target.checked)}
+                      className="rounded border-white/10 bg-[#1A2030] text-[#BFBCFC] focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span className="text-[#475569] text-xs font-mono">ID: #{movie.movieId}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
+                      <Check className="w-2 h-2" /> Synced
+                    </span>
+
+                    <div className="relative">
+                      <button
+                        onClick={() => setActiveMenuId(isMenuOpen ? null : movie.movieId)}
+                        className="p-1 hover:bg-white/5 rounded-lg text-[#475569] hover:text-[#F8FAFC] transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {isMenuOpen && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)} />
+                          <div className="absolute right-0 mt-1 z-50 bg-[#1A2030] border border-white/10 rounded-xl shadow-2xl p-1 w-36 text-left">
+                            <button
+                              onClick={() => openEditModal(movie)}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5 rounded-lg transition-colors"
+                            >
+                              <Edit className="w-3.5 h-3.5 text-[#BFBCFC]" /> Edit Movie
+                            </button>
+                            <button
+                              onClick={() => handleForceSync(movie.movieId, movie.title)}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/5 rounded-lg transition-colors"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 text-[#44FFFF]" /> Force Sync
+                            </button>
+                            <hr className="border-white/5 my-1" />
+                            <button
+                              onClick={() => handleDeleteMovie(movie.movieId, movie.title)}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/5 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete Movie
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Body: Poster and Details */}
+                <div className="flex gap-4">
+                  <div className="shrink-0">
+                    {movie.posterImg ? (
+                      <img
+                        src={movie.posterImg.startsWith("http") ? movie.posterImg : `https://image.tmdb.org/t/p/w92${movie.posterImg}`}
+                        alt={movie.title}
+                        className="w-16 h-24 object-cover rounded-lg shadow border border-white/5"
+                      />
+                    ) : (
+                      <div className="w-16 h-24 bg-white/5 rounded-lg flex items-center justify-center border border-dashed border-white/10">
+                        <Film className="w-6 h-6 text-[#475569]" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <h3 className="text-[#F8FAFC] font-bold text-sm leading-tight break-words">{movie.title}</h3>
+                    <p className="text-[#94A3B8] text-xs"><span className="text-[#475569]">Director:</span> {movie.director || 'N/A'}</p>
+                    <p className="text-[#F8FAFC] text-xs font-bold"><span className="text-[#475569] font-normal">Year:</span> {movie.year || 'N/A'}</p>
+                    
+                    <div className="flex flex-wrap gap-1 pt-1.5">
+                      {movie.genres.map((g) => (
+                        <span key={g} className={`text-[9px] px-2 py-0.5 rounded-full font-semibold border ${getGenreStyle(g)}`}>
+                          {g}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Pagination Controls */}

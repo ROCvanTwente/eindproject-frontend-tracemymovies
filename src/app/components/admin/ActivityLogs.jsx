@@ -207,7 +207,8 @@ export function ActivityLogs() {
       </div>
 
       {/* Logs Table */}
-      <div className="bg-[#151921] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+      {/* Logs Table - Desktop */}
+      <div className="hidden md:block bg-[#151921] border border-white/5 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -275,6 +276,64 @@ export function ActivityLogs() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Logs Card List - Mobile */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {loading ? (
+          <div className="py-12 text-center text-[#475569] bg-[#151921] border border-white/5 rounded-2xl">
+            <div className="flex items-center justify-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-[#BFBCFC]" />
+              <span>Fetching platform activity timeline...</span>
+            </div>
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="py-12 text-center text-[#475569] bg-[#151921] border border-white/5 rounded-2xl">
+            <div className="flex flex-col items-center justify-center gap-1">
+              <ShieldAlert className="w-6 h-6 text-[#475569] mb-1" />
+              <span className="font-semibold">No logs found</span>
+              <span>No matching activity logs exist for the current filter criteria</span>
+            </div>
+          </div>
+        ) : (
+          filteredLogs.map((log) => {
+            const style = getSeverityStyle(log.severity);
+            const SeverityIcon = style.icon;
+            return (
+              <div 
+                key={log.id} 
+                className="bg-[#151921] border border-white/5 rounded-2xl p-4 space-y-3 shadow-md border border-[#BFBCFC]/10"
+              >
+                {/* Header: Type, Status, Timestamp */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#BFBCFC]">{log.type}</span>
+                    <span className={`inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${style.bg}`}>
+                      <SeverityIcon className="w-2.5 h-2.5" />
+                      {log.severity}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] text-[#475569]">
+                    {log.timestamp.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                {/* Description */}
+                <p className="text-[#F8FAFC] text-xs leading-relaxed">{log.description}</p>
+
+                {/* Footer: Responsible + Full Date */}
+                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] text-[#94A3B8]">
+                  <span className="bg-white/5 border border-white/10 px-2 py-0.5 rounded-lg font-medium">
+                    By: {log.user}
+                  </span>
+                  <span className="text-[#475569] font-mono">
+                    {log.timestamp.toLocaleDateString('nl-NL', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

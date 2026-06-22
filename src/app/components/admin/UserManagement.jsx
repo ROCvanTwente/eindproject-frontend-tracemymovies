@@ -314,8 +314,8 @@ export function UserManagement() {
         </div>
       )}
 
-      {/* Users Table */}
-      <div className="bg-[#151921] border border-[#BFBCFC]/15 rounded-xl overflow-hidden shadow-lg min-h-[300px]">
+      {/* Users Table - Desktop */}
+      <div className="hidden md:block bg-[#151921] border border-[#BFBCFC]/15 rounded-xl overflow-hidden shadow-lg min-h-[300px]">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#0B0E14] border-b border-[#BFBCFC]/10">
@@ -520,31 +520,175 @@ export function UserManagement() {
               )}
           </table>
         </div>
-        {!loading && totalPages > 1 && (
-          <PaginationControls
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            totalEntries={totalEntries}
-          />
-        )}
-
-        <EditUserRoleModal
-          isOpen={!!localEditUser}
-          onClose={() => setLocalEditUser(null)}
-          userName={localEditUser?.name}
-          currentRole={localEditUser?.role}
-          onSave={handleSaveRole}
-        />
-
-        <BanUserModal
-          isOpen={!!localBanUser}
-          onClose={() => setLocalBanUser(null)}
-          userName={localBanUser?.name}
-          onBan={handleConfirmBan}
-        />
       </div>
+
+      {/* Users Card Grid - Mobile */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {loading ? (
+          <div className="py-12 text-center text-[#94A3B8] bg-[#151921] border border-[#BFBCFC]/15 rounded-xl">Loading users...</div>
+        ) : sortedUsers.length === 0 ? (
+          <div className="py-12 text-center text-[#94A3B8] bg-[#151921] border border-[#BFBCFC]/15 rounded-xl">No users found.</div>
+        ) : (
+          sortedUsers.map((user) => (
+            <div 
+              key={user.id} 
+              className={`bg-[#151921] border border-[#BFBCFC]/15 rounded-xl p-4 space-y-4 shadow-md transition-colors ${
+                selectedUsers.has(user.id) ? 'border-[#BFBCFC]/40 bg-[#BFBCFC]/5' : ''
+              }`}
+            >
+              {/* Card Header: Checkbox, ID, Actions */}
+              <div className="flex items-center justify-between border-b border-[#BFBCFC]/10 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.has(user.id)}
+                    onChange={() => handleSelectUser(user.id)}
+                    className="w-4 h-4 rounded border-[#BFBCFC]/30 bg-[#0B0E14] checked:bg-[#BFBCFC] focus:ring-2 focus:ring-[#BFBCFC]/20 cursor-pointer"
+                  />
+                  <span className="text-[#44FFFF] font-mono text-xs font-medium">#{user.id.slice(0,8)}</span>
+                </div>
+                
+                <div className="relative" data-dropdown>
+                  <button
+                    onClick={(e) => handleToggleActions(e, user.id)}
+                    className="p-1.5 hover:bg-white/5 rounded-lg text-[#94A3B8] hover:text-[#BFBCFC] transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+
+                  {/* Actions Dropdown for Mobile (Positioned relative to viewport trigger) */}
+                  {openUserActions === user.id && (
+                    <div 
+                      style={{
+                        position: 'fixed',
+                        top: `${dropdownPosition.top}px`,
+                        left: `${dropdownPosition.left}px`,
+                        width: '256px'
+                      }}
+                      className="bg-gradient-to-br from-[#151921] to-[#0B0E14] border border-[#BFBCFC]/20 rounded-xl shadow-2xl shadow-black/60 overflow-hidden z-50 backdrop-blur-xl animate-fade-in"
+                    >
+                      <div className="px-4 py-3 border-b border-[#BFBCFC]/10 bg-[#BFBCFC]/5">
+                        <p className="text-xs font-medium text-[#BFBCFC] uppercase tracking-wide">User Actions</p>
+                      </div>
+
+                      <div className="py-1">
+                        <button
+                          onClick={() => handleEditRole(user.id)}
+                          className="w-full px-4 py-3 text-left text-[#F8FAFC] hover:bg-gradient-to-r hover:from-[#BFBCFC]/15 hover:to-[#BFBCFC]/5 transition-all duration-200 flex items-center gap-3 text-sm group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#BFBCFC]/10 group-hover:bg-[#BFBCFC]/20 flex items-center justify-center transition-all">
+                            <Shield className="w-4 h-4 text-[#BFBCFC]" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">Edit Role</p>
+                            <p className="text-xs text-[#94A3B8] group-hover:text-[#BFBCFC]/70">Change permissions</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleResetPassword(user.id)}
+                          className="w-full px-4 py-3 text-left text-[#F8FAFC] hover:bg-gradient-to-r hover:from-[#44FFFF]/15 hover:to-[#44FFFF]/5 transition-all duration-200 flex items-center gap-3 text-sm group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#44FFFF]/10 group-hover:bg-[#44FFFF]/20 flex items-center justify-center transition-all">
+                            <Key className="w-4 h-4 text-[#44FFFF]" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">Reset Password</p>
+                            <p className="text-xs text-[#94A3B8] group-hover:text-[#44FFFF]/70">Send reset email</p>
+                          </div>
+                        </button>
+                      </div>
+
+                      <div className="h-px bg-gradient-to-r from-transparent via-[#FF61D2]/30 to-transparent my-1"></div>
+
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setLocalBanUser({ id: user.id, name: user.userName });
+                            setOpenUserActions(null);
+                          }}
+                          className="w-full px-4 py-3 text-left text-[#FF61D2] hover:bg-gradient-to-r hover:from-[#FF61D2]/15 hover:to-[#FF61D2]/5 transition-all duration-200 flex items-center gap-3 text-sm group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-[#FF61D2]/10 group-hover:bg-[#FF61D2]/20 flex items-center justify-center transition-all">
+                            <AlertTriangle className="w-4 h-4 text-[#FF61D2]" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">Ban User</p>
+                            <p className="text-xs text-[#FF61D2]/70 group-hover:text-[#FF61D2]">Restrict access</p>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Body: User Profile */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-full flex items-center justify-center shadow-lg shadow-[#BFBCFC]/20 shrink-0">
+                  <span className="text-[#0B0E14] font-bold text-sm">{user.userName.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[#F8FAFC] font-medium truncate">{user.userName}</p>
+                  <p className="text-[#94A3B8] text-xs truncate">{user.email}</p>
+                </div>
+              </div>
+
+              {/* Card Footer: Badges & Join Date */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#BFBCFC]/10">
+                <div className="flex items-center gap-1.5">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-medium inline-flex items-center gap-1 ${
+                    user.role === 'Admin'
+                      ? 'bg-[#FF61D2]/10 text-[#FF61D2] border border-[#FF61D2]/30'
+                      : (user.role === 'Mod' || user.role === 'Moderator')
+                      ? 'bg-[#44FFFF]/10 text-[#44FFFF] border border-[#44FFFF]/30'
+                      : 'bg-[#BFBCFC]/10 text-[#BFBCFC] border border-[#BFBCFC]/30'
+                  }`}>
+                    {user.role}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-medium inline-flex items-center gap-1 ${
+                    user.status === 'Active'
+                      ? 'bg-[#44FFFF]/10 text-[#44FFFF] border border-[#44FFFF]/30'
+                      : user.status === 'Pending'
+                      ? 'bg-[#BFBCFC]/10 text-[#BFBCFC] border border-[#BFBCFC]/30'
+                      : 'bg-[#FF61D2]/10 text-[#FF61D2] border border-[#FF61D2]/30'
+                  }`}>
+                    {user.status}
+                  </span>
+                </div>
+                <span className="text-[#94A3B8] text-xs">
+                  {new Date(user.joinDate || user.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Pagination Controls */}
+      {!loading && totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          totalPages={totalPages}
+          itemsPerPage={itemsPerPage}
+          totalEntries={totalEntries}
+        />
+      )}
+
+      <EditUserRoleModal
+        isOpen={!!localEditUser}
+        onClose={() => setLocalEditUser(null)}
+        userName={localEditUser?.name}
+        currentRole={localEditUser?.role}
+        onSave={handleSaveRole}
+      />
+
+      <BanUserModal
+        isOpen={!!localBanUser}
+        onClose={() => setLocalBanUser(null)}
+        userName={localBanUser?.name}
+        onBan={handleConfirmBan}
+      />
     </div>
   );
 }
