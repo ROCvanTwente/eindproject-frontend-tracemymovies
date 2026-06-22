@@ -1,7 +1,7 @@
 // src/pages/AdminPage.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { Shield, Menu } from 'lucide-react';
+import { Shield, ArrowUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { AdminContentFrame } from '../components/admin/AdminContentFrame';
@@ -14,7 +14,26 @@ export function AdminPage() {
   const [editGenresMovie, setEditGenresMovie] = useState(null);
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   useEffect(() => {
     if (!user || (user.role !== 'Admin' && user.role !== 'Moderator')) return;
@@ -79,31 +98,10 @@ export function AdminPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#0B0E14] flex flex-col lg:flex-row relative">
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-[#151921] border-b border-[#BFBCFC]/10 sticky top-16 z-30">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] rounded-lg flex items-center justify-center">
-            <Shield className="w-5 h-5 text-[#0B0E14]" />
-          </div>
-          <div>
-            <h1 className="text-[#F8FAFC] font-bold text-sm">TraceMyMovies</h1>
-            <p className="text-[#94A3B8] text-xs">Admin Panel</p>
-          </div>
-        </div>
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="p-2 text-[#94A3B8] hover:text-[#F8FAFC] focus:outline-none hover:bg-white/5 rounded-lg transition-colors"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-      </div>
-
       {/* Structural Components */}
       <AdminSidebar 
         currentView={currentView} 
         setCurrentView={setCurrentView} 
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -139,6 +137,17 @@ export function AdminPage() {
         currentGenres={editGenresMovie?.genres || []}
         onSave={(genres) => console.log(genres)}
       />
+
+      {/* Floating Scroll To Top Button */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-6 z-50 p-3 bg-gradient-to-br from-[#BFBCFC] to-[#44FFFF] hover:from-[#AFA9FF] hover:to-[#44FFFF] text-[#0B0E14] rounded-xl shadow-lg shadow-black/40 hover:shadow-[#BFBCFC]/20 transition-all duration-300 transform active:scale-95 ${
+          showScrollTop ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
+        }`}
+        aria-label="Scroll to top"
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
     </div>
   );
 }

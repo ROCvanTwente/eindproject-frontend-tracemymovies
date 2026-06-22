@@ -161,7 +161,7 @@ export function ActivityLogs() {
       {/* Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-[#F8FAFC] tracking-tight mb-2">Platform Activity Logs</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#F8FAFC] tracking-tight mb-2">Platform Activity Logs</h2>
           <p className="text-[#94A3B8] text-xs">Track registrations, moderation filings, security triggers, and system sync events</p>
         </div>
 

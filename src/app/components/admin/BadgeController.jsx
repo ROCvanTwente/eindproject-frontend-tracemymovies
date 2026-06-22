@@ -230,11 +230,11 @@ export function BadgeController() {
       {/* View Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-[#F8FAFC] flex items-center gap-2">
-            <Award className="w-8 h-8 text-[#BFBCFC]" />
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#F8FAFC] flex items-center gap-2">
+            <Award className="w-6 h-6 sm:w-8 sm:h-8 text-[#BFBCFC]" />
             Badge Controller
           </h2>
-          <p className="text-[#94A3B8] mt-1 text-sm">Create, view, and delete system badge definitions and rules</p>
+          <p className="text-[#94A3B8] mt-1 text-xs sm:text-sm">Create, view, and delete system badge definitions and rules</p>
         </div>
         <button
           onClick={handleOpenAddModal}

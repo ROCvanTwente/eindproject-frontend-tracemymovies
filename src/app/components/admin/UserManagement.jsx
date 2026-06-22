@@ -258,8 +258,8 @@ export function UserManagement() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-[#F8FAFC] mb-2">User Management</h2>
-          <p className="text-[#94A3B8]">Manage user accounts and permissions</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#F8FAFC] mb-2">User Management</h2>
+          <p className="text-xs sm:text-sm text-[#94A3B8]">Manage user accounts and permissions</p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />

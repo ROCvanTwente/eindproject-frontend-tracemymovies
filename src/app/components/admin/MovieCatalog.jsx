@@ -265,8 +265,8 @@ export function MovieCatalog() {
       {/* Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-[#F8FAFC] tracking-tight mb-2">Movie Catalog Management</h2>
-          <div className="flex flex-wrap items-center gap-4 text-xs">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#F8FAFC] tracking-tight mb-2">Movie Catalog</h2>
+          <div className="flex flex-wrap items-center gap-4 text-[10px] sm:text-xs">
             <div className="flex items-center gap-2 text-[#94A3B8]">
               <span>Database status:</span>
               <span className="inline-flex items-center gap-1.5 bg-[#4ADE80]/10 border border-[#4ADE80]/20 text-[#4ADE80] px-2.5 py-1 rounded-full font-bold">
